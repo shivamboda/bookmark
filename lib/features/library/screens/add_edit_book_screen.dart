@@ -1584,7 +1584,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         },
         borderRadius: BorderRadius.circular(10),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: 44, maxWidth: 200),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1605,13 +1605,17 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   const Icon(Icons.check_rounded, size: 14, color: Colors.white),
                   const SizedBox(width: 4),
                 ],
-                Text(
-                  genre,
-                  style: JournalTypography.bodySmall(
-                    color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
-                  ).copyWith(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    genre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: JournalTypography.bodySmall(
+                      color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
+                    ).copyWith(
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],

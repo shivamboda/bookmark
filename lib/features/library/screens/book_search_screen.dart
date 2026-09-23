@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/palette.dart';
 import '../../../core/theme/app_theme.dart';
@@ -9,25 +10,10 @@ import '../../../doodles/poppy_doodle.dart';
 import '../../../doodles/sketch_underline.dart';
 import '../../../models/book.dart';
 import 'add_edit_book_screen.dart';
+import '../../../services/book_search_service.dart';
+import '../../../services/image_service.dart';
+import 'package:http/http.dart' as http;
 
-/// Represents a candidate search result returned by book APIs.
-class BookSearchResult {
-  final String title;
-  final List<String> authors;
-  final String? coverUrl;
-  final int? pageCount;
-  final String? description;
-  final List<String> genres;
-
-  const BookSearchResult({
-    required this.title,
-    this.authors = const [],
-    this.coverUrl,
-    this.pageCount,
-    this.description,
-    this.genres = const [],
-  });
-}
 
 /// Book Search Screen: The entry point for finding and adding books to the journal.
 ///
@@ -87,27 +73,48 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
     });
   }
 
-  /// Triggers book search (API integration wired in Part 2)
+  /// Queries Open Library (primary) and Google Books (fallback) for results.
   Future<void> _executeSearch(String query) async {
     if (query.isEmpty) return;
 
     setState(() {
       _isLoading = true;
-      
     });
 
-    // Simulated short delay in Part 1 to demonstrate loading & empty state
-    await Future.delayed(const Duration(milliseconds: 350));
+    try {
+      // Call the search service (Open Library first, Google Books fallback)
+      final results = await BookSearchService.search(query);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
-      _hasSearched = true;
-      // In Part 1, results default to empty so the "no matches" state can be reviewed.
-      // In Part 2, real Open Library & Google Books API data will be populated here.
-      _results = [];
-    });
+      setState(() {
+        _isLoading = false;
+        _hasSearched = true;
+        _results = results;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _hasSearched = true;
+        _results = [];
+      });
+
+      // Show a gentle error snackbar so the user knows something went wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "couldn't reach the library shelves right now ~",
+            style: TextStyle(fontFamily: 'Caveat', fontSize: 16),
+          ),
+          backgroundColor: const Color(0xFFB84B6B),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   /// Clear the search query and restore the initial empty state
@@ -123,15 +130,44 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
     _searchFocusNode.requestFocus();
   }
 
-  /// Navigates directly to the manual AddEditBookScreen
+  /// Navigates to AddEditBookScreen, optionally pre-filling from a search result.
+  ///
+  /// When a [result] is provided (user tapped a search card), the cover image
+  /// is downloaded and compressed via [ImageService] so it's stored locally
+  /// in Hive rather than depending on an external URL at display time.
   Future<void> _openManualEntry([BookSearchResult? result]) async {
     Book? draft;
+
     if (result != null) {
+      // --- Download & compress the cover image if a URL is available ---
+      Uint8List? coverBytes;
+      if (result.coverUrl != null && result.coverUrl!.isNotEmpty) {
+        try {
+          // Show a brief loading indicator while we fetch the cover
+          setState(() => _isLoading = true);
+
+          final response = await http
+              .get(Uri.parse(result.coverUrl!))
+              .timeout(const Duration(seconds: 8));
+
+          if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+            // Downscale & compress to JPEG via ImageService (max 600px, 80% quality)
+            coverBytes = ImageService.processCoverBytes(response.bodyBytes);
+          }
+        } catch (e) {
+          // Cover download failed — not critical, we'll just skip the image
+          debugPrint('Cover download failed: $e');
+        } finally {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+
       draft = Book(
         id: 'draft-${DateTime.now().millisecondsSinceEpoch}',
         title: result.title,
         authors: result.authors,
         coverUrl: result.coverUrl,
+        coverBytes: coverBytes,
         pageCount: result.pageCount,
         description: result.description ?? '',
         genres: result.genres,
@@ -139,6 +175,8 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         dateAdded: DateTime.now(),
       );
     }
+
+    if (!mounted) return;
 
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
