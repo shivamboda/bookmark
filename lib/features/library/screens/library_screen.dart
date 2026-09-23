@@ -27,15 +27,6 @@ enum LibraryFilter {
 }
 
 /// Step 4a: Handcrafted Botanical Library Screen.
-///
-/// Features:
-/// - List and Grid view toggle with generous 140px bottom padding
-/// - Palette-based status pills (Lavender, Sage, Blush, Buttercup)
-/// - Full approved botanical poppy header flower positioned fully inside the screen
-/// - Handcrafted empty state with open book + poppy illustration
-/// - Botanical bottom navigation where all 4 tabs switch to active views
-/// - Complete SafeArea handling for iPhone 16
-/// - 44px+ minimum tap targets
 class LibraryScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenDoodleGallery;
 
@@ -103,7 +94,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Widget _buildLibraryTab(BuildContext context, AsyncValue<List<Book>> booksAsync) {
     return Stack(
       children: [
-        // Full approved botanical poppy positioned fully inside the screen (no clipping, no overlap)
+        // Full approved botanical poppy positioned fully inside the screen
         const Positioned(
           top: 10,
           right: 14,
@@ -111,7 +102,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: PoppyDoodle(
               size: 72,
               showStem: false,
-              petalColor: FloralPalette.rosePetal, // Full approved bloom with inner petals, pod & stamens
+              petalColor: FloralPalette.rosePetal,
             ),
           ),
         ),
@@ -158,7 +149,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   if (_isGridView) {
                     return GridView.builder(
                       key: const ValueKey('library_grid_view'),
-                      // 140px bottom padding so floating action button never covers last card
                       padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -179,7 +169,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
                   return ListView.builder(
                     key: const ValueKey('library_list_view'),
-                    // 140px bottom padding so floating action button never covers last card
                     padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
                     itemCount: books.length,
                     itemBuilder: (context, index) {
@@ -243,18 +232,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'Wishlist',
-                            style: TextStyle(
-                              fontFamily: 'Fraunces',
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
+                            style: JournalTypography.headingLarge(
                               color: FloralPalette.warmCharcoal,
-                            ),
+                            ).copyWith(fontSize: 32),
                           ),
-                          SizedBox(height: 2),
-                          HandDrawnUnderline(
+                          const SizedBox(height: 2),
+                          const HandDrawnUnderline(
                             width: 115,
                             color: FloralPalette.deepRose,
                           ),
@@ -317,6 +303,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     itemBuilder: (context, index) {
                       return BookListCard(
                         book: wishlistBooks[index],
+                        isWishlist: true, // Hides status pill & unrated, shows "Added <date>"
                         onTap: () => _onBookSelected(context, wishlistBooks[index]),
                       );
                     },
@@ -334,7 +321,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   // TAB 2: STATS SCREEN
   // ==========================================
   Widget _buildStatsTab(BuildContext context, AsyncValue<List<Book>> booksAsync) {
-    final yearlyGoal = ref.watch(yearlyGoalProvider) ?? 20;
+    final yearlyGoal = ref.watch(yearlyGoalProvider);
+    final currentYear = DateTime.now().year;
 
     return Stack(
       children: [
@@ -375,18 +363,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'Stats',
-                            style: TextStyle(
-                              fontFamily: 'Fraunces',
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
+                            style: JournalTypography.headingLarge(
                               color: FloralPalette.warmCharcoal,
-                            ),
+                            ).copyWith(fontSize: 32),
                           ),
-                          SizedBox(height: 2),
-                          HandDrawnUnderline(
+                          const SizedBox(height: 2),
+                          const HandDrawnUnderline(
                             width: 80,
                             color: FloralPalette.deepRose,
                           ),
@@ -422,7 +407,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
                     child: Column(
                       children: [
-                        // Yearly Goal Card
+                        // Yearly Goal Card (Dynamic Year & Friendly Unset State)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
@@ -436,24 +421,48 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '2026 Reading Goal',
+                                '$currentYear Reading Goal',
                                 style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                '$finishedCount of $yearlyGoal books finished',
-                                style: JournalTypography.handwriting(color: FloralPalette.deepRose),
-                              ),
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: LinearProgressIndicator(
-                                  value: yearlyGoal > 0 ? (finishedCount / yearlyGoal).clamp(0.0, 1.0) : 0,
-                                  backgroundColor: FloralPalette.blushPink.withValues(alpha: 0.3),
-                                  valueColor: const AlwaysStoppedAnimation(FloralPalette.deepRose),
-                                  minHeight: 10,
+                              if (yearlyGoal == null) ...[
+                                Text(
+                                  'Set a goal for the year ~',
+                                  style: JournalTypography.handwriting(color: FloralPalette.deepRose),
                                 ),
-                              ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Track how many books you wish to finish in $currentYear. Head over to Settings to pick a goal whenever you are ready.',
+                                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                                ),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: () => setState(() => _currentNavIndex = 3),
+                                  icon: const Icon(Icons.flag_outlined, size: 18),
+                                  label: const Text('Set Goal in Settings'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: FloralPalette.deepRose,
+                                    side: const BorderSide(color: FloralPalette.deepRose),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    minimumSize: const Size(44, 44),
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(
+                                  '$finishedCount of $yearlyGoal books finished',
+                                  style: JournalTypography.handwriting(color: FloralPalette.deepRose),
+                                ),
+                                const SizedBox(height: 12),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: yearlyGoal > 0 ? (finishedCount / yearlyGoal).clamp(0.0, 1.0) : 0,
+                                    backgroundColor: FloralPalette.blushPink.withValues(alpha: 0.3),
+                                    valueColor: const AlwaysStoppedAnimation(FloralPalette.deepRose),
+                                    minHeight: 10,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -517,7 +526,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   // TAB 3: SETTINGS SCREEN
   // ==========================================
   Widget _buildSettingsTab(BuildContext context) {
-    final yearlyGoal = ref.watch(yearlyGoalProvider) ?? 20;
+    final yearlyGoal = ref.watch(yearlyGoalProvider);
+    final currentYear = DateTime.now().year;
 
     return Stack(
       children: [
@@ -558,18 +568,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'Settings',
-                            style: TextStyle(
-                              fontFamily: 'Fraunces',
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
+                            style: JournalTypography.headingLarge(
                               color: FloralPalette.warmCharcoal,
-                            ),
+                            ).copyWith(fontSize: 32),
                           ),
-                          SizedBox(height: 2),
-                          HandDrawnUnderline(
+                          const SizedBox(height: 2),
+                          const HandDrawnUnderline(
                             width: 115,
                             color: FloralPalette.deepRose,
                           ),
@@ -612,33 +619,93 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         children: [
                           Text('Yearly Reading Goal', style: JournalTypography.headingSmall()),
                           const SizedBox(height: 4),
-                          Text('Set your target number of books for this year', style: JournalTypography.bodySmall()),
+                          Text('Set your target number of books for $currentYear', style: JournalTypography.bodySmall()),
                           const SizedBox(height: 14),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '$yearlyGoal books',
-                                style: JournalTypography.headingMedium(color: FloralPalette.deepRose),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: yearlyGoal > 1
-                                        ? () => ref.read(yearlyGoalProvider.notifier).setGoal(yearlyGoal - 1)
-                                        : null,
-                                    icon: const Icon(Icons.remove_circle_outline_rounded),
-                                    color: FloralPalette.deepRose,
+
+                          if (yearlyGoal == null) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'No goal set',
+                                    style: JournalTypography.subheading(color: FloralPalette.unratedText),
                                   ),
-                                  IconButton(
-                                    onPressed: () => ref.read(yearlyGoalProvider.notifier).setGoal(yearlyGoal + 1),
-                                    icon: const Icon(Icons.add_circle_outline_rounded),
-                                    color: FloralPalette.deepRose,
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton(
+                                  onPressed: () => ref.read(yearlyGoalProvider.notifier).setGoal(12),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: FloralPalette.deepRose,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(44, 44),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   ),
-                                ],
+                                  child: const Text('Set a goal for the year'),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '$yearlyGoal books',
+                                  style: JournalTypography.headingMedium(color: FloralPalette.deepRose),
+                                ),
+                                Row(
+                                  children: [
+                                    // Minus button with guaranteed >= 44x44 hit area
+                                    SizedBox(
+                                      width: 44,
+                                      height: 44,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                                        onPressed: () {
+                                          if (yearlyGoal <= 1) {
+                                            ref.read(yearlyGoalProvider.notifier).setGoal(null);
+                                          } else {
+                                            ref.read(yearlyGoalProvider.notifier).setGoal(yearlyGoal - 1);
+                                          }
+                                        },
+                                        tooltip: yearlyGoal <= 1 ? 'Clear goal' : 'Decrease goal',
+                                        icon: const Icon(Icons.remove_circle_outline_rounded, size: 26),
+                                        color: FloralPalette.deepRose,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Plus button with guaranteed >= 44x44 hit area
+                                    SizedBox(
+                                      width: 44,
+                                      height: 44,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                                        onPressed: () => ref.read(yearlyGoalProvider.notifier).setGoal(yearlyGoal + 1),
+                                        tooltip: 'Increase goal',
+                                        icon: const Icon(Icons.add_circle_outline_rounded, size: 26),
+                                        color: FloralPalette.deepRose,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () => ref.read(yearlyGoalProvider.notifier).setGoal(null),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: FloralPalette.mutedCharcoal,
+                                  minimumSize: const Size(44, 44),
+                                ),
+                                child: const Text('Clear Goal', style: TextStyle(fontSize: 12)),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -673,13 +740,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       ),
                     ),
 
-                    // Developer Doodle Showcase (visible strictly in kDebugMode)
+                    // Developer Doodle Showcase (strictly kDebugMode, no emoji)
                     if (kDebugMode && widget.onOpenDoodleGallery != null) ...[
                       const SizedBox(height: 20),
                       ElevatedButton.icon(
                         onPressed: widget.onOpenDoodleGallery,
                         icon: const Icon(Icons.palette_outlined, size: 20),
-                        label: const Text('🌸 Open Botanical Doodle Sketchbook'),
+                        label: const Text('Open Botanical Doodle Sketchbook'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FloralPalette.deepRose,
                           foregroundColor: Colors.white,
@@ -722,18 +789,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Library',
-                    style: TextStyle(
-                      fontFamily: 'Fraunces',
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
+                    style: JournalTypography.headingLarge(
                       color: FloralPalette.warmCharcoal,
-                    ),
+                    ).copyWith(fontSize: 32),
                   ),
-                  SizedBox(height: 2),
-                  HandDrawnUnderline(
+                  const SizedBox(height: 2),
+                  const HandDrawnUnderline(
                     width: 105,
                     color: FloralPalette.deepRose,
                   ),

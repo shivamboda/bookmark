@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
 import '../../../models/book.dart';
@@ -8,12 +8,19 @@ import 'book_cover_thumbnail.dart';
 class BookListCard extends StatelessWidget {
   final Book book;
   final VoidCallback? onTap;
+  final bool isWishlist;
 
   const BookListCard({
     super.key,
     required this.book,
     this.onTap,
+    this.isWishlist = false,
   });
+
+  String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return 'Added ${months[dt.month - 1]} ${dt.day}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,24 +83,36 @@ class BookListCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Status Pill & Rating
+                      // Status Pill & Rating (or "Added <date>" on Wishlist)
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                            decoration: BoxDecoration(
-                              color: badgeBg,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: badgeBorder, width: 0.8),
-                            ),
-                            child: Text(
-                              book.status.label,
-                              style: JournalTypography.bodySmall(color: badgeText).copyWith(
-                                fontWeight: FontWeight.w700,
+                          if (isWishlist) ...[
+                            Text(
+                              _formatDate(book.dateAdded),
+                              style: JournalTypography.bodySmall(
+                                color: FloralPalette.mutedCharcoal,
+                              ).copyWith(
                                 fontSize: 11,
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
-                          ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: badgeBorder, width: 0.8),
+                              ),
+                              child: Text(
+                                book.status.label,
+                                style: JournalTypography.bodySmall(color: badgeText).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
                           const Spacer(),
                           if (book.rating > 0) ...[
                             const Icon(
@@ -108,7 +127,7 @@ class BookListCard extends StatelessWidget {
                                 color: FloralPalette.warmCharcoal,
                               ).copyWith(fontWeight: FontWeight.w700),
                             ),
-                          ] else ...[
+                          ] else if (!isWishlist) ...[
                             Text(
                               'Unrated',
                               style: JournalTypography.bodySmall(
