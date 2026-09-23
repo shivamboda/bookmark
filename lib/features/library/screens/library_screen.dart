@@ -16,7 +16,7 @@ import '../widgets/floral_bottom_nav.dart';
 import '../widgets/library_empty_state.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
-import 'add_edit_book_screen.dart';
+import 'book_search_screen.dart';
 
 /// Filter option for books displayed in the Library screen.
 enum LibraryFilter {
@@ -955,14 +955,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _openAddBookScreen(BuildContext context, {ReadingStatus? defaultStatus}) {
+    final status = defaultStatus ??
+        (_currentNavIndex == 1
+            ? ReadingStatus.wantToRead
+            : ReadingStatus.reading);
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => AddEditBookScreen(
-          defaultStatus: defaultStatus ??
-              (_currentNavIndex == 1
-                  ? ReadingStatus.wantToRead
-                  : ReadingStatus.reading),
-        ),
+        builder: (_) => BookSearchScreen(defaultStatus: status),
       ),
     );
   }

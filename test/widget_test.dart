@@ -1,3 +1,4 @@
+import 'package:bookmark/features/library/screens/book_search_screen.dart';
 import 'package:bookmark/features/library/screens/add_edit_book_screen.dart';
 import 'package:bookmark/features/library/widgets/book_list_card.dart';
 import 'dart:typed_data';
@@ -318,6 +319,13 @@ void main() {
     await tester.tap(fab);
     await tester.pumpAndSettle();
 
+    // Verify BookSearchScreen opens first from Library FAB (+)
+    expect(find.byType(BookSearchScreen), findsOneWidget);
+
+    // Tap "Add manually instead" to open AddEditBookScreen
+    await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+    await tester.pumpAndSettle();
+
     expect(find.byType(AddEditBookScreen), findsOneWidget);
     expect(find.text('Add New Book'), findsOneWidget);
 
@@ -529,8 +537,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Tap Add Book FAB
+    // Tap Add Book FAB -> opens BookSearchScreen
     await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BookSearchScreen), findsOneWidget);
+
+    // Bypass to manual AddEditBookScreen
+    await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
     await tester.pumpAndSettle();
 
     // Scroll to Add Quote button
@@ -651,5 +664,141 @@ void main() {
     expect(cardFinder, findsOneWidget);
     final cardSize = tester.getSize(cardFinder);
     expect(cardSize.height, greaterThan(0));
+  });
+
+  testWidgets('BookSearchScreen: verifies search field, both empty states, and manual entry bypass', (tester) async {
+    final mockStorage = InMemoryStorageService();
+    await mockStorage.init();
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const MaterialApp(
+          home: BookSearchScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Verify search input field exists
+    expect(find.byKey(const ValueKey('book_search_input')), findsOneWidget);
+
+    // 2. Verify Initial "before search" empty state copy
+    expect(find.text('Find Your Next Tale'), findsOneWidget);
+    expect(find.text('search for a title or author to begin ~'), findsOneWidget);
+    expect(find.text('Circe'), findsOneWidget);
+
+    // 3. Verify persistent "Add manually instead" link
+    expect(find.byKey(const ValueKey('add_manually_btn')), findsOneWidget);
+
+    // 4. Type a search query to trigger debounce and search
+    await tester.enterText(find.byKey(const ValueKey('book_search_input')), 'Unfindable Book XYZ');
+    // Pump debounce timer (500ms) + simulated search delay (350ms)
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+
+    // 5. Verify Zero Results empty state copy and action
+    expect(find.text('No Stories Found'), findsOneWidget);
+    expect(find.text('no matches found, but you can still add it by hand ~'), findsOneWidget);
+    expect(find.byKey(const ValueKey('zero_results_add_manually_btn')), findsOneWidget);
+
+    // 6. Tap "Add Manually Instead" from zero results
+    await tester.tap(find.byKey(const ValueKey('zero_results_add_manually_btn')));
+    await tester.pumpAndSettle();
+
+    // Verify AddEditBookScreen opened
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+  });
+
+  testWidgets('Entry points: Library + and Wishlist + open BookSearchScreen; Detail Edit opens AddEditBookScreen', (tester) async {
+    final mockStorage = InMemoryStorageService();
+    await mockStorage.init();
+
+    final testBook = Book(
+      id: 'book-entry-test',
+      title: 'Sense and Sensibility',
+      authors: ['Jane Austen'],
+      genres: ['Romance'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime.now(),
+    );
+    await mockStorage.saveBook(testBook);
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Library tab (+) opens BookSearchScreen
+    final libraryFab = find.byKey(const ValueKey('add_book_fab'));
+    expect(libraryFab, findsOneWidget);
+    await tester.tap(libraryFab);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BookSearchScreen), findsOneWidget);
+    final searchScreenOnLibrary = tester.widget<BookSearchScreen>(find.byType(BookSearchScreen));
+    expect(searchScreenOnLibrary.defaultStatus, ReadingStatus.reading);
+
+    // Pop back to Library
+    await tester.tap(find.byKey(const ValueKey('search_back_button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BookSearchScreen), findsNothing);
+
+    // 2. Switch to Wishlist tab
+    await tester.tap(find.text('Wishlist'));
+    await tester.pumpAndSettle();
+
+    // Wishlist tab (+) opens BookSearchScreen
+    final wishlistFab = find.byKey(const ValueKey('add_book_fab'));
+    expect(wishlistFab, findsOneWidget);
+    await tester.tap(wishlistFab);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BookSearchScreen), findsOneWidget);
+    final searchScreenOnWishlist = tester.widget<BookSearchScreen>(find.byType(BookSearchScreen));
+    expect(searchScreenOnWishlist.defaultStatus, ReadingStatus.wantToRead);
+
+    // Pop back to Wishlist
+    await tester.tap(find.byKey(const ValueKey('search_back_button')));
+    await tester.pumpAndSettle();
+
+    // 3. Switch back to Library tab, tap book to open BookDetailScreen
+    await tester.tap(find.text('Library').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sense and Sensibility').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(BookDetailScreen), findsOneWidget);
+
+    // Tap Edit button on BookDetailScreen -> MUST open AddEditBookScreen directly (not search)
+    final editBtn = find.byKey(const ValueKey('detail_edit_button'));
+    expect(editBtn, findsOneWidget);
+    await tester.tap(editBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+    expect(find.byType(BookSearchScreen), findsNothing);
   });
 }
