@@ -46,10 +46,10 @@ class _PoppyBotanicalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final bloomCenter = Offset(
-      size.width * 0.54,
+      size.width * 0.5,
       showStem ? size.height * 0.32 : size.height * 0.5,
     );
-    final radius = size.width * 0.38;
+    final radius = showStem ? size.width * 0.36 : size.width * 0.44;
 
     // 1. Organic curving stem & leaves if enabled
     if (showStem) {

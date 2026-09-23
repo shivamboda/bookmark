@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/state/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/palette.dart';
+import 'doodles/doodle_gallery_screen.dart';
 import 'doodles/poppy_doodle.dart';
 import 'doodles/sketch_underline.dart';
 import 'models/book.dart';
@@ -35,14 +36,44 @@ class BookmarkApp extends ConsumerWidget {
       title: 'Bookmark',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(mode: themeMode),
-      home: const JournalCoverScreen(),
+      home: const MainContainerScreen(),
     );
   }
 }
 
-/// Botanical Reading Journal Screen with Live Library Data
+/// Container that seamlessly switches between the Reading Journal and the Doodle Showcase
+class MainContainerScreen extends StatefulWidget {
+  const MainContainerScreen({super.key});
+
+  @override
+  State<MainContainerScreen> createState() => _MainContainerScreenState();
+}
+
+class _MainContainerScreenState extends State<MainContainerScreen> {
+  bool _showDoodleGallery = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showDoodleGallery) {
+      return DoodleGalleryScreen(
+        onBackToJournal: () => setState(() => _showDoodleGallery = false),
+      );
+    }
+
+    return JournalCoverScreen(
+      onOpenDoodleGallery: () => setState(() => _showDoodleGallery = true),
+    );
+  }
+}
+
+/// Botanical Reading Journal Screen with Live Library Data & Doodle Preview Link
 class JournalCoverScreen extends ConsumerWidget {
-  const JournalCoverScreen({super.key});
+  final VoidCallback onOpenDoodleGallery;
+
+  const JournalCoverScreen({
+    super.key,
+    required this.onOpenDoodleGallery,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,11 +86,57 @@ class JournalCoverScreen extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 6),
+                  // Top Navigation Bar with Doodle Sketchbook button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'VOL. I • READING JOURNAL',
+                          style: JournalTypography.bodySmall(
+                            color: FloralPalette.deepForestGreen.withValues(alpha: 0.85),
+                          ).copyWith(
+                            letterSpacing: 1.8,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: onOpenDoodleGallery,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: FloralPalette.blushPink.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: FloralPalette.rosePetal.withValues(alpha: 0.5),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const PoppyDoodle(size: 16, showStem: false),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Doodle Art',
+                                style: JournalTypography.bodySmall(
+                                  color: FloralPalette.warmCharcoal,
+                                ).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
 
                   // Top Header: Side-by-side Row to guarantee ZERO collision across all phone widths
                   Row(
@@ -70,17 +147,6 @@ class JournalCoverScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'VOL. I • READING JOURNAL',
-                              style: JournalTypography.bodySmall(
-                                color: FloralPalette.deepForestGreen.withValues(alpha: 0.85),
-                              ).copyWith(
-                                letterSpacing: 1.8,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-
                             // Main App Title in Fraunces
                             Text(
                               'Bookmark',
@@ -420,3 +486,4 @@ class JournalCoverScreen extends ConsumerWidget {
     );
   }
 }
+
