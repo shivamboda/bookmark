@@ -44,46 +44,31 @@ class JournalCoverScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
 
-                  // Top Asymmetrical Header: Title + Pressed Botanical Poppy Sketch
-                  Stack(
-                    clipBehavior: Clip.none,
+                  // Top Header: Side-by-side Row to guarantee ZERO collision across all phone widths
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Organic pressed poppy sketch leaning gracefully in from the right
-                      Positioned(
-                        right: -12,
-                        top: -16,
-                        child: const Opacity(
-                          opacity: 0.95,
-                          child: PoppyDoodle(
-                            size: 115,
-                            showStem: true,
-                          ),
-                        ),
-                      ),
-
-                      // Title & Handwritten Margin Tagline
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24, bottom: 20),
+                      // Title & Handwritten Tagline
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Date margin stamp
                             Text(
                               'VOL. I • READING JOURNAL',
                               style: JournalTypography.bodySmall(
-                                color: FloralPalette.deepForestGreen.withValues(alpha: 0.75),
+                                color: FloralPalette.deepForestGreen.withValues(alpha: 0.8),
                               ).copyWith(
-                                letterSpacing: 2.2,
+                                letterSpacing: 1.8,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
 
                             // Main App Title in Fraunces
                             Text(
@@ -96,12 +81,12 @@ class JournalCoverScreen extends StatelessWidget {
 
                             // Hand-drawn wavy ink underline
                             const HandDrawnUnderline(
-                              width: 175,
+                              width: 155,
                               color: FloralPalette.rosePetal,
                               strokeWidth: 2.2,
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
 
                             // Intimate handwriting note in Caveat
                             Text(
@@ -113,15 +98,23 @@ class JournalCoverScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+
+                      const SizedBox(width: 8),
+
+                      // Organic pressed poppy sketch nestled gracefully beside the title
+                      const PoppyDoodle(
+                        size: 90,
+                        showStem: true,
+                      ),
                     ],
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
-                  // Journal Entry Note Card (resembling a creamy pressed-flower stationery page)
+                  // Journal Entry Note Card (creamy pressed-flower stationery page)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(26),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                     decoration: BoxDecoration(
                       color: FloralPalette.softIvory,
                       borderRadius: BorderRadius.circular(22),
@@ -166,7 +159,7 @@ class JournalCoverScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
 
-                        // Attribution in Caveat
+                        // Intimate attribution in Caveat
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
@@ -176,43 +169,13 @@ class JournalCoverScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        const SizedBox(height: 18),
-                        Divider(
-                          color: FloralPalette.blushPink.withValues(alpha: 0.45),
-                          height: 1,
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Quiet, elegant journal footnote
-                        Row(
-                          children: [
-                            Container(
-                              width: 7,
-                              height: 7,
-                              decoration: const BoxDecoration(
-                                color: FloralPalette.poppyRed,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Poppy Blush palette • Fraunces, Lora & Caveat typography',
-                                style: JournalTypography.bodySmall(
-                                  color: FloralPalette.mutedCharcoal,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 36),
 
-                  // Elegant pill button to open library (Phase 2 preview)
+                  // Elegant pill button to open library
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
@@ -248,7 +211,7 @@ class JournalCoverScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -258,4 +221,3 @@ class JournalCoverScreen extends StatelessWidget {
     );
   }
 }
-
