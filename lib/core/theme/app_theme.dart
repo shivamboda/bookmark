@@ -1,12 +1,121 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'palette.dart';
 
-/// Central theme builder for "Bookmark".
+/// Named typography tokens for "Bookmark".
 ///
-/// Features warm creamy paper backgrounds, soft pink-tinted shadows,
-/// rounded 20px cards, and romantic botanical typography pairing:
-/// Playfair Display (editorial serif) + Nunito (friendly rounded sans).
+/// Evokes an intimate botanical journal or pressed-flower diary:
+/// - Headings: Fraunces (warm, characterful optical serif)
+/// - Body: Lora (cozy, highly readable book-weight serif)
+/// - Handwritten Accents: Caveat (intimate cursive script for margin notes, taglines, quotes)
+class JournalTypography {
+  JournalTypography._();
+
+  /// Grand hero title (e.g. journal cover title)
+  static TextStyle headingHero({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.fraunces(
+        fontSize: 38,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: -0.6,
+        height: 1.15,
+      );
+
+  /// Primary screen heading
+  static TextStyle headingLarge({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.fraunces(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: -0.3,
+        height: 1.2,
+      );
+
+  /// Section or card heading
+  static TextStyle headingMedium({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.fraunces(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.25,
+      );
+
+  /// Small section or shelf header
+  static TextStyle headingSmall({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.fraunces(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.3,
+      );
+
+  /// Elegant editorial subheading
+  static TextStyle subheading({Color color = FloralPalette.mutedCharcoal}) =>
+      GoogleFonts.lora(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        fontStyle: FontStyle.italic,
+        color: color,
+        height: 1.4,
+      );
+
+  /// Main body reading text (comfortable line height for reviews & synopses)
+  static TextStyle bodyLarge({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.lora(
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
+        color: color,
+        height: 1.6,
+      );
+
+  /// Secondary body text (book metadata, tags, details)
+  static TextStyle bodyMedium({Color color = FloralPalette.warmCharcoal}) =>
+      GoogleFonts.lora(
+        fontSize: 14,
+        fontWeight: FontWeight.normal,
+        color: color,
+        height: 1.5,
+      );
+
+  /// Small caption / timestamps
+  static TextStyle bodySmall({Color color = FloralPalette.mutedCharcoal}) =>
+      GoogleFonts.lora(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: color,
+        height: 1.4,
+      );
+
+  /// Expressive handwritten script (taglines, chapter headers)
+  static TextStyle handwritingLarge({Color color = FloralPalette.poppyRed}) =>
+      GoogleFonts.caveat(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.1,
+      );
+
+  /// Standard handwritten note (quotes, intimate annotations)
+  static TextStyle handwriting({Color color = FloralPalette.deepForestGreen}) =>
+      GoogleFonts.caveat(
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
+        color: color,
+        height: 1.2,
+      );
+
+  /// Delicate margin note or footnote tucked beside cards
+  static TextStyle marginNote({Color color = FloralPalette.mutedCharcoal}) =>
+      GoogleFonts.caveat(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        fontStyle: FontStyle.italic,
+        color: color,
+        height: 1.1,
+      );
+}
+
+/// Central theme builder for "Bookmark".
 class AppTheme {
   AppTheme._();
 
@@ -50,53 +159,23 @@ class AppTheme {
         ? ThemeData.dark().textTheme
         : ThemeData.light().textTheme;
 
-    final textTheme = GoogleFonts.nunitoTextTheme(baseTextTheme).copyWith(
-      displayLarge: GoogleFonts.playfairDisplay(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: text,
-        letterSpacing: -0.5,
-      ),
-      displayMedium: GoogleFonts.playfairDisplay(
-        fontSize: 26,
-        fontWeight: FontWeight.w600,
-        color: text,
-      ),
-      displaySmall: GoogleFonts.playfairDisplay(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-        color: text,
-      ),
-      headlineMedium: GoogleFonts.playfairDisplay(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: text,
-      ),
-      titleLarge: GoogleFonts.nunito(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: text,
-      ),
-      titleMedium: GoogleFonts.nunito(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: text,
-      ),
-      bodyLarge: GoogleFonts.nunito(
-        fontSize: 16,
-        fontWeight: FontWeight.normal,
-        color: text,
-        height: 1.5,
-      ),
-      bodyMedium: GoogleFonts.nunito(
-        fontSize: 14,
-        fontWeight: FontWeight.normal,
+    final textTheme = GoogleFonts.loraTextTheme(baseTextTheme).copyWith(
+      displayLarge: JournalTypography.headingHero(color: text),
+      displayMedium: JournalTypography.headingLarge(color: text),
+      displaySmall: JournalTypography.headingMedium(color: text),
+      headlineMedium: JournalTypography.headingSmall(color: text),
+      titleLarge: JournalTypography.headingSmall(color: text),
+      titleMedium: JournalTypography.subheading(color: text),
+      bodyLarge: JournalTypography.bodyLarge(color: text),
+      bodyMedium: JournalTypography.bodyMedium(
         color: isDark ? const Color(0xFFD6CAD0) : FloralPalette.mutedCharcoal,
-        height: 1.4,
       ),
-      labelLarge: GoogleFonts.nunito(
+      bodySmall: JournalTypography.bodySmall(
+        color: isDark ? const Color(0xFFAFA2A8) : FloralPalette.mutedCharcoal,
+      ),
+      labelLarge: GoogleFonts.lora(
         fontSize: 15,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
       ),
     );
@@ -135,11 +214,7 @@ class AppTheme {
         foregroundColor: text,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.playfairDisplay(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          color: text,
-        ),
+        titleTextStyle: JournalTypography.headingMedium(color: text),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -150,9 +225,9 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: GoogleFonts.nunito(
+          textStyle: GoogleFonts.lora(
             fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

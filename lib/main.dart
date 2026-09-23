@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/palette.dart';
 import 'doodles/poppy_doodle.dart';
+import 'doodles/sketch_underline.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,81 +24,109 @@ class BookmarkApp extends StatelessWidget {
       title: 'Bookmark',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(mode: FloralThemeMode.poppyBlush),
-      home: const WelcomeScreen(),
+      home: const JournalCoverScreen(),
     );
   }
 }
 
-/// Phase 1 Welcome & Verification Screen
-class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+/// Intimate Botanical Journal Cover Screen
+class JournalCoverScreen extends StatelessWidget {
+  const JournalCoverScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: FloralPalette.petalWhite,
       body: SafeArea(
         child: Center(
-          // Center in a phone-proportional column on desktop displays
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
 
-                  // Signature Poppy Hero Graphic
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: FloralPalette.blushPink.withValues(alpha: 0.35),
-                      shape: BoxShape.circle,
-                      boxShadow: const [FloralPalette.cardShadow],
-                    ),
-                    alignment: Alignment.center,
-                    child: const PoppyDoodle(
-                      size: 92,
-                      showStem: true,
-                    ),
-                  ),
+                  // Top Asymmetrical Header: Title + Pressed Botanical Poppy Sketch
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Organic pressed poppy sketch leaning gracefully in from the right
+                      Positioned(
+                        right: -12,
+                        top: -16,
+                        child: const Opacity(
+                          opacity: 0.95,
+                          child: PoppyDoodle(
+                            size: 115,
+                            showStem: true,
+                          ),
+                        ),
+                      ),
 
-                  const SizedBox(height: 28),
+                      // Title & Handwritten Margin Tagline
+                      Padding(
+                        padding: const EdgeInsets.only(top: 24, bottom: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date margin stamp
+                            Text(
+                              'VOL. I • READING JOURNAL',
+                              style: JournalTypography.bodySmall(
+                                color: FloralPalette.deepForestGreen.withValues(alpha: 0.75),
+                              ).copyWith(
+                                letterSpacing: 2.2,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
 
-                  // App Title & Tagline
-                  Text(
-                    'Bookmark',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w700,
-                      color: FloralPalette.warmCharcoal,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'A personal reading journal, pressed with care',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.nunito(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                      color: FloralPalette.mutedCharcoal,
-                    ),
+                            // Main App Title in Fraunces
+                            Text(
+                              'Bookmark',
+                              style: JournalTypography.headingHero(
+                                color: FloralPalette.warmCharcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            // Hand-drawn wavy ink underline
+                            const HandDrawnUnderline(
+                              width: 175,
+                              color: FloralPalette.rosePetal,
+                              strokeWidth: 2.2,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Intimate handwriting note in Caveat
+                            Text(
+                              'for all the stories we hold close ~',
+                              style: JournalTypography.handwritingLarge(
+                                color: FloralPalette.poppyRed,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 36),
 
-                  // Phase 1 Status Card
+                  // Journal Entry Note Card (resembling a creamy pressed-flower stationery page)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(26),
                     decoration: BoxDecoration(
                       color: FloralPalette.softIvory,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: FloralPalette.blushPink.withValues(alpha: 0.6),
+                        color: const Color(0xFFF2DED9),
                         width: 1.2,
                       ),
                       boxShadow: const [FloralPalette.cardShadow],
@@ -106,85 +134,121 @@ class WelcomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Handwritten Chapter Header
                         Row(
                           children: [
-                            const PoppyDoodle(size: 24),
-                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Phase 1: Setup Complete',
-                                style: GoogleFonts.playfairDisplay(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: FloralPalette.warmCharcoal,
+                                'chapter one begins here',
+                                style: JournalTypography.handwriting(
+                                  color: FloralPalette.deepForestGreen,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.auto_stories_outlined,
+                              size: 18,
+                              color: FloralPalette.rosePetal,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Warm literary excerpt in Lora
+                        Text(
+                          '“I have lived a thousand lives and loved a thousand worlds — yet every good book still feels like coming home.”',
+                          style: JournalTypography.bodyLarge(
+                            color: FloralPalette.warmCharcoal,
+                          ).copyWith(
+                            fontStyle: FontStyle.italic,
+                            height: 1.65,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Attribution in Caveat
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '— for you, with love ♡',
+                            style: JournalTypography.handwriting(
+                              color: FloralPalette.rosePetal,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+                        Divider(
+                          color: FloralPalette.blushPink.withValues(alpha: 0.45),
+                          height: 1,
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Quiet, elegant journal footnote
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: FloralPalette.poppyRed,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Poppy Blush palette • Fraunces, Lora & Caveat typography',
+                                style: JournalTypography.bodySmall(
+                                  color: FloralPalette.mutedCharcoal,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-                        _buildStatusRow(
-                          icon: Icons.check_circle_rounded,
-                          color: FloralPalette.deepForestGreen,
-                          title: 'Flutter Web Toolchain',
-                          detail: 'Compiled & ready for Chrome & iOS Safari',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStatusRow(
-                          icon: Icons.check_circle_rounded,
-                          color: FloralPalette.deepForestGreen,
-                          title: 'iPhone 16 Viewport & PWA',
-                          detail: 'viewport-fit=cover & standalone mode set',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStatusRow(
-                          icon: Icons.check_circle_rounded,
-                          color: FloralPalette.deepForestGreen,
-                          title: 'Floral Design System',
-                          detail: 'Poppy Blush palette & Playfair typography',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStatusRow(
-                          icon: Icons.check_circle_rounded,
-                          color: FloralPalette.deepForestGreen,
-                          title: 'Storage Decoupled',
-                          detail: 'StorageService abstraction layer ready',
-                        ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 36),
 
-                  // Next Step Note
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: FloralPalette.blushPink.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.favorite_rounded,
-                          color: FloralPalette.poppyRed,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Ready for Phase 2: Local Database (Hive) & Data Models.',
-                            style: GoogleFonts.nunito(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: FloralPalette.warmCharcoal,
+                  // Elegant pill button to open library (Phase 2 preview)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: FloralPalette.rosePetal,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: FloralPalette.rosePetal.withValues(alpha: 0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Open Library',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: Colors.white,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 28),
                 ],
               ),
             ),
@@ -193,41 +257,5 @@ class WelcomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildStatusRow({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String detail,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: FloralPalette.warmCharcoal,
-                ),
-              ),
-              Text(
-                detail,
-                style: GoogleFonts.nunito(
-                  fontSize: 12,
-                  color: FloralPalette.mutedCharcoal,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }
+
