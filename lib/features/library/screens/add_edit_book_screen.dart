@@ -1816,7 +1816,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '“${q.quote}”',
+                          q.displayQuote,
                           style: JournalTypography.body(color: FloralPalette.cocoa).copyWith(
                             fontStyle: FontStyle.italic,
                             fontSize: 13.5,

@@ -129,7 +129,7 @@ class BookCoverThumbnail extends ConsumerWidget {
     return Container(
       width: width.isFinite ? width : null,
       height: height.isFinite ? height : null,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
         border: Border.all(color: borderColor, width: 1.0),
@@ -155,17 +155,23 @@ class BookCoverThumbnail extends ConsumerWidget {
             petalColor: poppyColor,
           ),
 
-          // Title snippet (Fraunces feel, highly readable against all backgrounds)
-          Text(
-            book.title,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: safeWidth < 70 ? 9 : 11,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-              height: 1.1,
+          // Title (wraps naturally within cover bounds without mid-word ellipsis truncation)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Center(
+                child: Text(
+                  book.title,
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: safeWidth < 70 ? 8.5 : 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    height: 1.15,
+                  ),
+                ),
+              ),
             ),
           ),
 

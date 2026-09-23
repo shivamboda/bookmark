@@ -33,6 +33,81 @@ class BookQuote {
     required this.createdAt,
   });
 
+  /// Strips any enclosing quotation marks (straight ", ', curly “ ”, ‘ ’, or « »)
+  /// so quote text is never duplicated when displayed inside quotation marks.
+  static String stripOuterQuotes(String raw) {
+    var s = raw.trim();
+    bool changed = true;
+    while (changed && s.isNotEmpty) {
+      changed = false;
+      // Paired quotes
+      if ((s.startsWith('"') && s.endsWith('"') && s.length >= 2) ||
+          (s.startsWith("'") && s.endsWith("'") && s.length >= 2) ||
+          (s.startsWith('“') && s.endsWith('”') && s.length >= 2) ||
+          (s.startsWith('‘') && s.endsWith('’') && s.length >= 2) ||
+          (s.startsWith('«') && s.endsWith('»') && s.length >= 2) ||
+          (s.startsWith('”') && s.endsWith('”') && s.length >= 2) ||
+          (s.startsWith('“') && s.endsWith('“') && s.length >= 2)) {
+        s = s.substring(1, s.length - 1).trim();
+        changed = true;
+        continue;
+      }
+      // Single stray outer quotes
+      if (s.startsWith('"') || s.startsWith("'") || s.startsWith('“') || s.startsWith('‘') || s.startsWith('«')) {
+        s = s.substring(1).trim();
+        changed = true;
+        continue;
+      }
+      if (s.endsWith('"') || s.endsWith("'") || s.endsWith('”') || s.endsWith('’') || s.endsWith('»')) {
+        s = s.substring(0, s.length - 1).trim();
+        changed = true;
+        continue;
+      }
+    }
+    return s;
+  }
+
+  /// Ensures that trailing dots never exceed 3 (e.g. cleans "…." or ".…" or "...." to "…").
+  static String sanitizeTrailingDots(String text) {
+    var s = text.trim();
+    // Collapse any ellipsis + dot or dot + ellipsis into a single ellipsis
+    s = s.replaceAll(RegExp(r'(…|\.\.\.)\s*\.+'), '…');
+    s = s.replaceAll(RegExp(r'\.+\s*(…|\.\.\.)'), '…');
+    // Collapse 4 or more dots in a row to 3 dots
+    s = s.replaceAll(RegExp(r'\.{4,}'), '...');
+    s = s.replaceAll('….', '…');
+    s = s.replaceAll('.…', '…');
+    return s;
+  }
+
+  /// Returns the cleaned quote text (without outer quotes and with sanitized trailing dots).
+  String get cleanText => sanitizeTrailingDots(stripOuterQuotes(quote));
+
+  /// Formatted for full display on Book Detail and Add/Edit cards: “Cleaned text”
+  String get displayQuote => '“$cleanText”';
+
+  /// Formatted for compact 1-line snippet on Library cards.
+  /// Ensures trailing periods before ellipsis are stripped so it never displays more than 3 dots.
+  static String formatSnippet(String rawQuote, {int maxLength = 52}) {
+    var clean = stripOuterQuotes(rawQuote);
+    clean = sanitizeTrailingDots(clean);
+
+    if (clean.length > maxLength) {
+      var truncated = clean.substring(0, maxLength);
+      // If we cut in the middle of a word, rewind to the last space
+      if (maxLength < clean.length && !RegExp(r'[\s.,;:!?]').hasMatch(clean[maxLength])) {
+        final lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > maxLength ~/ 2) {
+          truncated = truncated.substring(0, lastSpace);
+        }
+      }
+      // Strip any trailing punctuation (.,;:!?) so we don't end up with "tragedy.…"
+      truncated = truncated.replaceAll(RegExp(r'[\s.,;:!?\u2026]+$'), '');
+      return '“$truncated…”';
+    }
+    return '“$clean”';
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

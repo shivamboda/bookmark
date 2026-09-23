@@ -193,7 +193,7 @@ class BookListCard extends StatelessWidget {
                       if (book.quotes.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          '"${book.quotes.first.quote}"',
+                          BookQuote.formatSnippet(book.quotes.first.quote),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: JournalTypography.marginNote(

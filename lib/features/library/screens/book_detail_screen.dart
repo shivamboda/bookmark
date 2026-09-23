@@ -780,7 +780,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     children: [
                       // Quote in Lora italic with Cocoa text (passes 5.5:1 contrast on Kraft)
                       Text(
-                        '“${q.quote}”',
+                        q.displayQuote,
                         style: JournalTypography.bodyLarge(color: FloralPalette.cocoa).copyWith(
                           fontStyle: FontStyle.italic,
                           fontSize: 14.5,

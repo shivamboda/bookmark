@@ -567,4 +567,89 @@ void main() {
 
     expect(find.text('No quotes yet ~'), findsOneWidget);
   });
+
+  test('BookQuote: quotes formatting strips doubled quotes and trailing dot anomalies', () {
+    // 1. Without quotes
+    final q1 = BookQuote(
+      id: 'q1',
+      quote: 'Its the Hope that Kills',
+      createdAt: DateTime.now(),
+    );
+    expect(q1.displayQuote, '“Its the Hope that Kills”');
+
+    // 2. With single double quotes
+    final q2 = BookQuote(
+      id: 'q2',
+      quote: '"Its the Hope that Kills"',
+      createdAt: DateTime.now(),
+    );
+    expect(q2.displayQuote, '“Its the Hope that Kills”');
+
+    // 3. With doubled quotes
+    final q3 = BookQuote(
+      id: 'q3',
+      quote: '""Its the Hope that Kills""',
+      createdAt: DateTime.now(),
+    );
+    expect(q3.displayQuote, '“Its the Hope that Kills”');
+
+    // 4. With curly quotes
+    final q4 = BookQuote(
+      id: 'q4',
+      quote: '“Its the Hope that Kills”',
+      createdAt: DateTime.now(),
+    );
+    expect(q4.displayQuote, '“Its the Hope that Kills”');
+
+    // 5. Trailing dot anomaly e.g. "tragedy…."
+    final q5 = BookQuote(
+      id: 'q5',
+      quote: 'A dragon without its rider is a tragedy….',
+      createdAt: DateTime.now(),
+    );
+    expect(q5.displayQuote, '“A dragon without its rider is a tragedy…”');
+
+    // 6. Snippet formatting strips trailing period before ellipsis
+    final snippet = BookQuote.formatSnippet(
+      'A dragon without its rider is a tragedy. A rider without their dragon is dead.',
+      maxLength: 40,
+    );
+    expect(snippet, '“A dragon without its rider is a tragedy…”');
+    expect(snippet.contains('….'), isFalse);
+    expect(snippet.contains('....'), isFalse);
+  });
+
+  testWidgets('Placeholder cover: long title wraps naturally without mid-word ellipsis truncation', (tester) async {
+    final mockStorage = InMemoryStorageService();
+    await mockStorage.init();
+
+    await mockStorage.saveBook(
+      Book(
+        id: 'test-long-title',
+        title: 'The Seven Husbands of Evelyn Hugo',
+        authors: ['Taylor Jenkins Reid'],
+        genres: ['Historical Fiction'],
+        status: ReadingStatus.reading,
+        dateAdded: DateTime.now(),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify the title wraps within cover bounds
+    expect(find.text('The Seven Husbands of Evelyn Hugo'), findsWidgets);
+    // Ensure the card renders at standard height without overflow
+    final cardFinder = find.byType(BookListCard);
+    expect(cardFinder, findsOneWidget);
+    final cardSize = tester.getSize(cardFinder);
+    expect(cardSize.height, greaterThan(0));
+  });
 }
