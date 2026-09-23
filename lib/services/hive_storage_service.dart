@@ -32,9 +32,14 @@ class HiveStorageService implements StorageService {
 
     _isInitialized = true;
 
-    // Seed realistic sample books on very first launch
-    if (_booksBox.isEmpty) {
+    // DEBUG-ONLY SAMPLE SEEDING:
+    // Only runs in debug mode on first install when the database is completely empty.
+    // In production/release builds (kReleaseMode), this will never execute.
+    // Setting 'has_seeded_sample_data' ensures it never re-seeds if books are deleted.
+    final hasSeeded = await getSetting('has_seeded_sample_data', defaultValue: false);
+    if (kDebugMode && !hasSeeded && _booksBox.isEmpty) {
       await _seedSampleLibrary();
+      await setSetting('has_seeded_sample_data', true);
     }
   }
 
@@ -294,4 +299,5 @@ class HiveStorageService implements StorageService {
     }
   }
 }
+
 
