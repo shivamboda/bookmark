@@ -18,15 +18,27 @@ import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
 import 'book_search_screen.dart';
 
-/// Filter option for books displayed in the Library screen.
-enum LibraryFilter {
-  all('All Books'),
+/// Status filter options for books displayed in the Library screen.
+enum LibraryStatusFilter {
+  all('All'),
   reading('Reading'),
-  wantToRead('Want to Read'),
-  finished('Finished');
+  finished('Finished'),
+  paused('Paused/DNF');
 
   final String label;
-  const LibraryFilter(this.label);
+  const LibraryStatusFilter(this.label);
+}
+
+/// Sorting options for the user's reading journal shelf.
+enum LibrarySortOption {
+  dateFinished('Date Finished'),
+  dateAdded('Date Added'),
+  rating('Rating'),
+  title('Title'),
+  author('Author');
+
+  final String label;
+  const LibrarySortOption(this.label);
 }
 
 /// Step 4a: Handcrafted Botanical Library Screen.
@@ -44,8 +56,67 @@ class LibraryScreen extends ConsumerStatefulWidget {
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool _isGridView = false;
-  LibraryFilter _activeFilter = LibraryFilter.all;
+  LibraryStatusFilter _activeStatusFilter = LibraryStatusFilter.all;
+  String? _selectedGenre;
+  LibrarySortOption _sortOption = LibrarySortOption.dateAdded;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   int _currentNavIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final savedGrid = await storage.getSetting('library_is_grid_view');
+      final savedSort = await storage.getSetting('library_sort_option');
+
+      if (mounted) {
+        setState(() {
+          if (savedGrid is bool) {
+            _isGridView = savedGrid;
+          }
+          if (savedSort is String) {
+            _sortOption = LibrarySortOption.values.firstWhere(
+              (o) => o.name == savedSort,
+              orElse: () => LibrarySortOption.dateAdded,
+            );
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading library settings: $e');
+    }
+  }
+
+  Future<void> _toggleViewMode() async {
+    final newMode = !_isGridView;
+    setState(() => _isGridView = newMode);
+    try {
+      await ref.read(storageServiceProvider).setSetting('library_is_grid_view', newMode);
+    } catch (e) {
+      debugPrint('Failed to save grid view setting: $e');
+    }
+  }
+
+  Future<void> _setSortOption(LibrarySortOption option) async {
+    setState(() => _sortOption = option);
+    try {
+      await ref.read(storageServiceProvider).setSetting('library_sort_option', option.name);
+    } catch (e) {
+      debugPrint('Failed to save sort option setting: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,8 +198,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             // Top App Header
             _buildHeader(context),
 
-            // Filter Chips & View Mode Toggle Bar
-            _buildControlsBar(),
+            // Filter Chips, Search & View Mode Toggle Bar
+            _buildControlsBar(booksAsync.value ?? []),
 
             // Book Collection / Empty State
             Expanded(
@@ -150,15 +221,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                 ),
                 data: (allBooks) {
-                  final books = _filterBooks(allBooks);
-
-                  if (books.isEmpty) {
+                  if (allBooks.isEmpty) {
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
                       child: LibraryEmptyState(
                         onAddBook: () => _openAddBookScreen(context, defaultStatus: ReadingStatus.reading),
                       ),
                     );
+                  }
+
+                  final books = _filterAndSortBooks(allBooks);
+
+                  if (books.isEmpty) {
+                    return _buildNoMatchesState();
                   }
 
                   if (_isGridView) {
@@ -832,114 +907,368 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  /// Controls bar containing status filter chips and list/grid toggle
-  Widget _buildControlsBar() {
+  /// Friendly empty state when search or filters return 0 results
+  Widget _buildNoMatchesState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const TulipDoodle(size: 64, showStem: false, petalColor: FloralPalette.rosePetal),
+            const SizedBox(height: 16),
+            Text(
+              'Nothing matches that yet ~',
+              textAlign: TextAlign.center,
+              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'try adjusting your search, filters, or shelves ~',
+              textAlign: TextAlign.center,
+              style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 15),
+            ),
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
+              key: const ValueKey('clear_filters_btn'),
+              onPressed: () {
+                setState(() {
+                  _activeStatusFilter = LibraryStatusFilter.all;
+                  _selectedGenre = null;
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Reset Filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Controls bar containing search field, status filter chips, genre dropdown, sort dropdown, and list/grid toggle
+  Widget _buildControlsBar(List<Book> allBooks) {
+    final availableGenres = allBooks.expand((b) => b.genres).toSet().toList()..sort();
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filter Chips (Horizontally Scrollable)
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: LibraryFilter.values.map((filter) {
-                  final isSelected = _activeFilter == filter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      onTap: () => setState(() => _activeFilter = filter),
-                      borderRadius: BorderRadius.circular(16),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 44),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? FloralPalette.deepRose
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? FloralPalette.deepRose
-                                  : const Color(0xFFF0DCD7),
-                              width: 1.0,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: FloralPalette.deepRose.withValues(alpha: 0.25),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
-                          ),
-                          child: Text(
-                            filter.label,
-                            style: JournalTypography.bodySmall(
-                              color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
-                            ).copyWith(
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+          // 1. Search Box for personal library (title & author)
+          Container(
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+              boxShadow: const [FloralPalette.cardShadow],
+            ),
+            child: TextField(
+              key: const ValueKey('library_search_input'),
+              controller: _searchController,
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Search shelf by title or author...',
+                hintStyle: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 12.5),
+                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: FloralPalette.cocoa),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16, color: FloralPalette.mutedCharcoal),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(height: 8),
 
-          // List / Grid Mode Toggle Button (44px+ tap target)
-          Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              key: const ValueKey('view_mode_toggle_btn'),
-              onTap: () => setState(() => _isGridView = !_isGridView),
-              borderRadius: BorderRadius.circular(14),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                child: Container(
-                  padding: const EdgeInsets.all(9),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+          // 2. Status Filter Chips (All, Reading, Finished, Paused/DNF)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: LibraryStatusFilter.values.map((filter) {
+                final isSelected = _activeStatusFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: InkWell(
+                    key: ValueKey('status_chip_${filter.name}'),
+                    onTap: () => setState(() => _activeStatusFilter = filter),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF0DCD7), width: 1.0),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 36),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: isSelected ? FloralPalette.deepRose : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? FloralPalette.deepRose : const Color(0xFFF0DCD7),
+                            width: 1.0,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: FloralPalette.deepRose.withValues(alpha: 0.22),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          filter.label,
+                          style: JournalTypography.bodySmall(
+                            color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
+                          ).copyWith(
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Icon(
-                    _isGridView ? Icons.view_agenda_rounded : Icons.grid_view_rounded,
-                    color: FloralPalette.deepRose,
-                    size: 22,
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // 3. Secondary Controls: Genre Filter, Sort Options, Grid/List Mode
+          Row(
+            children: [
+              // Genre Filter Button / Dropdown
+              PopupMenuButton<String?>(
+                key: const ValueKey('genre_filter_button'),
+                initialValue: _selectedGenre,
+                onSelected: (genre) => setState(() => _selectedGenre = genre),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<String?>(
+                      value: null,
+                      child: Text(
+                        'All Genres',
+                        style: JournalTypography.bodySmall(
+                          color: _selectedGenre == null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                        ).copyWith(fontWeight: _selectedGenre == null ? FontWeight.w700 : FontWeight.w500),
+                      ),
+                    ),
+                    ...availableGenres.map(
+                      (g) => PopupMenuItem<String?>(
+                        value: g,
+                        key: ValueKey('genre_item_$g'),
+                        child: Text(
+                          g,
+                          style: JournalTypography.bodySmall(
+                            color: _selectedGenre == g ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                          ).copyWith(fontWeight: _selectedGenre == g ? FontWeight.w700 : FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                  ];
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _selectedGenre != null
+                        ? FloralPalette.blushPink.withValues(alpha: 0.3)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _selectedGenre != null ? FloralPalette.deepRose : const Color(0xFFF0DCD7),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.filter_list_rounded,
+                        size: 15,
+                        color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cocoa,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _selectedGenre ?? 'All Genres',
+                        style: JournalTypography.bodySmall(
+                          color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                        ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                    ],
                   ),
                 ),
               ),
-            ),
+
+              const SizedBox(width: 8),
+
+              // Sort Option Button / Dropdown
+              PopupMenuButton<LibrarySortOption>(
+                key: const ValueKey('sort_option_button'),
+                initialValue: _sortOption,
+                onSelected: (opt) => _setSortOption(opt),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                itemBuilder: (context) {
+                  return LibrarySortOption.values.map(
+                    (opt) => PopupMenuItem<LibrarySortOption>(
+                      value: opt,
+                      key: ValueKey('sort_item_${opt.name}'),
+                      child: Row(
+                        children: [
+                          if (_sortOption == opt) ...[
+                            const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            opt.label,
+                            style: JournalTypography.bodySmall(
+                              color: _sortOption == opt ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                            ).copyWith(fontWeight: _sortOption == opt ? FontWeight.w700 : FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ).toList();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFF0DCD7), width: 1.0),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.swap_vert_rounded, size: 15, color: FloralPalette.cocoa),
+                      const SizedBox(width: 4),
+                      Text(
+                        _sortOption.label,
+                        style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // List / Grid Mode Toggle Button (44px+ tap target)
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  key: const ValueKey('view_mode_toggle_btn'),
+                  onTap: _toggleViewMode,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF0DCD7), width: 1.0),
+                    ),
+                    child: Icon(
+                      _isGridView ? Icons.view_agenda_rounded : Icons.grid_view_rounded,
+                      color: FloralPalette.deepRose,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  List<Book> _filterBooks(List<Book> books) {
-    switch (_activeFilter) {
-      case LibraryFilter.all:
-        return books;
-      case LibraryFilter.reading:
-        return books.where((b) => b.status == ReadingStatus.reading).toList();
-      case LibraryFilter.wantToRead:
-        return books.where((b) => b.status == ReadingStatus.wantToRead).toList();
-      case LibraryFilter.finished:
-        return books.where((b) => b.status == ReadingStatus.finished).toList();
+  List<Book> _filterAndSortBooks(List<Book> allBooks) {
+    // 1. Status Filter
+    var filtered = allBooks.where((b) {
+      switch (_activeStatusFilter) {
+        case LibraryStatusFilter.all:
+          return true;
+        case LibraryStatusFilter.reading:
+          return b.status == ReadingStatus.reading;
+        case LibraryStatusFilter.finished:
+          return b.status == ReadingStatus.finished;
+        case LibraryStatusFilter.paused:
+          return b.status == ReadingStatus.paused;
+      }
+    }).toList();
+
+    // 2. Genre Filter
+    if (_selectedGenre != null && _selectedGenre!.isNotEmpty) {
+      filtered = filtered.where((b) => b.genres.contains(_selectedGenre)).toList();
     }
+
+    // 3. Search Query (title and author)
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((b) {
+        final titleMatch = b.title.toLowerCase().contains(query);
+        final authorMatch = b.authors.any((a) => a.toLowerCase().contains(query));
+        return titleMatch || authorMatch;
+      }).toList();
+    }
+
+    // 4. Sorting
+    filtered.sort((a, b) {
+      switch (_sortOption) {
+        case LibrarySortOption.dateFinished:
+          if (a.finishDate == null && b.finishDate == null) return b.dateAdded.compareTo(a.dateAdded);
+          if (a.finishDate == null) return 1;
+          if (b.finishDate == null) return -1;
+          return b.finishDate!.compareTo(a.finishDate!);
+        case LibrarySortOption.dateAdded:
+          return b.dateAdded.compareTo(a.dateAdded);
+        case LibrarySortOption.rating:
+          final rA = a.rating ?? 0.0;
+          final rB = b.rating ?? 0.0;
+          final cmp = rB.compareTo(rA);
+          if (cmp != 0) return cmp;
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case LibrarySortOption.title:
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case LibrarySortOption.author:
+          final authA = (a.authors.firstOrNull ?? '').toLowerCase();
+          final authB = (b.authors.firstOrNull ?? '').toLowerCase();
+          final cmp = authA.compareTo(authB);
+          if (cmp != 0) return cmp;
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      }
+    });
+
+    return filtered;
   }
 
   void _onBookSelected(BuildContext context, Book book) {

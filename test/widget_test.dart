@@ -1048,4 +1048,236 @@ void main() {
     expect(booksAfterCancel.length, 1);
   });
 
+
+  testWidgets('Phase 8: Library status chips filter books by Reading, Finished, Paused, and All', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final b1 = Book(
+      id: 'p8-1',
+      title: 'Dune',
+      authors: ['Frank Herbert'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 20),
+    );
+    final b2 = Book(
+      id: 'p8-2',
+      title: 'Neuromancer',
+      authors: ['William Gibson'],
+      status: ReadingStatus.finished,
+      finishDate: DateTime(2026, 9, 22),
+      dateAdded: DateTime(2026, 9, 18),
+    );
+    final b3 = Book(
+      id: 'p8-3',
+      title: 'Foundation',
+      authors: ['Isaac Asimov'],
+      status: ReadingStatus.paused,
+      dateAdded: DateTime(2026, 9, 15),
+    );
+
+    await storage.saveBook(b1);
+    await storage.saveBook(b2);
+    await storage.saveBook(b3);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Initial "All" filter shows all 3 books
+    expect(find.text('Dune'), findsWidgets);
+    expect(find.text('Neuromancer'), findsWidgets);
+    expect(find.text('Foundation'), findsWidgets);
+
+    // 2. Tap Reading filter
+    await tester.tap(find.byKey(const ValueKey('status_chip_reading')));
+    await tester.pumpAndSettle();
+    expect(find.text('Dune'), findsWidgets);
+    expect(find.text('Neuromancer'), findsNothing);
+    expect(find.text('Foundation'), findsNothing);
+
+    // 3. Tap Finished filter
+    await tester.tap(find.byKey(const ValueKey('status_chip_finished')));
+    await tester.pumpAndSettle();
+    expect(find.text('Neuromancer'), findsWidgets);
+    expect(find.text('Dune'), findsNothing);
+    expect(find.text('Foundation'), findsNothing);
+
+    // 4. Tap Paused/DNF filter
+    await tester.tap(find.byKey(const ValueKey('status_chip_paused')));
+    await tester.pumpAndSettle();
+    expect(find.text('Foundation'), findsWidgets);
+    expect(find.text('Dune'), findsNothing);
+    expect(find.text('Neuromancer'), findsNothing);
+
+    // 5. Back to All
+    await tester.tap(find.byKey(const ValueKey('status_chip_all')));
+    await tester.pumpAndSettle();
+    expect(find.text('Dune'), findsWidgets);
+    expect(find.text('Neuromancer'), findsWidgets);
+    expect(find.text('Foundation'), findsWidgets);
+  });
+
+  testWidgets('Phase 8: Library search, genre filter, and empty result with reset', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final b1 = Book(
+      id: 'p8-search-1',
+      title: 'The Way of Kings',
+      authors: ['Brandon Sanderson'],
+      genres: ['Fantasy'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 20),
+    );
+    final b2 = Book(
+      id: 'p8-search-2',
+      title: 'Words of Radiance',
+      authors: ['Brandon Sanderson'],
+      genres: ['Fantasy', 'Epic'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 21),
+    );
+    final b3 = Book(
+      id: 'p8-search-3',
+      title: 'Project Hail Mary',
+      authors: ['Andy Weir'],
+      genres: ['Sci-Fi'],
+      status: ReadingStatus.finished,
+      dateAdded: DateTime(2026, 9, 22),
+    );
+
+    await storage.saveBook(b1);
+    await storage.saveBook(b2);
+    await storage.saveBook(b3);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Search by title
+    final searchField = find.byKey(const ValueKey('library_search_input'));
+    expect(searchField, findsOneWidget);
+    await tester.enterText(searchField, 'Hail Mary');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Project Hail Mary'), findsWidgets);
+    expect(find.text('The Way of Kings'), findsNothing);
+
+    // 2. Search by author
+    await tester.enterText(searchField, 'Sanderson');
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Way of Kings'), findsWidgets);
+    expect(find.text('Words of Radiance'), findsWidgets);
+    expect(find.text('Project Hail Mary'), findsNothing);
+
+    // 3. Search non-matching query -> triggers friendly empty result
+    await tester.enterText(searchField, 'Nonexistent Query XYZ');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing matches that yet ~'), findsOneWidget);
+    expect(find.text('try adjusting your search, filters, or shelves ~'), findsOneWidget);
+    expect(find.byKey(const ValueKey('clear_filters_btn')), findsOneWidget);
+
+    // 4. Tap reset button
+    await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Way of Kings'), findsWidgets);
+    expect(find.text('Project Hail Mary'), findsWidgets);
+  });
+
+  testWidgets('Phase 8: Sorting by title and rating changes order; view mode and sort persist in bookmark_settings', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final bA = Book(
+      id: 'p8-sort-1',
+      title: 'A Story of Ash',
+      authors: ['Zack Author'],
+      rating: 3.5,
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 10),
+    );
+    final bZ = Book(
+      id: 'p8-sort-2',
+      title: 'Zeno and the Stars',
+      authors: ['Alice Writer'],
+      rating: 5.0,
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 20),
+    );
+
+    await storage.saveBook(bA);
+    await storage.saveBook(bZ);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Sort by Rating (bZ 5.0 should come before bA 3.5)
+    await tester.tap(find.byKey(const ValueKey('sort_option_button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('sort_item_rating')));
+    await tester.pumpAndSettle();
+
+    final posZ = tester.getTopLeft(find.text('Zeno and the Stars').last).dy;
+    final posA = tester.getTopLeft(find.text('A Story of Ash').last).dy;
+    expect(posZ, lessThan(posA));
+
+    // Verify sort setting was persisted in storage
+    final persistedSort = await storage.getSetting('library_sort_option');
+    expect(persistedSort, 'rating');
+
+    // 2. Toggle to Grid view
+    await tester.tap(find.byKey(const ValueKey('view_mode_toggle_btn')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('library_grid_view')), findsOneWidget);
+    final persistedGrid = await storage.getSetting('library_is_grid_view');
+    expect(persistedGrid, true);
+
+    // 3. Mount fresh instance to verify restoration from settings
+    await tester.pumpWidget(
+      ProviderScope(
+        key: UniqueKey(),
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Restored in grid view
+    expect(find.byKey(const ValueKey('library_grid_view')), findsOneWidget);
+  });
+
 }
