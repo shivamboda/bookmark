@@ -1,15 +1,20 @@
 ﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/book.dart';
 import '../../services/storage_service.dart';
+import '../../services/hive_storage_service.dart';
 import '../theme/palette.dart';
 
-/// Provider for the singleton StorageService instance.
-/// Overridden in main() after initialization, or in tests with an in-memory mock.
+/// Global shared instance of HiveStorageService.
+/// Guarantees the provider always resolves to a valid, working instance
+/// even before overrides or across hot reloads.
+final globalStorageService = HiveStorageService();
+
+/// Provider for the StorageService instance.
 final storageServiceProvider = Provider<StorageService>((ref) {
-  throw UnimplementedError('storageServiceProvider must be initialized before use.');
+  return globalStorageService;
 });
 
-/// Manages active floral theme mode and persists choice to storage.
+/// Manages active floral theme mode (defaults to Poppy Blush).
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, FloralThemeMode>(ThemeModeNotifier.new);
 
 class ThemeModeNotifier extends Notifier<FloralThemeMode> {
@@ -20,13 +25,17 @@ class ThemeModeNotifier extends Notifier<FloralThemeMode> {
   }
 
   Future<void> _loadTheme() async {
-    final storage = ref.read(storageServiceProvider);
-    final saved = await storage.getSetting('theme_mode', defaultValue: 'poppyBlush');
-    final match = FloralThemeMode.values.firstWhere(
-      (m) => m.name == saved,
-      orElse: () => FloralThemeMode.poppyBlush,
-    );
-    state = match;
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final saved = await storage.getSetting('theme_mode', defaultValue: 'poppyBlush');
+      final match = FloralThemeMode.values.firstWhere(
+        (m) => m.name == saved,
+        orElse: () => FloralThemeMode.poppyBlush,
+      );
+      state = match;
+    } catch (_) {
+      state = FloralThemeMode.poppyBlush;
+    }
   }
 
   Future<void> setTheme(FloralThemeMode mode) async {
@@ -48,11 +57,13 @@ class YearlyGoalNotifier extends Notifier<int?> {
   }
 
   Future<void> _loadGoal() async {
-    final storage = ref.read(storageServiceProvider);
-    final saved = await storage.getSetting('yearly_goal');
-    if (saved is int) {
-      state = saved;
-    }
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final saved = await storage.getSetting('yearly_goal');
+      if (saved is int) {
+        state = saved;
+      }
+    } catch (_) {}
   }
 
   Future<void> setGoal(int? goal) async {
@@ -69,6 +80,8 @@ class BooksNotifier extends AsyncNotifier<List<Book>> {
   @override
   Future<List<Book>> build() async {
     final storage = ref.watch(storageServiceProvider);
+    // Ensure storage is initialized if called before or during main init
+    await storage.init();
     return storage.getAllBooks();
   }
 

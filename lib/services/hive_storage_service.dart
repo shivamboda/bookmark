@@ -8,15 +8,15 @@ import 'storage_service.dart';
 /// Concrete storage implementation using Hive CE (Community Edition).
 ///
 /// Backed directly by browser IndexedDB on Web, with native support
-/// for binary [Uint8List] storage, fast key-value lookups, and zero SQL overhead.
+/// for binary Uint8List storage, fast key-value lookups, and zero SQL overhead.
 class HiveStorageService implements StorageService {
   static const String _booksBoxName = 'bookmark_books';
   static const String _coversBoxName = 'bookmark_covers';
   static const String _settingsBoxName = 'bookmark_settings';
 
   late Box<Map> _booksBox;
-  late Box<Uint8List> _coversBox;
-  late Box<dynamic> _settingsBox;
+  late Box _coversBox;
+  late Box _settingsBox;
 
   bool _isInitialized = false;
 
@@ -27,8 +27,8 @@ class HiveStorageService implements StorageService {
     await Hive.initFlutter();
 
     _booksBox = await Hive.openBox<Map>(_booksBoxName);
-    _coversBox = await Hive.openBox<Uint8List>(_coversBoxName);
-    _settingsBox = await Hive.openBox<dynamic>(_settingsBoxName);
+    _coversBox = await Hive.openBox(_coversBoxName);
+    _settingsBox = await Hive.openBox(_settingsBoxName);
 
     _isInitialized = true;
 
@@ -40,7 +40,7 @@ class HiveStorageService implements StorageService {
 
   @override
   Future<List<Book>> getAllBooks() async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     final books = <Book>[];
 
     for (final raw in _booksBox.values) {
@@ -59,7 +59,7 @@ class HiveStorageService implements StorageService {
 
   @override
   Future<Book?> getBook(String id) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     final raw = _booksBox.get(id);
     if (raw == null) return null;
     return Book.fromMap(Map<String, dynamic>.from(raw));
@@ -67,56 +67,59 @@ class HiveStorageService implements StorageService {
 
   @override
   Future<void> saveBook(Book book) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     await _booksBox.put(book.id, book.toMap());
   }
 
   @override
   Future<void> deleteBook(String id) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     await _booksBox.delete(id);
     await _coversBox.delete(id);
   }
 
   @override
   Future<void> saveCoverImage(String id, Uint8List imageBytes) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     await _coversBox.put(id, imageBytes);
   }
 
   @override
   Future<Uint8List?> getCoverImage(String id) async {
-    _ensureInitialized();
-    return _coversBox.get(id);
+    if (!_isInitialized) await init();
+    final data = _coversBox.get(id);
+    if (data is Uint8List) return data;
+    if (data is List<int>) return Uint8List.fromList(data);
+    return null;
   }
 
   @override
   Future<void> deleteCoverImage(String id) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     await _coversBox.delete(id);
   }
 
   @override
   Future<dynamic> getSetting(String key, {dynamic defaultValue}) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     return _settingsBox.get(key, defaultValue: defaultValue);
   }
 
   @override
   Future<void> setSetting(String key, dynamic value) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     await _settingsBox.put(key, value);
   }
 
   @override
   Future<Map<String, dynamic>> exportAllData() async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
     final books = await getAllBooks();
 
     // Encode cover images into base64 for safe JSON transport
     final coversMap = <String, String>{};
     for (final key in _coversBox.keys) {
-      final bytes = _coversBox.get(key);
+      final bytes = await getCoverImage(key.toString());
       if (bytes != null) {
         coversMap[key.toString()] = base64Encode(bytes);
       }
@@ -139,7 +142,7 @@ class HiveStorageService implements StorageService {
 
   @override
   Future<void> importAllData(Map<String, dynamic> data, {bool merge = false}) async {
-    _ensureInitialized();
+    if (!_isInitialized) await init();
 
     if (!merge) {
       await _booksBox.clear();
@@ -177,12 +180,6 @@ class HiveStorageService implements StorageService {
 
   @override
   Future<bool> isStoragePersistent() => checkStoragePersistence();
-
-  void _ensureInitialized() {
-    if (!_isInitialized) {
-      throw StateError('HiveStorageService must be initialized via init() before use.');
-    }
-  }
 
   /// Seeds initial sample library with popular romance, fantasy, and literary fiction
   Future<void> _seedSampleLibrary() async {
