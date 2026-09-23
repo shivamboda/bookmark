@@ -9,10 +9,16 @@ import '../../../doodles/poppy_doodle.dart';
 /// with a delicate blush poppy resting beside it, accompanied by warm literary copy.
 class LibraryEmptyState extends StatelessWidget {
   final VoidCallback? onAddBook;
+  final String? title;
+  final String? subtitle;
+  final String? buttonLabel;
 
   const LibraryEmptyState({
     super.key,
     this.onAddBook,
+    this.title,
+    this.subtitle,
+    this.buttonLabel,
   });
 
   @override
@@ -61,7 +67,7 @@ class LibraryEmptyState extends StatelessWidget {
 
           // Heading
           Text(
-            'Your shelf is waiting for its first story',
+            title ?? 'Your shelf is waiting for its first story',
             textAlign: TextAlign.center,
             style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
           ),
@@ -70,7 +76,7 @@ class LibraryEmptyState extends StatelessWidget {
 
           // Handwritten hint in Caveat using Cocoa accent
           Text(
-            'add a favorite book or one you wish to read ~',
+            subtitle ?? 'add a favorite book or one you wish to read ~',
             textAlign: TextAlign.center,
             style: JournalTypography.handwriting(color: FloralPalette.cocoa),
           ),
@@ -80,7 +86,7 @@ class LibraryEmptyState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onAddBook,
               icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-              label: const Text('Add a Book'),
+              label: Text(buttonLabel ?? 'Add a Book'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
                 foregroundColor: Colors.white,

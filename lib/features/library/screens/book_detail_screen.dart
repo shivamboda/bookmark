@@ -57,8 +57,21 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     await ref.read(booksProvider.notifier).updateBook(updated);
   }
 
+  /// Hook for a future finished-book celebration animation.
+  /// Intentionally left without animation logic for future phases.
+  void _onBookFinishedCelebrationHook(Book finishedBook) {
+    debugPrint('Book finished celebration hook triggered for "${finishedBook.title}" (ID: ${finishedBook.id})');
+  }
+
   Future<void> _updateStatus(Book book, ReadingStatus newStatus) async {
     await ref.read(booksProvider.notifier).updateStatus(book.id, newStatus);
+    if (newStatus == ReadingStatus.finished) {
+      final updated = book.copyWith(
+        status: ReadingStatus.finished,
+        finishDate: book.finishDate ?? DateTime.now(),
+      );
+      _onBookFinishedCelebrationHook(updated);
+    }
   }
 
   @override
@@ -123,6 +136,12 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       children: [
                         // Cover & Primary Info Header
                         _buildCoverAndHeader(context, book),
+
+                        // Prominent Wishlist Action: "I have it / Start reading"
+                        if (book.status == ReadingStatus.wantToRead) ...[
+                          const SizedBox(height: 16),
+                          _buildStartReadingPrompt(context, book),
+                        ],
 
                         const SizedBox(height: 20),
 
@@ -877,6 +896,100 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     );
   }
 
+  /// Prominent prompt card displayed when a book is in "Want to Read" status
+  Widget _buildStartReadingPrompt(BuildContext context, Book book) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.deepRose.withValues(alpha: 0.4), width: 1.2),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: FloralPalette.blushPink.withValues(alpha: 0.35),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  color: FloralPalette.deepRose,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ready to read this story?',
+                      style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+                    ),
+                    Text(
+                      'move from wishlist into your journal ~',
+                      style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              key: const ValueKey('start_reading_button'),
+              onPressed: () => _showStartReadingBottomSheet(context, book),
+              icon: const Icon(Icons.bookmark_added_rounded, size: 18),
+              label: const Text(
+                'I have it / Start reading',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStartReadingBottomSheet(BuildContext context, Book book) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
+        ),
+        child: _StartReadingBottomSheet(
+          book: book,
+          onSave: (updated) async {
+            await ref.read(booksProvider.notifier).updateBook(updated);
+            if (updated.status == ReadingStatus.finished) {
+              _onBookFinishedCelebrationHook(updated);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   /// Synopsis Card
   Widget _buildSynopsisSection(BuildContext context, Book book) {
     return Column(
@@ -905,6 +1018,435 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StartReadingBottomSheet extends StatefulWidget {
+  final Book book;
+  final Future<void> Function(Book updated) onSave;
+
+  const _StartReadingBottomSheet({
+    required this.book,
+    required this.onSave,
+  });
+
+  @override
+  State<_StartReadingBottomSheet> createState() => _StartReadingBottomSheetState();
+}
+
+class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
+  // Mode: 0 = "Starting now", 1 = "Already finished"
+  int _modeIndex = 0;
+
+  late DateTime _startDate;
+  DateTime? _alreadyFinishedStartDate;
+  late DateTime _finishDate;
+  double? _rating;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDate = DateTime.now();
+    _finishDate = DateTime.now();
+    _rating = widget.book.rating;
+  }
+
+  String _formatDateShort(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  Future<void> _pickDate({
+    required BuildContext context,
+    required DateTime initialDate,
+    required ValueChanged<DateTime> onPicked,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: FloralPalette.deepRose,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: FloralPalette.warmCharcoal,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => onPicked(picked));
+    }
+  }
+
+  Future<void> _handleConfirm() async {
+    setState(() => _isSaving = true);
+    try {
+      if (_modeIndex == 0) {
+        // "Starting now"
+        final updated = widget.book.copyWith(
+          status: ReadingStatus.reading,
+          startDate: _startDate,
+        );
+        await widget.onSave(updated);
+      } else {
+        // "Already finished"
+        final updated = widget.book.copyWith(
+          status: ReadingStatus.finished,
+          startDate: _alreadyFinishedStartDate,
+          finishDate: _finishDate,
+          rating: _rating,
+        );
+        await widget.onSave(updated);
+      }
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x2A402E32),
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: FloralPalette.latte,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Header
+              Text(
+                'Update Reading Status',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 18),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Move "${widget.book.title}" to your shelf ~',
+                style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 15),
+              ),
+
+              const SizedBox(height: 18),
+
+              // Segmented Choice: "Starting now" vs "Already finished"
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: FloralPalette.petalWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        key: const ValueKey('tab_starting_now'),
+                        onTap: () => setState(() => _modeIndex = 0),
+                        borderRadius: BorderRadius.circular(12),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _modeIndex == 0 ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: _modeIndex == 0 ? const [FloralPalette.cardShadow] : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Starting now',
+                            style: JournalTypography.bodySmall(
+                              color: _modeIndex == 0 ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+                            ).copyWith(
+                              fontWeight: _modeIndex == 0 ? FontWeight.w700 : FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        key: const ValueKey('tab_already_finished'),
+                        onTap: () => setState(() => _modeIndex = 1),
+                        borderRadius: BorderRadius.circular(12),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _modeIndex == 1 ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: _modeIndex == 1 ? const [FloralPalette.cardShadow] : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Already finished',
+                            style: JournalTypography.bodySmall(
+                              color: _modeIndex == 1 ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+                            ).copyWith(
+                              fontWeight: _modeIndex == 1 ? FontWeight.w700 : FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Content based on choice
+              if (_modeIndex == 0) ...[
+                // "Starting now" Form
+                Text(
+                  'Reading begins today',
+                  style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  key: const ValueKey('start_date_picker_btn'),
+                  onTap: () => _pickDate(
+                    context: context,
+                    initialDate: _startDate,
+                    onPicked: (d) => _startDate = d,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: FloralPalette.petalWhite,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF2DED9)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 16, color: FloralPalette.deepRose),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Start Date: ${_formatDateShort(_startDate)}',
+                              style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 13.5),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Change',
+                          style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    key: const ValueKey('confirm_start_reading_btn'),
+                    onPressed: _isSaving ? null : _handleConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FloralPalette.deepRose,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Begin Reading', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  ),
+                ),
+              ] else ...[
+                // "Already finished" Form
+                // Optional Start Date
+                InkWell(
+                  key: const ValueKey('already_finished_start_date_btn'),
+                  onTap: () => _pickDate(
+                    context: context,
+                    initialDate: _alreadyFinishedStartDate ?? _finishDate,
+                    onPicked: (d) => _alreadyFinishedStartDate = d,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: FloralPalette.petalWhite,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF2DED9)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.bookmark_border_rounded, size: 16, color: FloralPalette.cocoa),
+                            const SizedBox(width: 8),
+                            Text(
+                              _alreadyFinishedStartDate == null
+                                  ? 'Start Date: (Optional)'
+                                  : 'Start Date: ${_formatDateShort(_alreadyFinishedStartDate!)}',
+                              style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          _alreadyFinishedStartDate == null ? 'Set' : 'Change',
+                          style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Finish Date (defaults to today)
+                InkWell(
+                  key: const ValueKey('finish_date_picker_btn'),
+                  onTap: () => _pickDate(
+                    context: context,
+                    initialDate: _finishDate,
+                    onPicked: (d) => _finishDate = d,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: FloralPalette.petalWhite,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF2DED9)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline_rounded, size: 16, color: FloralPalette.sageGreenDark),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Finish Date: ${_formatDateShort(_finishDate)}',
+                              style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Change',
+                          style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // Optional Rating
+                Row(
+                  children: [
+                    Text(
+                      'Rating (optional):',
+                      style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 10),
+                    ...List.generate(5, (index) {
+                      final starVal = index + 1.0;
+                      final isFilled = (_rating ?? 0.0) >= starVal;
+                      return InkWell(
+                        key: ValueKey('sheet_star_$starVal'),
+                        onTap: () => setState(() => _rating = (_rating == starVal) ? null : starVal),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: Icon(
+                            isFilled ? Icons.star_rounded : Icons.star_border_rounded,
+                            size: 24,
+                            color: isFilled ? FloralPalette.buttercupGold : FloralPalette.latte,
+                          ),
+                        ),
+                      );
+                    }),
+                    if (_rating != null) ...[
+                      const SizedBox(width: 6),
+                      TextButton(
+                        onPressed: () => setState(() => _rating = null),
+                        child: Text(
+                          'Clear',
+                          style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    key: const ValueKey('confirm_already_finished_btn'),
+                    onPressed: _isSaving ? null : _handleConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FloralPalette.deepRose,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Mark Finished', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

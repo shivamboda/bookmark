@@ -285,28 +285,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 ),
                 error: (error, _) => Center(child: Text('Error: $error')),
                 data: (allBooks) {
-                  final wishlistBooks = allBooks.where((b) => b.status == ReadingStatus.wantToRead).toList();
+                  final wishlistBooks = allBooks
+                      .where((b) => b.status == ReadingStatus.wantToRead)
+                      .toList()
+                    ..sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
 
                   if (wishlistBooks.isEmpty) {
                     return Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const TulipDoodle(size: 72, showStem: false, petalColor: FloralPalette.rosePetal),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Your wishlist is waiting for future stories ~',
-                              textAlign: TextAlign.center,
-                              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        child: LibraryEmptyState(
+                          title: "Books you'd love to read someday live here ~",
+                          subtitle: "add stories you dream of reading next",
+                          buttonLabel: "Find a Book",
+                          onAddBook: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const BookSearchScreen(),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'add books you dream of reading next',
-                              style: JournalTypography.handwriting(color: FloralPalette.deepForestGreen),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     );
@@ -318,7 +314,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     itemBuilder: (context, index) {
                       return BookListCard(
                         book: wishlistBooks[index],
-                        isWishlist: true, // Hides status pill & unrated, shows "Added <date>"
+                        isWishlist: true,
                         onTap: () => _onBookSelected(context, wishlistBooks[index]),
                       );
                     },

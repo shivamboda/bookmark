@@ -1,4 +1,5 @@
 import 'package:bookmark/features/library/screens/book_search_screen.dart';
+import 'package:bookmark/services/book_search_service.dart';
 import 'package:bookmark/features/library/screens/add_edit_book_screen.dart';
 import 'package:bookmark/features/library/widgets/book_list_card.dart';
 import 'dart:typed_data';
@@ -116,7 +117,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('WISHLIST'), findsOneWidget);
     expect(find.text('Tomorrow, and Tomorrow, and Tomorrow'), findsWidgets);
-    expect(find.text('Added Sep 23'), findsOneWidget);
+    expect(find.text('Added Sep 23'), findsNothing); // Dates hidden on wishlist cards
     expect(find.text('Want to Read'), findsNothing); // Pill hidden on wishlist
     expect(find.text('Unrated'), findsNothing); // Unrated hidden on wishlist
 
@@ -682,8 +683,10 @@ void main() {
         overrides: [
           storageServiceProvider.overrideWithValue(mockStorage),
         ],
-        child: const MaterialApp(
-          home: BookSearchScreen(),
+        child: MaterialApp(
+          home: BookSearchScreen(
+            searchFn: (q) async => [],
+          ),
         ),
       ),
     );
@@ -801,4 +804,248 @@ void main() {
     expect(find.byType(AddEditBookScreen), findsOneWidget);
     expect(find.byType(BookSearchScreen), findsNothing);
   });
+
+  testWidgets('Phase 7: Wishlist sorting (newest first) and empty state with poppy & caveat copy', (WidgetTester tester) async {
+    final storage = InMemoryStorageService();
+
+    // 1. Test Empty State
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const MaterialApp(home: BookmarkApp()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Wishlist').last);
+    await tester.pumpAndSettle();
+
+    // Verify warm empty state with Caveat copy
+    expect(find.text("Books you'd love to read someday live here ~"), findsOneWidget);
+    expect(find.text("add stories you dream of reading next"), findsOneWidget);
+    expect(find.text('Find a Book'), findsOneWidget);
+
+    // 2. Add two Want to Read books with different dateAdded
+    final olderBook = Book(
+      id: 'w1',
+      title: 'Tale of Whispers',
+      authors: ['Author A'],
+      genres: ['Fantasy'],
+      status: ReadingStatus.wantToRead,
+      dateAdded: DateTime(2026, 9, 20),
+    );
+    final newerBook = Book(
+      id: 'w2',
+      title: 'Chronicle of Stars',
+      authors: ['Author B'],
+      genres: ['Romance'],
+      status: ReadingStatus.wantToRead,
+      dateAdded: DateTime(2026, 9, 24),
+    );
+
+    await storage.saveBook(olderBook);
+    await storage.saveBook(newerBook);
+
+    // Re-render with fresh ProviderScope so booksProvider reads the newly saved books
+    await tester.pumpWidget(
+      ProviderScope(
+        key: UniqueKey(),
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const MaterialApp(home: BookmarkApp()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Wishlist').last);
+    await tester.pumpAndSettle();
+
+    // Verify both books are displayed (can appear on thumbnail spine + card title)
+    expect(find.text('Tale of Whispers'), findsWidgets);
+    expect(find.text('Chronicle of Stars'), findsWidgets);
+
+    // Verify Newer book appears before Older book in widget tree (newest first)
+    final newerPos = tester.getTopLeft(find.text('Chronicle of Stars').last).dy;
+    final olderPos = tester.getTopLeft(find.text('Tale of Whispers').last).dy;
+    expect(newerPos, lessThan(olderPos));
+
+    // Verify rating and dates are hidden on Wishlist cards
+    expect(find.textContaining('Added'), findsNothing);
+    expect(find.text('Unrated'), findsNothing);
+  });
+
+  testWidgets('Phase 7: Book Detail "I have it / Start reading" transitions to Reading or Finished preserving all fields', (WidgetTester tester) async {
+    final storage = InMemoryStorageService();
+    final wishlistBook = Book(
+      id: 'w-detail-1',
+      title: 'Circe',
+      authors: ['Madeline Miller'],
+      genres: ['Mythology', 'Fantasy'],
+      status: ReadingStatus.wantToRead,
+      pageCount: 393,
+      description: 'In the house of Helios, god of the sun and mightiest of the Titans...',
+      notes: 'Gift from friend',
+      quotes: [
+        BookQuote(
+          id: 'q1',
+          quote: 'Humbling women is the chief pastime of poets.',
+          createdAt: DateTime(2026, 9, 23),
+        ),
+      ],
+      dateAdded: DateTime(2026, 9, 23),
+    );
+    await storage.saveBook(wishlistBook);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const MaterialApp(
+          home: BookDetailScreen(bookId: 'w-detail-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Prominent "I have it / Start reading" button exists
+    final startBtn = find.byKey(const ValueKey('start_reading_button'));
+    expect(startBtn, findsOneWidget);
+
+    // Tap to open bottom sheet
+    await tester.tap(startBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Update Reading Status'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tab_starting_now')), findsOneWidget);
+    expect(find.byKey(const ValueKey('tab_already_finished')), findsOneWidget);
+
+    // Choose "Starting now" -> tap "Begin Reading"
+    final confirmStart = find.byKey(const ValueKey('confirm_start_reading_btn'));
+    expect(confirmStart, findsOneWidget);
+    await tester.tap(confirmStart);
+    await tester.pumpAndSettle();
+
+    // Verify book updated in storage: status is Reading, all other fields preserved
+    final updated1 = await storage.getBook('w-detail-1');
+    expect(updated1!.status, ReadingStatus.reading);
+    expect(updated1.startDate, isNotNull);
+    expect(updated1.finishDate, isNull);
+    expect(updated1.title, 'Circe');
+    expect(updated1.authors, ['Madeline Miller']);
+    expect(updated1.genres, ['Mythology', 'Fantasy']);
+    expect(updated1.pageCount, 393);
+    expect(updated1.description, contains('Helios'));
+    expect(updated1.notes, 'Gift from friend');
+    expect(updated1.quotes.length, 1);
+    expect(updated1.quotes.first.cleanText, contains('Humbling women'));
+  });
+
+  testWidgets('Phase 7: Book Detail bottom sheet "Already finished" sets Finished status and optional rating while preserving fields', (WidgetTester tester) async {
+    final storage = InMemoryStorageService();
+    final wishlistBook = Book(
+      id: 'w-detail-2',
+      title: 'Piranesi',
+      authors: ['Susanna Clarke'],
+      genres: ['Fantasy', 'Mystery'],
+      status: ReadingStatus.wantToRead,
+      pageCount: 245,
+      description: 'Piranesi has always lived in the House.',
+      notes: 'Recommended by book club',
+      dateAdded: DateTime(2026, 9, 23),
+    );
+    await storage.saveBook(wishlistBook);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const MaterialApp(
+          home: BookDetailScreen(bookId: 'w-detail-2'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Open bottom sheet
+    await tester.tap(find.byKey(const ValueKey('start_reading_button')));
+    await tester.pumpAndSettle();
+
+    // Switch to "Already finished" tab
+    await tester.tap(find.byKey(const ValueKey('tab_already_finished')));
+    await tester.pumpAndSettle();
+
+    // Rate 5 stars
+    await tester.tap(find.byKey(const ValueKey('sheet_star_5.0')));
+    await tester.pumpAndSettle();
+
+    // Confirm finished
+    await tester.tap(find.byKey(const ValueKey('confirm_already_finished_btn')));
+    await tester.pumpAndSettle();
+
+    // Verify status and preserved fields
+    final updated = await storage.getBook('w-detail-2');
+    expect(updated!.status, ReadingStatus.finished);
+    expect(updated.finishDate, isNotNull);
+    expect(updated.rating, 5.0);
+    expect(updated.title, 'Piranesi');
+    expect(updated.authors, ['Susanna Clarke']);
+    expect(updated.genres, ['Fantasy', 'Mystery']);
+    expect(updated.pageCount, 245);
+    expect(updated.notes, 'Recommended by book club');
+  });
+
+  testWidgets('Phase 7: Save to Wishlist saves book without form; duplicate triggers kind alert', (WidgetTester tester) async {
+    final storage = InMemoryStorageService();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: MaterialApp(
+          home: BookSearchScreen(
+            searchFn: (q) async => [
+              const BookSearchResult(
+                title: 'The Hobbit',
+                authors: ['J.R.R. Tolkien'],
+                pageCount: 310,
+                genres: ['Fantasy'],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Trigger search for "The Hobbit"
+    final searchInput = find.byKey(const ValueKey('book_search_input'));
+    await tester.enterText(searchInput, 'The Hobbit');
+    await tester.pump(const Duration(milliseconds: 600)); // debounce
+    await tester.pumpAndSettle();
+
+    // Look for Save to Wishlist button on the search results
+    final saveToWishlistBtn = find.text('Save to Wishlist');
+    expect(saveToWishlistBtn, findsWidgets);
+
+    // Tap first Save to Wishlist
+    await tester.tap(saveToWishlistBtn.first);
+    await tester.pumpAndSettle();
+
+    // Verify saved to storage with status wantToRead
+    final books = await storage.getAllBooks();
+    expect(books.length, 1);
+    expect(books.first.status, ReadingStatus.wantToRead);
+
+    // Tap again -> duplicate detection dialog should appear
+    await tester.tap(saveToWishlistBtn.first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Already in Your Journal ~'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    // Tap cancel
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    // Still only 1 book
+    final booksAfterCancel = await storage.getAllBooks();
+    expect(booksAfterCancel.length, 1);
+  });
+
 }

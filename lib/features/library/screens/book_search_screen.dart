@@ -10,6 +10,7 @@ import '../../../doodles/poppy_doodle.dart';
 import '../../../doodles/sketch_underline.dart';
 import '../../../models/book.dart';
 import 'add_edit_book_screen.dart';
+import '../../../core/state/providers.dart';
 import '../../../services/book_search_service.dart';
 import '../../../services/image_service.dart';
 import 'package:http/http.dart' as http;
@@ -25,10 +26,12 @@ import 'package:http/http.dart' as http;
 /// - Fully styled in Poppy Blush / Fraunces-Lora-Caveat botanical design
 class BookSearchScreen extends ConsumerStatefulWidget {
   final ReadingStatus defaultStatus;
+  final Future<List<BookSearchResult>> Function(String query)? searchFn;
 
   const BookSearchScreen({
     super.key,
     this.defaultStatus = ReadingStatus.reading,
+    this.searchFn,
   });
 
   @override
@@ -83,7 +86,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
 
     try {
       // Call the search service (Open Library first, Google Books fallback)
-      final results = await BookSearchService.search(query);
+      final results = await (widget.searchFn != null ? widget.searchFn!(query) : BookSearchService.search(query));
 
       if (!mounted) return;
 
@@ -135,6 +138,119 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
   /// When a [result] is provided (user tapped a search card), the cover image
   /// is downloaded and compressed via [ImageService] so it's stored locally
   /// in Hive rather than depending on an external URL at display time.
+  /// Directly saves a search result to the user's Wishlist (Want to Read) without opening the form.
+  Future<void> _saveToWishlist(BookSearchResult result) async {
+    final allBooks = ref.read(booksProvider).value ?? [];
+    final trimmedTitle = result.title.trim().toLowerCase();
+    final duplicate = allBooks.where((b) {
+      final titleMatch = b.title.trim().toLowerCase() == trimmedTitle;
+      final authorMatch = result.authors.isEmpty || b.authors.any(
+        (a) => result.authors.any((ra) => ra.trim().toLowerCase() == a.trim().toLowerCase()),
+      );
+      return titleMatch && authorMatch;
+    }).firstOrNull;
+
+    if (duplicate != null) {
+      final statusName = duplicate.status == ReadingStatus.wantToRead
+          ? 'on your Wishlist'
+          : 'in your library (${duplicate.status.label})';
+
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              'Already in Your Journal ~',
+              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+            ),
+            content: Text(
+              '"${result.title}" is already $statusName. Would you like to add another copy to your Wishlist?',
+              style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  'Cancel',
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FloralPalette.deepRose,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Add to Wishlist'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (proceed != true) return;
+    }
+
+    // Download & compress cover if available
+    Uint8List? coverBytes;
+    if (result.coverUrl != null && result.coverUrl!.isNotEmpty) {
+      try {
+        final response = await http
+            .get(Uri.parse(result.coverUrl!))
+            .timeout(const Duration(seconds: 6));
+        if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+          coverBytes = ImageService.processCoverBytes(response.bodyBytes);
+        }
+      } catch (e) {
+        debugPrint('Cover download for wishlist skipped: $e');
+      }
+    }
+
+    final newBook = Book(
+      id: 'book-${DateTime.now().millisecondsSinceEpoch}',
+      title: result.title,
+      authors: result.authors,
+      coverUrl: result.coverUrl,
+      coverBytes: coverBytes,
+      pageCount: result.pageCount,
+      description: result.description ?? '',
+      genres: result.genres,
+      status: ReadingStatus.wantToRead,
+      dateAdded: DateTime.now(),
+    );
+
+    await ref.read(booksProvider.notifier).addBook(newBook);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.bookmark_added_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Added "${result.title}" to Wishlist ~',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontFamily: 'Caveat', fontSize: 17, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: FloralPalette.lavenderDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _openManualEntry([BookSearchResult? result]) async {
     Book? draft;
 
@@ -702,6 +818,47 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 8),
+                      // Secondary "Save to Wishlist" button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          key: ValueKey('save_to_wishlist_${result.title}'),
+                          onTap: () => _saveToWishlist(result),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: FloralPalette.lavenderMist.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: FloralPalette.lavenderDark.withValues(alpha: 0.5),
+                                width: 0.9,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.bookmark_add_outlined,
+                                  size: 14,
+                                  color: FloralPalette.lavenderDark,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Save to Wishlist',
+                                  style: JournalTypography.bodySmall(
+                                    color: FloralPalette.lavenderDark,
+                                  ).copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

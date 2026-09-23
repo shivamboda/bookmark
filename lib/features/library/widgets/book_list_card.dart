@@ -17,10 +17,7 @@ class BookListCard extends StatelessWidget {
     this.isWishlist = false,
   });
 
-  String _formatDate(DateTime dt) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return 'Added ${months[dt.month - 1]} ${dt.day}';
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -84,20 +81,10 @@ class BookListCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Status Pill & Rating (or "Added <date>" on Wishlist)
-                      Row(
-                        children: [
-                          if (isWishlist) ...[
-                            Text(
-                              _formatDate(book.dateAdded),
-                              style: JournalTypography.bodySmall(
-                                color: FloralPalette.mutedCharcoal,
-                              ).copyWith(
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ] else ...[
+                      // Status Pill & Rating (Hidden entirely on Wishlist: shows cover, title, author, genres; hides rating and dates)
+                      if (!isWishlist) ...[
+                        Row(
+                          children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                               decoration: BoxDecoration(
@@ -113,33 +100,32 @@ class BookListCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            const Spacer(),
+                            if (book.isRated) ...[
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 17,
+                                color: FloralPalette.buttercupGold,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                book.rating!.toStringAsFixed(1),
+                                style: JournalTypography.bodySmall(
+                                  color: FloralPalette.warmCharcoal,
+                                ).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ] else ...[
+                              Text(
+                                'Unrated',
+                                style: JournalTypography.bodySmall(
+                                  color: FloralPalette.unratedText,
+                                ).copyWith(fontSize: 11),
+                              ),
+                            ],
                           ],
-                          const Spacer(),
-                          if (book.isRated) ...[
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 17,
-                              color: FloralPalette.buttercupGold, // Deeper buttercup gold for contrast on white
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              book.rating!.toStringAsFixed(1),
-                              style: JournalTypography.bodySmall(
-                                color: FloralPalette.warmCharcoal,
-                              ).copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ] else if (!isWishlist) ...[
-                            Text(
-                              'Unrated',
-                              style: JournalTypography.bodySmall(
-                                color: FloralPalette.unratedText, // #756A70
-                              ).copyWith(fontSize: 11),
-                            ),
-                          ],
-                        ],
-                      ),
-
-                      const SizedBox(height: 6),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
 
                       // Title in Fraunces (handling long titles with ellipsis)
                       Text(
