@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,7 +95,7 @@ void main() {
     expect(find.text('Taylor Jenkins Reid'), findsOneWidget);
     expect(find.text('Finished'), findsWidgets); // Status badge and filter chip
 
-    // 3. Verify Bottom Navigation Tabs
+    // 3. Verify Bottom Navigation Tabs exist
     expect(find.text('Wishlist'), findsOneWidget);
     expect(find.text('Stats'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
@@ -114,6 +114,29 @@ void main() {
     await tester.tap(toggleBtn);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('library_list_view')), findsOneWidget);
+
+    // 5. Test all 4 bottom navigation tabs work & switch screens
+    // Tap Wishlist tab
+    await tester.tap(find.text('Wishlist'));
+    await tester.pumpAndSettle();
+    expect(find.text('BOOKMARK • WISHLIST'), findsOneWidget);
+
+    // Tap Stats tab
+    await tester.tap(find.text('Stats'));
+    await tester.pumpAndSettle();
+    expect(find.text('BOOKMARK • READING STATS'), findsOneWidget);
+    expect(find.text('2026 Reading Goal'), findsOneWidget);
+
+    // Tap Settings tab
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('BOOKMARK • SETTINGS'), findsOneWidget);
+    expect(find.text('Yearly Reading Goal'), findsOneWidget);
+
+    // Tap Library tab back
+    await tester.tap(find.text('Library').last);
+    await tester.pumpAndSettle();
+    expect(find.text('BOOKMARK • READING JOURNAL'), findsOneWidget);
   });
 
   testWidgets('Library Screen: empty shelf renders poetic empty state with poppy & book', (WidgetTester tester) async {

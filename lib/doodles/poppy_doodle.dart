@@ -6,9 +6,11 @@ import '../core/theme/palette.dart';
 ///
 /// Features authentic botanical details:
 /// - Opaque crinkled petals with radial gradient (deep crimson center to light poppy tips)
+/// - Inner crinkled petals for botanical depth and ruffled richness
 /// - Dark plum blotches at petal bases
-/// - Small green seed pod with dark stamen filaments and golden pollen anthers
-/// - Correct z-order: stem and separate budding stalk drawn behind the bloom
+/// - Small green seed pod with star-spoked cap
+/// - Central dark plum stamen ring with radiating filaments and buttercup pollen anther dots
+/// - Correct z-order: stem, attached serrated leaf, and separate budding stalk drawn behind the bloom
 class PoppyDoodle extends StatelessWidget {
   final double size;
   final Color? petalColor;
@@ -24,6 +26,7 @@ class PoppyDoodle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeSize = size.isFinite && size > 0 ? size : 80.0;
+
     return SizedBox(
       width: safeSize,
       height: showStem ? safeSize * 1.35 : safeSize,
@@ -48,218 +51,239 @@ class _PoppyBotanicalPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Coordinate anchor center for main bloom
-    final bloomCenterX = size.width * 0.50;
-    final bloomCenterY = showStem ? size.height * 0.38 : size.height * 0.50;
-    final bloomRadius = size.width * 0.38;
+    final bloomCenter = Offset(
+      size.width * 0.52,
+      showStem ? size.height * 0.38 : size.height * 0.50,
+    );
+    final radius = size.width * 0.36;
 
-    // Palette Colors
-    final deepCrimson = Color.lerp(petalColor, const Color(0xFF8B121A), 0.55)!;
-    final coralEdge = Color.lerp(petalColor, const Color(0xFFFFA094), 0.35)!;
-    const blotchColor = Color(0xFF260D15); // Dark plum blotch at petal base
-    const stemColor = FloralPalette.deepForestGreen;
-    const podGreen = Color(0xFF5E8256);
-    const podHighlight = Color(0xFF90B584);
-    const stamenDark = Color(0xFF1F1216);
-    const pollenGold = FloralPalette.buttercupYellow;
-    const contourInk = Color(0xFF38151E); // Crisp contour outline
-
-    // ==========================================
-    // 1. STEMS & LEAF (DRAWN BEHIND BLOOM)
-    // ==========================================
+    // ========================================================
+    // 1. STEMS, BUD & LEAVES (Z-Order: Drawn behind bloom)
+    // ========================================================
     if (showStem) {
       final stemPaint = Paint()
-        ..color = stemColor
+        ..color = FloralPalette.deepForestGreen
+        ..strokeWidth = math.max(1.8, size.width * 0.034)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = (size.width * 0.038).clamp(2.0, 3.8)
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
-      // Main Stem
+      // Primary gracefully arched stem
       final stemPath = Path();
-      stemPath.moveTo(bloomCenterX, bloomCenterY + 4);
+      stemPath.moveTo(bloomCenter.dx - 1, bloomCenter.dy + radius * 0.4);
       stemPath.cubicTo(
-        bloomCenterX - size.width * 0.06, size.height * 0.55,
-        bloomCenterX + size.width * 0.05, size.height * 0.78,
-        bloomCenterX - size.width * 0.03, size.height * 0.98,
+        bloomCenter.dx - size.width * 0.05, size.height * 0.55,
+        bloomCenter.dx + size.width * 0.06, size.height * 0.78,
+        bloomCenter.dx - size.width * 0.02, size.height * 0.98,
       );
       canvas.drawPath(stemPath, stemPaint);
 
       // Separate Budding Stalk (distinct from main stem)
-      final budStalkPath = Path();
-      budStalkPath.moveTo(bloomCenterX + size.width * 0.02, size.height * 0.65);
-      budStalkPath.cubicTo(
-        bloomCenterX + size.width * 0.22, size.height * 0.58,
-        bloomCenterX + size.width * 0.32, size.height * 0.44,
-        bloomCenterX + size.width * 0.36, size.height * 0.38,
+      final branchStalk = Path();
+      branchStalk.moveTo(bloomCenter.dx + size.width * 0.02, size.height * 0.62);
+      branchStalk.cubicTo(
+        bloomCenter.dx + size.width * 0.18, size.height * 0.56,
+        bloomCenter.dx + size.width * 0.28, size.height * 0.58,
+        bloomCenter.dx + size.width * 0.30, size.height * 0.65,
       );
-      final budStalkPaint = Paint()
-        ..color = stemColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = (size.width * 0.025).clamp(1.5, 2.6)
-        ..strokeCap = StrokeCap.round;
-      canvas.drawPath(budStalkPath, budStalkPaint);
+      canvas.drawPath(branchStalk, stemPaint);
 
-      // Drooping Poppy Bud at the end of budding stalk
-      final budCenter = Offset(bloomCenterX + size.width * 0.36, size.height * 0.38);
+      // Drooping bud at the tip of its own stalk
+      final budTip = Offset(bloomCenter.dx + size.width * 0.30, size.height * 0.65);
       final budPaint = Paint()
-        ..color = podGreen
+        ..color = FloralPalette.sageGreen
         ..style = PaintingStyle.fill;
-      canvas.drawOval(
-        Rect.fromCenter(center: budCenter, width: size.width * 0.11, height: size.width * 0.16),
-        budPaint,
-      );
-      // Faint hint of red petal peeking from bud tip
-      final budPetal = Paint()
+      final budStroke = Paint()
+        ..color = FloralPalette.deepForestGreen
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
+
+      canvas.save();
+      canvas.translate(budTip.dx, budTip.dy);
+      canvas.rotate(0.35);
+
+      final budPath = Path();
+      budPath.moveTo(0, 0);
+      budPath.cubicTo(-size.width * 0.06, size.width * 0.04, -size.width * 0.05, size.width * 0.14, 0, size.width * 0.16);
+      budPath.cubicTo(size.width * 0.05, size.width * 0.14, size.width * 0.06, size.width * 0.04, 0, 0);
+      canvas.drawPath(budPath, budPaint);
+      canvas.drawPath(budPath, budStroke);
+
+      // Tiny peek of red petal from the cracking bud
+      final budPetalPaint = Paint()
         ..color = petalColor
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(budCenter.translate(0, -size.width * 0.06), size.width * 0.03, budPetal);
+      canvas.drawCircle(Offset(0, size.width * 0.15), size.width * 0.025, budPetalPaint);
+      canvas.restore();
 
-      // Attached Serrated Leaf on main stem
-      final leafStemX = bloomCenterX - size.width * 0.03;
-      final leafStemY = size.height * 0.68;
+      // Botanical Leaf: Originates directly from the stem curve with petiole connection
+      final leafStemX = bloomCenter.dx - size.width * 0.02;
+      final leafStemY = size.height * 0.72;
+
+      final leafPaint = Paint()
+        ..color = FloralPalette.sageGreen.withValues(alpha: 0.9)
+        ..style = PaintingStyle.fill;
+      final leafStroke = Paint()
+        ..color = FloralPalette.deepForestGreen
+        ..strokeWidth = 1.1
+        ..style = PaintingStyle.stroke;
+
       final leafPath = Path();
       leafPath.moveTo(leafStemX, leafStemY);
       leafPath.cubicTo(
-        leafStemX - size.width * 0.18, leafStemY - size.height * 0.05,
-        leafStemX - size.width * 0.32, leafStemY + size.height * 0.02,
-        leafStemX - size.width * 0.38, leafStemY + size.height * 0.12,
+        leafStemX - size.width * 0.18, leafStemY - size.height * 0.06,
+        leafStemX - size.width * 0.42, leafStemY - size.height * 0.04,
+        leafStemX - size.width * 0.40, leafStemY + size.height * 0.08,
       );
       leafPath.cubicTo(
-        leafStemX - size.width * 0.22, leafStemY + size.height * 0.11,
-        leafStemX - size.width * 0.12, leafStemY + size.height * 0.08,
-        leafStemX, leafStemY + size.height * 0.04,
+        leafStemX - size.width * 0.25, leafStemY + size.height * 0.09,
+        leafStemX - size.width * 0.12, leafStemY + size.height * 0.05,
+        leafStemX, leafStemY,
       );
-      leafPath.close();
-
-      final leafPaint = Paint()
-        ..color = FloralPalette.sageGreenDark
-        ..style = PaintingStyle.fill;
       canvas.drawPath(leafPath, leafPaint);
+      canvas.drawPath(leafPath, leafStroke);
+
+      // Leaf central vein
+      final veinPath = Path();
+      veinPath.moveTo(leafStemX, leafStemY);
+      veinPath.quadraticBezierTo(
+        leafStemX - size.width * 0.20, leafStemY + size.height * 0.01,
+        leafStemX - size.width * 0.36, leafStemY + size.height * 0.03,
+      );
+      canvas.drawPath(veinPath, leafStroke);
     }
 
-    // ==========================================
-    // 2. OPAQUE PETALS WITH WAVY EDGES & GRADIENT
-    // ==========================================
-    final petalAngles = [-0.75, 0.75, 2.35, -2.35];
+    // ========================================================
+    // 2. BLOOM (Z-Order: Opaque petals on top of stem)
+    // ========================================================
+    const petalCount = 4;
+    final baseAngles = [0.15, math.pi / 2 + 0.1, math.pi + 0.05, 3 * math.pi / 2 + 0.2];
 
-    for (int i = 0; i < petalAngles.length; i++) {
-      final angle = petalAngles[i];
-      final petalCenter = Offset(
-        bloomCenterX + (bloomRadius * 0.42 * math.cos(angle)),
-        bloomCenterY + (bloomRadius * 0.42 * math.sin(angle)),
-      );
+    for (int i = 0; i < petalCount; i++) {
+      final angle = baseAngles[i];
+      canvas.save();
+      canvas.translate(bloomCenter.dx, bloomCenter.dy);
+      canvas.rotate(angle);
 
-      final petalPath = Path();
-      petalPath.moveTo(bloomCenterX, bloomCenterY);
+      // Wavy, crinkled organic petal contour
+      final petal = Path();
+      petal.moveTo(0, 0);
+      petal.cubicTo(-radius * 0.65, -radius * 0.35, -radius * 0.95, -radius * 0.85, -radius * 0.45, -radius * 1.15);
+      petal.cubicTo(-radius * 0.15, -radius * 1.05, 0, -radius * 1.25, radius * 0.25, -radius * 1.10);
+      petal.cubicTo(radius * 0.75, -radius * 1.20, radius * 0.95, -radius * 0.75, radius * 0.65, -radius * 0.35);
+      petal.close();
 
-      final tipX = bloomCenterX + (bloomRadius * 1.15 * math.cos(angle));
-      final tipY = bloomCenterY + (bloomRadius * 1.15 * math.sin(angle));
-
-      final perpX = -math.sin(angle) * (bloomRadius * 0.75);
-      final perpY = math.cos(angle) * (bloomRadius * 0.75);
-
-      petalPath.cubicTo(
-        bloomCenterX + perpX * 0.8, bloomCenterY + perpY * 0.8,
-        tipX + perpX * 0.6, tipY + perpY * 0.6,
-        tipX, tipY,
-      );
-      petalPath.cubicTo(
-        tipX - perpX * 0.6, tipY - perpY * 0.6,
-        bloomCenterX - perpX * 0.8, bloomCenterY - perpY * 0.8,
-        bloomCenterX, bloomCenterY,
-      );
-      petalPath.close();
-
-      final gradientPaint = Paint()
+      // Opaque gradient fill: deeper ruby at center to radiant coral/poppy at wavy tips
+      final fillPaint = Paint()
         ..shader = RadialGradient(
-          center: Alignment.center,
-          radius: 0.95,
-          colors: [deepCrimson, petalColor, coralEdge],
-          stops: const [0.0, 0.55, 1.0],
-        ).createShader(Rect.fromCircle(center: petalCenter, radius: bloomRadius * 1.1))
+          center: Alignment.bottomCenter,
+          radius: 1.1,
+          colors: [
+            const Color(0xFF9E1B24), // Deep crimson center
+            const Color(0xFFC7262F),
+            petalColor,              // Vibrant poppy red
+            const Color(0xFFEA5E55), // Soft luminous tip
+          ],
+          stops: const [0.0, 0.35, 0.75, 1.0],
+        ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius * 1.2))
         ..style = PaintingStyle.fill;
 
-      canvas.drawPath(petalPath, gradientPaint);
-
-      final outlinePaint = Paint()
-        ..color = contourInk.withValues(alpha: 0.75)
+      final strokePaint = Paint()
+        ..color = const Color(0xFF7A161C).withValues(alpha: 0.75)
+        ..strokeWidth = math.max(1.1, size.width * 0.016)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-      canvas.drawPath(petalPath, outlinePaint);
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawPath(petal, fillPaint);
+      canvas.drawPath(petal, strokePaint);
+
+      // Dark plum blotch at the petal base (signature poppy characteristic)
+      final blotchPaint = Paint()
+        ..color = const Color(0xFF260D15).withValues(alpha: 0.92)
+        ..style = PaintingStyle.fill;
+
+      final blotchPath = Path();
+      blotchPath.moveTo(0, 0);
+      blotchPath.cubicTo(-radius * 0.22, -radius * 0.15, -radius * 0.28, -radius * 0.38, 0, -radius * 0.42);
+      blotchPath.cubicTo(radius * 0.28, -radius * 0.38, radius * 0.22, -radius * 0.15, 0, 0);
+      canvas.drawPath(blotchPath, blotchPaint);
+
+      canvas.restore();
     }
 
-    // ==========================================
-    // 3. DARK PLUM BASAL BLOTCHES
-    // ==========================================
-    final blotchPaint = Paint()
-      ..color = blotchColor
+    // Inner crinkled petals for ruffled richness
+    for (int i = 0; i < 2; i++) {
+      final angle = (i * math.pi) + 0.75;
+      canvas.save();
+      canvas.translate(bloomCenter.dx, bloomCenter.dy);
+      canvas.rotate(angle);
+
+      final innerPetal = Path();
+      innerPetal.moveTo(0, 0);
+      innerPetal.cubicTo(-radius * 0.45, -radius * 0.3, -radius * 0.65, -radius * 0.75, 0, -radius * 0.88);
+      innerPetal.cubicTo(radius * 0.65, -radius * 0.75, radius * 0.45, -radius * 0.3, 0, 0);
+
+      final innerFill = Paint()
+        ..color = petalColor.withValues(alpha: 0.96)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawPath(innerPetal, innerFill);
+      canvas.restore();
+    }
+
+    // ========================================================
+    // 3. SEED POD & STAMEN RING
+    // ========================================================
+    // Dark plum stamen base disk
+    final stamenBasePaint = Paint()
+      ..color = const Color(0xFF1F0B12)
       ..style = PaintingStyle.fill;
+    canvas.drawCircle(bloomCenter, radius * 0.28, stamenBasePaint);
 
-    for (int i = 0; i < 6; i++) {
-      final bAngle = i * (math.pi / 3.0);
-      final blotchOffset = Offset(
-        bloomCenterX + (bloomRadius * 0.22 * math.cos(bAngle)),
-        bloomCenterY + (bloomRadius * 0.22 * math.sin(bAngle)),
-      );
-      canvas.drawCircle(blotchOffset, bloomRadius * 0.14, blotchPaint);
-    }
-
-    // ==========================================
-    // 4. STAMENS & POLLEN ANTHERS (RING)
-    // ==========================================
-    final stamenFilament = Paint()
-      ..color = stamenDark
-      ..strokeWidth = 1.1
+    // Fine dark stamen filaments radiating outward with golden/buttercup anther dots
+    final filamentPaint = Paint()
+      ..color = const Color(0xFF1F0B12)
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    final pollenPaint = Paint()
-      ..color = pollenGold
+    final antherPaint = Paint()
+      ..color = FloralPalette.buttercupYellow
       ..style = PaintingStyle.fill;
 
-    const stamenCount = 14;
-    for (int i = 0; i < stamenCount; i++) {
-      final sAngle = i * (2 * math.pi / stamenCount);
+    const antherCount = 14;
+    for (int j = 0; j < antherCount; j++) {
+      final theta = (j * 2 * math.pi) / antherCount;
       final start = Offset(
-        bloomCenterX + (bloomRadius * 0.18 * math.cos(sAngle)),
-        bloomCenterY + (bloomRadius * 0.18 * math.sin(sAngle)),
+        bloomCenter.dx + math.cos(theta) * (radius * 0.18),
+        bloomCenter.dy + math.sin(theta) * (radius * 0.18),
       );
       final end = Offset(
-        bloomCenterX + (bloomRadius * 0.36 * math.cos(sAngle)),
-        bloomCenterY + (bloomRadius * 0.36 * math.sin(sAngle)),
+        bloomCenter.dx + math.cos(theta) * (radius * 0.28),
+        bloomCenter.dy + math.sin(theta) * (radius * 0.28),
       );
-      canvas.drawLine(start, end, stamenFilament);
-      canvas.drawCircle(end, (size.width * 0.024).clamp(1.4, 2.4), pollenPaint);
+      canvas.drawLine(start, end, filamentPaint);
+      canvas.drawCircle(end, size.width * 0.018, antherPaint);
     }
 
-    // ==========================================
-    // 5. GREEN SEED POD (CAPSULE) WITH STAR CAP
-    // ==========================================
-    final podCenter = Offset(bloomCenterX, bloomCenterY);
-    final podRadius = bloomRadius * 0.24;
-
+    // Central green seed pod (soft muted green with botanical star cap)
     final podPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.3),
-        radius: 0.9,
-        colors: [podHighlight, podGreen],
-      ).createShader(Rect.fromCircle(center: podCenter, radius: podRadius))
+      ..color = const Color(0xFF6E8E6A)
       ..style = PaintingStyle.fill;
+    canvas.drawCircle(bloomCenter, radius * 0.16, podPaint);
 
-    canvas.drawCircle(podCenter, podRadius, podPaint);
-
-    final capLinePaint = Paint()
-      ..color = const Color(0xFF2C4328)
+    // Star-spoked disc atop the poppy pod
+    final capPaint = Paint()
+      ..color = const Color(0xFF486345)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    for (int i = 0; i < 6; i++) {
-      final cAngle = i * (math.pi / 3.0);
-      final ray = Offset(
-        podCenter.dx + (podRadius * 0.85 * math.cos(cAngle)),
-        podCenter.dy + (podRadius * 0.85 * math.sin(cAngle)),
+    for (int k = 0; k < 6; k++) {
+      final theta = (k * math.pi) / 6;
+      canvas.drawLine(
+        Offset(bloomCenter.dx - math.cos(theta) * (radius * 0.14), bloomCenter.dy - math.sin(theta) * (radius * 0.14)),
+        Offset(bloomCenter.dx + math.cos(theta) * (radius * 0.14), bloomCenter.dy + math.sin(theta) * (radius * 0.14)),
+        capPaint,
       );
-      canvas.drawLine(podCenter, ray, capLinePaint);
     }
   }
 

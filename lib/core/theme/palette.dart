@@ -22,6 +22,8 @@ class FloralPalette {
   static const Color lavenderDark = Color(0xFF5A447E);
   static const Color buttercupYellow = Color(0xFFF7DC8B);
   static const Color buttercupDark = Color(0xFF7A5C14);
+  static const Color buttercupGold = Color(0xFFC68A00); // Deeper buttercup gold for stars (contrasts cleanly on white)
+  static const Color unratedText = Color(0xFF756A70); // High readability unrated caption
   static const Color warmCharcoal = Color(0xFF4A3F44); // Body text
   static const Color mutedCharcoal = Color(0xFF7A6F74); // Subtitle / secondary text
 

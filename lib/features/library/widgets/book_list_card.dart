@@ -44,17 +44,18 @@ class BookListCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
+          hoverColor: FloralPalette.blushPink.withValues(alpha: 0.12),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -98,7 +99,7 @@ class BookListCard extends StatelessWidget {
                             const Icon(
                               Icons.star_rounded,
                               size: 17,
-                              color: Color(0xFFE5A922),
+                              color: FloralPalette.buttercupGold, // Deeper buttercup gold for contrast on white
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -106,6 +107,13 @@ class BookListCard extends StatelessWidget {
                               style: JournalTypography.bodySmall(
                                 color: FloralPalette.warmCharcoal,
                               ).copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Unrated',
+                              style: JournalTypography.bodySmall(
+                                color: FloralPalette.unratedText, // #756A70
+                              ).copyWith(fontSize: 11),
                             ),
                           ],
                         ],
@@ -165,7 +173,7 @@ class BookListCard extends StatelessWidget {
                       if (book.quotes.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          '“${book.quotes.first.quote}”',
+                          '"${book.quotes.first.quote}"',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: JournalTypography.marginNote(

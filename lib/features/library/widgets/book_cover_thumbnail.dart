@@ -92,11 +92,15 @@ class BookCoverThumbnail extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Simulated embossed top line
-          Container(
-            height: 1.5,
-            width: safeWidth * 0.7,
-            color: accentColor.withValues(alpha: 0.4),
+          // Top rule: Stops well before top-right corner to never run behind status pill
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              margin: const EdgeInsets.only(left: 6),
+              height: 1.5,
+              width: (safeWidth * 0.32).clamp(16.0, 42.0),
+              color: accentColor.withValues(alpha: 0.4),
+            ),
           ),
 
           // Mini floral motif in center
@@ -123,7 +127,7 @@ class BookCoverThumbnail extends ConsumerWidget {
           // Simulated embossed bottom line
           Container(
             height: 1.5,
-            width: safeWidth * 0.7,
+            width: safeWidth * 0.6,
             color: accentColor.withValues(alpha: 0.4),
           ),
         ],

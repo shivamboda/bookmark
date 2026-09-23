@@ -43,17 +43,18 @@ class BookGridItem extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
+          hoverColor: FloralPalette.blushPink.withValues(alpha: 0.12),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -142,7 +143,7 @@ class BookGridItem extends StatelessWidget {
                       const Icon(
                         Icons.star_rounded,
                         size: 15,
-                        color: Color(0xFFE5A922), // Buttercup gold
+                        color: FloralPalette.buttercupGold, // Deeper buttercup gold, visible on white
                       ),
                       const SizedBox(width: 3),
                       Text(
@@ -158,7 +159,7 @@ class BookGridItem extends StatelessWidget {
                       Text(
                         'Unrated',
                         style: JournalTypography.bodySmall(
-                          color: FloralPalette.mutedCharcoal.withValues(alpha: 0.6),
+                          color: FloralPalette.unratedText, // #756A70
                         ).copyWith(fontSize: 11),
                       ),
                     ],
