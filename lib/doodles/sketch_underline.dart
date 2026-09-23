@@ -31,6 +31,9 @@ class HandDrawnUnderline extends StatelessWidget {
   }
 }
 
+/// Alias for HandDrawnUnderline
+typedef SketchUnderline = HandDrawnUnderline;
+
 class _UnderlinePainter extends CustomPainter {
   final Color color;
   final double strokeWidth;

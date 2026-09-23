@@ -1,0 +1,174 @@
+﻿import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/palette.dart';
+import '../../../models/book.dart';
+import 'book_cover_thumbnail.dart';
+
+/// Grid view card displaying a book cover with botanical styling,
+/// palette status pill, rating, and Fraunces title.
+class BookGridItem extends StatelessWidget {
+  final Book book;
+  final VoidCallback? onTap;
+
+  const BookGridItem({
+    super.key,
+    required this.book,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color badgeBg;
+    Color badgeText;
+    Color badgeBorder;
+
+    switch (book.status) {
+      case ReadingStatus.wantToRead:
+        badgeBg = FloralPalette.lavenderMist.withValues(alpha: 0.35);
+        badgeText = FloralPalette.lavenderDark;
+        badgeBorder = FloralPalette.lavenderDark.withValues(alpha: 0.35);
+      case ReadingStatus.reading:
+        badgeBg = FloralPalette.sageGreen.withValues(alpha: 0.35);
+        badgeText = FloralPalette.sageGreenDark;
+        badgeBorder = FloralPalette.sageGreenDark.withValues(alpha: 0.35);
+      case ReadingStatus.finished:
+        badgeBg = FloralPalette.blushPink.withValues(alpha: 0.45);
+        badgeText = FloralPalette.deepRose;
+        badgeBorder = FloralPalette.deepRose.withValues(alpha: 0.35);
+      case ReadingStatus.paused:
+        badgeBg = FloralPalette.buttercupYellow.withValues(alpha: 0.40);
+        badgeText = FloralPalette.buttercupDark;
+        badgeBorder = FloralPalette.buttercupDark.withValues(alpha: 0.35);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: FloralPalette.softIvory,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Book Cover with status badge overlay
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final w = constraints.maxWidth;
+                      final h = constraints.maxHeight;
+
+                      return Stack(
+                        children: [
+                          Center(
+                            child: BookCoverThumbnail(
+                              book: book,
+                              width: w,
+                              height: h,
+                              borderRadius: 8,
+                            ),
+                          ),
+                          // Floating Status Pill at top-right
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: badgeBorder, width: 0.8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                book.status.label,
+                                style: JournalTypography.bodySmall(color: badgeText).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Title in Fraunces (handling long titles)
+                Text(
+                  book.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.headingSmall(
+                    color: FloralPalette.warmCharcoal,
+                  ).copyWith(fontSize: 14, height: 1.2),
+                ),
+
+                const SizedBox(height: 2),
+
+                // Author in Lora
+                Text(
+                  book.authorDisplay,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.subheading(
+                    color: FloralPalette.mutedCharcoal,
+                  ).copyWith(fontSize: 12),
+                ),
+
+                const SizedBox(height: 6),
+
+                // Rating (if rated)
+                Row(
+                  children: [
+                    if (book.rating > 0) ...[
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 15,
+                        color: Color(0xFFE5A922), // Buttercup gold
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        book.rating.toStringAsFixed(1),
+                        style: JournalTypography.bodySmall(
+                          color: FloralPalette.warmCharcoal,
+                        ).copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ] else ...[
+                      Text(
+                        'Unrated',
+                        style: JournalTypography.bodySmall(
+                          color: FloralPalette.mutedCharcoal.withValues(alpha: 0.6),
+                        ).copyWith(fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

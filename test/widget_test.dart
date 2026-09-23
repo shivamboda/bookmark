@@ -1,10 +1,12 @@
 ﻿import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bookmark/main.dart';
 import 'package:bookmark/models/book.dart';
 import 'package:bookmark/services/storage_service.dart';
 import 'package:bookmark/core/state/providers.dart';
+import 'package:bookmark/features/library/widgets/library_empty_state.dart';
 
 class InMemoryStorageService implements StorageService {
   final Map<String, Book> _books = {};
@@ -58,7 +60,7 @@ class InMemoryStorageService implements StorageService {
 }
 
 void main() {
-  testWidgets('Bookmark initial smoke test with in-memory storage', (WidgetTester tester) async {
+  testWidgets('Library Screen: list view, book details, toggle to grid, and bottom nav', (WidgetTester tester) async {
     final mockStorage = InMemoryStorageService();
     await mockStorage.saveBook(
       Book(
@@ -81,12 +83,55 @@ void main() {
       ),
     );
 
-    // Initial pump and settle
     await tester.pumpAndSettle();
 
-    // Verify app title appears
-    expect(find.text('Bookmark'), findsOneWidget);
-    // Verify book from storage appears
-    expect(find.text('The Seven Husbands of Evelyn Hugo'), findsOneWidget);
+    // 1. Verify Header and Nav both have "Library"
+    expect(find.text('Library'), findsNWidgets(2));
+    expect(find.text('BOOKMARK • READING JOURNAL'), findsOneWidget);
+
+    // 2. Verify Book card in List view (matches both card title and cover placeholder)
+    expect(find.byKey(const ValueKey('library_list_view')), findsOneWidget);
+    expect(find.text('The Seven Husbands of Evelyn Hugo'), findsWidgets);
+    expect(find.text('Taylor Jenkins Reid'), findsOneWidget);
+    expect(find.text('Finished'), findsWidgets); // Status badge and filter chip
+
+    // 3. Verify Bottom Navigation Tabs
+    expect(find.text('Wishlist'), findsOneWidget);
+    expect(find.text('Stats'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+
+    // 4. Test List / Grid toggle
+    final toggleBtn = find.byKey(const ValueKey('view_mode_toggle_btn'));
+    expect(toggleBtn, findsOneWidget);
+    await tester.tap(toggleBtn);
+    await tester.pumpAndSettle();
+
+    // Verify Grid view is now rendered
+    expect(find.byKey(const ValueKey('library_grid_view')), findsOneWidget);
+    expect(find.text('The Seven Husbands of Evelyn Hugo'), findsWidgets);
+
+    // Toggle back to List view
+    await tester.tap(toggleBtn);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('library_list_view')), findsOneWidget);
+  });
+
+  testWidgets('Library Screen: empty shelf renders poetic empty state with poppy & book', (WidgetTester tester) async {
+    final mockStorage = InMemoryStorageService();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify empty state message
+    expect(find.byType(LibraryEmptyState), findsOneWidget);
+    expect(find.text('Your shelf is waiting for its first story'), findsOneWidget);
   });
 }
