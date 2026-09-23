@@ -54,7 +54,7 @@ class DoodleGalleryScreen extends StatelessWidget {
                               const Icon(
                                 Icons.arrow_back_rounded,
                                 size: 16,
-                                color: FloralPalette.rosePetal,
+                                color: FloralPalette.deepRose,
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -115,9 +115,9 @@ class DoodleGalleryScreen extends StatelessWidget {
                                 size: 120,
                                 showStem: true,
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Text(
-                                'Botanical Field Sketch (curving stem, leaf vein & side bud)',
+                                'Botanical Field Sketch (curving stem, leaf vein & dedicated side bud stalk)',
                                 textAlign: TextAlign.center,
                                 style: JournalTypography.marginNote(color: FloralPalette.mutedCharcoal),
                               ),
@@ -129,15 +129,16 @@ class DoodleGalleryScreen extends StatelessWidget {
                         const Divider(color: Color(0xFFF4E5E1), height: 1),
                         const SizedBox(height: 18),
 
-                        // Poppy Bloom Variants (Compact bloom for badges, buttons & stars)
+                        // Poppy Bloom Variants (Wrap prevents overflow and keeps generous spacing)
                         Text(
                           'Bloom Variants & Sizes:',
                           style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 14,
+                          runSpacing: 18,
+                          alignment: WrapAlignment.spaceAround,
                           children: [
                             _buildDoodleItem(
                               label: 'Large Bloom (64px)',
@@ -174,7 +175,7 @@ class DoodleGalleryScreen extends StatelessWidget {
                         // Row 1: Sweet Daisy
                         _buildFlowerRow(
                           flowerName: 'Sweet Daisy',
-                          usage: 'Wishlist tab, cheerful marks & chapter dividers',
+                          usage: 'Wishlist tab, cheerful marks & chapter dividers (enhanced for white backgrounds)',
                           flower1: const DaisyDoodle(size: 64, showStem: true),
                           flower2: const DaisyDoodle(size: 44, showStem: false),
                         ),
@@ -274,17 +275,18 @@ class DoodleGalleryScreen extends StatelessWidget {
 
                   const SizedBox(height: 32),
 
-                  // Bottom Action Button to Return
+                  // Bottom Action Button to Return (Using deepRose for 4.5:1 contrast)
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: onBackToJournal,
-                      icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                      icon: const Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.white),
                       label: const Text('Looks Good! Return to Journal'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: FloralPalette.rosePetal,
+                        backgroundColor: FloralPalette.deepRose,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        elevation: 0,
                       ),
                     ),
                   ),
@@ -337,9 +339,14 @@ class DoodleGalleryScreen extends StatelessWidget {
     required Widget child,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        child,
-        const SizedBox(height: 6),
+        Container(
+          height: 70,
+          alignment: Alignment.center,
+          child: child,
+        ),
+        const SizedBox(height: 8),
         Text(
           label,
           style: JournalTypography.marginNote(color: FloralPalette.mutedCharcoal),

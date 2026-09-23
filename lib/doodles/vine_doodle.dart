@@ -3,8 +3,8 @@ import '../core/theme/palette.dart';
 
 /// A handcrafted botanical vine border or horizontal flourish drawn via CustomPainter.
 ///
-/// Features a gentle organic curving stem, alternating sage green leaves,
-/// and delicate curlicue tendrils for dividing sections or framing cards.
+/// Features a gentle organic curving stem, alternating sage green leaves connected
+/// with delicate tiny stems (petioles), and winding tendrils for dividing sections or framing cards.
 class VineBorderDoodle extends StatelessWidget {
   final double width;
   final double height;
@@ -46,17 +46,17 @@ class _VineBorderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final stemPaint = Paint()
-      ..color = stemColor.withValues(alpha: 0.8)
+      ..color = stemColor.withValues(alpha: 0.85)
       ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final leafFill = Paint()
-      ..color = leafColor.withValues(alpha: 0.85)
+      ..color = leafColor.withValues(alpha: 0.88)
       ..style = PaintingStyle.fill;
 
     final leafStroke = Paint()
-      ..color = stemColor.withValues(alpha: 0.7)
+      ..color = stemColor.withValues(alpha: 0.75)
       ..strokeWidth = 0.9
       ..style = PaintingStyle.stroke;
 
@@ -71,7 +71,7 @@ class _VineBorderPainter extends CustomPainter {
       final startX = i * waveWidth;
       final midX = startX + waveWidth * 0.5;
       final endX = startX + waveWidth;
-      final yOffset = (i % 2 == 0 ? -1 : 1) * (size.height * 0.28);
+      final yOffset = (i % 2 == 0 ? -1 : 1) * (size.height * 0.26);
 
       vinePath.quadraticBezierTo(
         midX, size.height * 0.5 + yOffset,
@@ -80,26 +80,34 @@ class _VineBorderPainter extends CustomPainter {
     }
     canvas.drawPath(vinePath, stemPaint);
 
-    // Leaves placed along the crests and valleys
+    // Leaves attached with tiny stems (petioles) to the vine
     for (int i = 0; i < waves; i++) {
       final midX = i * waveWidth + waveWidth * 0.5;
       final isUp = i % 2 == 0;
-      final leafY = size.height * 0.5 + (isUp ? -size.height * 0.24 : size.height * 0.24);
+      final vineY = size.height * 0.5 + (isUp ? -size.height * 0.26 : size.height * 0.26);
+      final petioleEndY = vineY + (isUp ? -5.0 : 5.0);
+
+      // Draw tiny petiole connecting vine to leaf
+      canvas.drawLine(
+        Offset(midX, vineY),
+        Offset(midX + 2, petioleEndY),
+        stemPaint..strokeWidth = 1.1,
+      );
 
       canvas.save();
-      canvas.translate(midX, leafY);
-      canvas.rotate(isUp ? -0.4 : 0.4);
+      canvas.translate(midX + 2, petioleEndY);
+      canvas.rotate(isUp ? -0.42 : 0.42);
 
       final leaf = Path();
       leaf.moveTo(0, 0);
       leaf.cubicTo(
-        -5, isUp ? -10 : 10,
-        14, isUp ? -14 : 14,
-        18, 0,
+        -4, isUp ? -8 : 8,
+        13, isUp ? -13 : 13,
+        17, 0,
       );
       leaf.cubicTo(
-        14, isUp ? 8 : -8,
-        5, isUp ? 4 : -4,
+        13, isUp ? 7 : -7,
+        4, isUp ? 3 : -3,
         0, 0,
       );
       leaf.close();

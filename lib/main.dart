@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/state/providers.dart';
 import 'core/theme/app_theme.dart';
@@ -66,7 +67,7 @@ class _MainContainerScreenState extends State<MainContainerScreen> {
   }
 }
 
-/// Botanical Reading Journal Screen with Live Library Data & Doodle Preview Link
+/// Botanical Reading Journal Screen with Live Library Data & Debug Doodle Preview Link
 class JournalCoverScreen extends ConsumerWidget {
   final VoidCallback onOpenDoodleGallery;
 
@@ -90,7 +91,7 @@ class JournalCoverScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Navigation Bar with Doodle Sketchbook button
+                  // Top Navigation Bar (Doodle Sketchbook chip is debug-only)
                   Row(
                     children: [
                       Expanded(
@@ -104,35 +105,37 @@ class JournalCoverScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: onOpenDoodleGallery,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: FloralPalette.blushPink.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: FloralPalette.rosePetal.withValues(alpha: 0.5),
-                              width: 1.0,
+                      if (kDebugMode) ...[
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: onOpenDoodleGallery,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: FloralPalette.blushPink.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: FloralPalette.rosePetal.withValues(alpha: 0.5),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const PoppyDoodle(size: 16, showStem: false),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Doodle Art',
+                                  style: JournalTypography.bodySmall(
+                                    color: FloralPalette.warmCharcoal,
+                                  ).copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const PoppyDoodle(size: 16, showStem: false),
-                              const SizedBox(width: 5),
-                              Text(
-                                'Doodle Art',
-                                style: JournalTypography.bodySmall(
-                                  color: FloralPalette.warmCharcoal,
-                                ).copyWith(fontWeight: FontWeight.w700),
-                              ),
-                            ],
-                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
 
@@ -218,7 +221,7 @@ class JournalCoverScreen extends ConsumerWidget {
                             const Icon(
                               Icons.auto_stories_outlined,
                               size: 18,
-                              color: FloralPalette.rosePetal,
+                              color: FloralPalette.deepRose,
                             ),
                           ],
                         ),
@@ -242,7 +245,7 @@ class JournalCoverScreen extends ConsumerWidget {
                           child: Text(
                             '— for you, with love ♡',
                             style: JournalTypography.handwriting(
-                              color: FloralPalette.rosePetal,
+                              color: FloralPalette.deepRose,
                             ),
                           ),
                         ),
@@ -252,7 +255,7 @@ class JournalCoverScreen extends ConsumerWidget {
 
                   const SizedBox(height: 32),
 
-                  // Section Header: Seeded Library from Hive CE
+                  // Section Header: Seeded Library from Hive CE (Debug note hidden in release)
                   Row(
                     children: [
                       Text(
@@ -261,15 +264,17 @@ class JournalCoverScreen extends ConsumerWidget {
                           color: FloralPalette.warmCharcoal,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '• local database',
-                          style: JournalTypography.marginNote(
-                            color: FloralPalette.deepForestGreen,
+                      if (kDebugMode) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '• local database',
+                            style: JournalTypography.marginNote(
+                              color: FloralPalette.deepForestGreen,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -334,16 +339,29 @@ class JournalCoverScreen extends ConsumerWidget {
   }
 
   Widget _buildBookCard(BuildContext context, WidgetRef ref, Book book) {
-    Color statusColor;
+    // Recolor status pills strictly into floral palette:
+    // Want to Read = Lavender, Reading = Sage, Finished = Blush, Paused = Buttercup
+    Color badgeBg;
+    Color badgeText;
+    Color badgeBorder;
+
     switch (book.status) {
-      case ReadingStatus.reading:
-        statusColor = const Color(0xFFD97724);
-      case ReadingStatus.finished:
-        statusColor = FloralPalette.deepForestGreen;
       case ReadingStatus.wantToRead:
-        statusColor = const Color(0xFF7C5E9B);
+        badgeBg = FloralPalette.lavenderMist.withValues(alpha: 0.35);
+        badgeText = FloralPalette.lavenderDark;
+        badgeBorder = FloralPalette.lavenderDark.withValues(alpha: 0.35);
+      case ReadingStatus.reading:
+        badgeBg = FloralPalette.sageGreen.withValues(alpha: 0.35);
+        badgeText = FloralPalette.sageGreenDark;
+        badgeBorder = FloralPalette.sageGreenDark.withValues(alpha: 0.35);
+      case ReadingStatus.finished:
+        badgeBg = FloralPalette.blushPink.withValues(alpha: 0.45);
+        badgeText = FloralPalette.deepRose;
+        badgeBorder = FloralPalette.deepRose.withValues(alpha: 0.35);
       case ReadingStatus.paused:
-        statusColor = FloralPalette.mutedCharcoal;
+        badgeBg = FloralPalette.buttercupYellow.withValues(alpha: 0.40);
+        badgeText = FloralPalette.buttercupDark;
+        badgeBorder = FloralPalette.buttercupDark.withValues(alpha: 0.35);
     }
 
     return Container(
@@ -390,16 +408,16 @@ class JournalCoverScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.14),
+                  color: badgeBg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: statusColor.withValues(alpha: 0.4),
-                    width: 0.8,
+                    color: badgeBorder,
+                    width: 0.9,
                   ),
                 ),
                 child: Text(
                   book.status.label,
-                  style: JournalTypography.bodySmall(color: statusColor).copyWith(
+                  style: JournalTypography.bodySmall(color: badgeText).copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -413,10 +431,11 @@ class JournalCoverScreen extends ConsumerWidget {
           Row(
             children: [
               if (book.rating > 0) ...[
+                // Warm Buttercup Yellow star (strictly within floral palette)
                 const Icon(
                   Icons.star_rounded,
-                  size: 17,
-                  color: Color(0xFFF4B23E),
+                  size: 18,
+                  color: Color(0xFFE5A922),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -436,7 +455,7 @@ class JournalCoverScreen extends ConsumerWidget {
                         margin: const EdgeInsets.only(right: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: FloralPalette.blushPink.withValues(alpha: 0.18),
+                          color: FloralPalette.blushPink.withValues(alpha: 0.22),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -465,7 +484,7 @@ class JournalCoverScreen extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('“', style: TextStyle(fontSize: 18, color: FloralPalette.rosePetal)),
+                  const Text('“', style: TextStyle(fontSize: 18, color: FloralPalette.deepRose)),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -486,4 +505,3 @@ class JournalCoverScreen extends ConsumerWidget {
     );
   }
 }
-

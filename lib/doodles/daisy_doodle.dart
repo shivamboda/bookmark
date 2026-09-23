@@ -4,8 +4,9 @@ import '../core/theme/palette.dart';
 
 /// A handcrafted sweet botanical daisy doodle drawn via CustomPainter.
 ///
-/// Features soft radiating ivory/cream petals with delicate ink contours,
-/// a sunny golden-honey stippled center, and an optional curving stem with leaves.
+/// Features soft radiating petals with a faint blush-cream tint and defined ink contours
+/// for crisp readability on white backgrounds, a sunny golden stippled center,
+/// and an optional curving stem with leaves.
 class DaisyDoodle extends StatelessWidget {
   final double size;
   final bool showStem;
@@ -28,7 +29,7 @@ class DaisyDoodle extends StatelessWidget {
       child: CustomPaint(
         painter: _DaisyPainter(
           showStem: showStem,
-          petalColor: petalColor ?? Colors.white,
+          petalColor: petalColor ?? const Color(0xFFFFF2F5), // Delicate blush-cream tint
           centerColor: centerColor ?? FloralPalette.buttercupYellow,
         ),
       ),
@@ -58,7 +59,7 @@ class _DaisyPainter extends CustomPainter {
     // Stem & Leaf
     if (showStem) {
       final stemPaint = Paint()
-        ..color = FloralPalette.deepForestGreen.withValues(alpha: 0.85)
+        ..color = FloralPalette.deepForestGreen
         ..strokeWidth = math.max(1.8, size.width * 0.03)
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
@@ -71,37 +72,41 @@ class _DaisyPainter extends CustomPainter {
       );
       canvas.drawPath(stemPath, stemPaint);
 
-      // Cute small daisy leaf
+      // Daisy leaf attached to stem
+      final leafStemX = center.dx + size.width * 0.04;
+      final leafStemY = size.height * 0.68;
+
       final leafPaint = Paint()
-        ..color = FloralPalette.sageGreen.withValues(alpha: 0.8)
+        ..color = FloralPalette.sageGreen.withValues(alpha: 0.85)
         ..style = PaintingStyle.fill;
       final leafStroke = Paint()
-        ..color = FloralPalette.deepForestGreen.withValues(alpha: 0.8)
+        ..color = FloralPalette.deepForestGreen
         ..strokeWidth = 1.0
         ..style = PaintingStyle.stroke;
 
       final leafPath = Path();
-      leafPath.moveTo(center.dx + size.width * 0.04, size.height * 0.68);
+      leafPath.moveTo(leafStemX, leafStemY);
       leafPath.quadraticBezierTo(
-        center.dx + size.width * 0.32, size.height * 0.62,
-        center.dx + size.width * 0.36, size.height * 0.74,
+        leafStemX + size.width * 0.28, leafStemY - size.height * 0.06,
+        leafStemX + size.width * 0.34, leafStemY + size.height * 0.06,
       );
       leafPath.quadraticBezierTo(
-        center.dx + size.width * 0.18, size.height * 0.76,
-        center.dx + size.width * 0.02, size.height * 0.72,
+        leafStemX + size.width * 0.16, leafStemY + size.height * 0.08,
+        leafStemX, leafStemY,
       );
       canvas.drawPath(leafPath, leafPaint);
       canvas.drawPath(leafPath, leafStroke);
     }
 
-    // 12 Radiating elongated petals
+    // 12 Radiating elongated petals with faint blush-cream tint and defined contour
     final petalFill = Paint()
-      ..color = petalColor.withValues(alpha: 0.92)
+      ..color = petalColor
       ..style = PaintingStyle.fill;
 
+    // Stronger soft charcoal-plum outline for clear separation on white cards
     final petalOutline = Paint()
-      ..color = const Color(0xFFD8C2C9).withValues(alpha: 0.85)
-      ..strokeWidth = math.max(1.1, size.width * 0.018)
+      ..color = const Color(0xFFA69098)
+      ..strokeWidth = math.max(1.2, size.width * 0.02)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -138,14 +143,14 @@ class _DaisyPainter extends CustomPainter {
     canvas.drawCircle(center, radius * 0.32, centerPaint);
 
     final centerOutline = Paint()
-      ..color = const Color(0xFFC49830)
+      ..color = const Color(0xFFB58A28)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius * 0.32, centerOutline);
 
     // Stipple Texture Dots
     final dotPaint = Paint()
-      ..color = const Color(0xFFA57C1E).withValues(alpha: 0.75)
+      ..color = const Color(0xFF946F1B)
       ..style = PaintingStyle.fill;
 
     for (int j = 0; j < 6; j++) {
@@ -154,7 +159,7 @@ class _DaisyPainter extends CustomPainter {
         center.dx + math.cos(theta) * (radius * 0.16),
         center.dy + math.sin(theta) * (radius * 0.16),
       );
-      canvas.drawCircle(offset, size.width * 0.016, dotPaint);
+      canvas.drawCircle(offset, size.width * 0.018, dotPaint);
     }
   }
 
