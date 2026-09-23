@@ -5,16 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
+import '../../../doodles/bookmark_ribbon_doodle.dart';
 import '../../../doodles/poppy_doodle.dart';
 import '../../../doodles/sketch_underline.dart';
 import '../../../models/book.dart';
+import '../../../services/image_service.dart';
+import '../widgets/book_cover_thumbnail.dart';
 
-/// Step 4c-1: Handcrafted Botanical Add / Edit Book Form Screen.
+/// Step 4c: Handcrafted Botanical Add / Edit Book Form Screen.
 ///
 /// Features:
 /// - Reusable for both Add (new book) and Edit (existing book) modes
 /// - Supports prefilled drafts for future Book Search (Phase 6)
-/// - Grouped cards: Title/Authors, Status, Dates, Genres, Page Count, Notes/Synopsis
+/// - Cover Image Upload: Photo picker from device, automatic 600px downscaling,
+///   80% JPEG compression (30KB-70KB), with Change and Remove actions
+/// - Half-step rating input (0 to 5 in 0.5 increments) with tap-half detection & clear button
+/// - Favorite Quotes editor: Add, edit, and delete quotes with optional page numbers
+/// - Grouped cards: Cover, Title/Authors, Status, Dates, Rating, Genres, Page Count, Notes/Synopsis, Quotes
 /// - Custom botanical styling with soft pink shadows and latte hairline dividers
 /// - iOS Safari safe: 16px+ inputs (no zoom on focus), keyboard avoidance, >=44px tap targets
 /// - Unsaved changes confirmation dialog on back/swipe
@@ -51,7 +58,11 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   late ReadingStatus _status;
   DateTime? _startDate;
   DateTime? _finishDate;
+  double? _rating;
+  Uint8List? _coverBytes;
+  String? _existingCoverUrl;
   final Set<String> _selectedGenres = {};
+  late List<BookQuote> _quotes;
   bool _isSaving = false;
   String? _dateValidationError;
 
@@ -77,10 +88,13 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   late final ReadingStatus _initialStatus;
   late final DateTime? _initialStartDate;
   late final DateTime? _initialFinishDate;
+  late final double? _initialRating;
+  late final Uint8List? _initialCoverBytes;
   late final Set<String> _initialGenres;
   late final String _initialPageCount;
   late final String _initialDescription;
   late final String _initialNotes;
+  late final int _initialQuotesCount;
 
   @override
   void initState() {
@@ -105,6 +119,11 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
     _startDate = source?.startDate;
     _finishDate = source?.finishDate;
+    _rating = source?.rating;
+    _coverBytes = source?.coverBytes;
+    _existingCoverUrl = source?.coverUrl;
+
+    _quotes = source != null ? List<BookQuote>.from(source.quotes) : [];
 
     if (source != null) {
       _selectedGenres.addAll(source.genres);
@@ -126,10 +145,13 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     _initialStatus = _status;
     _initialStartDate = _startDate;
     _initialFinishDate = _finishDate;
+    _initialRating = _rating;
+    _initialCoverBytes = _coverBytes;
     _initialGenres = Set.from(_selectedGenres);
     _initialPageCount = _pageCountController.text;
     _initialDescription = _descriptionController.text;
     _initialNotes = _notesController.text;
+    _initialQuotesCount = _quotes.length;
   }
 
   @override
@@ -149,9 +171,12 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     if (_status != _initialStatus) return true;
     if (_startDate != _initialStartDate) return true;
     if (_finishDate != _initialFinishDate) return true;
+    if (_rating != _initialRating) return true;
+    if (_coverBytes != _initialCoverBytes) return true;
     if (_pageCountController.text != _initialPageCount) return true;
     if (_descriptionController.text != _initialDescription) return true;
     if (_notesController.text != _initialNotes) return true;
+    if (_quotes.length != _initialQuotesCount) return true;
     if (!_areSetsEqual(_selectedGenres, _initialGenres)) return true;
     return false;
   }
@@ -170,20 +195,47 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         .toList();
   }
 
+  /// Pick cover photo from device with automatic 600px downscaling & 80% JPEG compression
+  Future<void> _pickCoverImage() async {
+    try {
+      final processedBytes = await ImageService.pickAndProcessCoverImage();
+      if (processedBytes != null && mounted) {
+        setState(() {
+          _coverBytes = processedBytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unable to process photo: $e'),
+            backgroundColor: Colors.red.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Remove custom cover photo (reverts to poppy placeholder)
+  void _removeCoverImage() {
+    setState(() {
+      _coverBytes = null;
+      _existingCoverUrl = null;
+    });
+  }
+
   /// Updates status with smart date defaulting
   void _onStatusChanged(ReadingStatus newStatus) {
     setState(() {
       _status = newStatus;
       _dateValidationError = null;
 
-      // Smart date rules requested by user
       if (newStatus == ReadingStatus.reading && _startDate == null) {
         _startDate = DateTime.now();
       } else if (newStatus == ReadingStatus.finished) {
         _startDate ??= DateTime.now();
         _finishDate ??= DateTime.now();
-      } else if (newStatus == ReadingStatus.wantToRead) {
-        // Dates hidden for Want to Read
       }
 
       _validateDates();
@@ -294,6 +346,120 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     if (newGenre != null && newGenre.isNotEmpty) {
       setState(() {
         _selectedGenres.add(newGenre);
+      });
+    }
+  }
+
+  /// Add / Edit favorite quote modal
+  Future<void> _showQuoteDialog({BookQuote? existingQuote, int? editIndex}) async {
+    final quoteController = TextEditingController(text: existingQuote?.quote ?? '');
+    final pageController = TextEditingController(
+      text: existingQuote?.pageNumber != null ? existingQuote!.pageNumber.toString() : '',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    final savedQuote = await showDialog<BookQuote>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Text(
+            existingQuote != null ? 'Edit Favorite Quote' : 'Add Favorite Quote',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quote Text *',
+                    style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    key: const ValueKey('quote_text_input'),
+                    controller: quoteController,
+                    maxLines: 4,
+                    autofocus: true,
+                    style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+                    decoration: const InputDecoration(
+                      hintText: '“The words that took your breath away...”',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter the quote text';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Page Number (Optional)',
+                    style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    key: const ValueKey('quote_page_input'),
+                    controller: pageController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. 184',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  final pageNum = int.tryParse(pageController.text.trim());
+                  final quoteObj = BookQuote(
+                    id: existingQuote?.id ?? 'quote-${DateTime.now().millisecondsSinceEpoch}',
+                    quote: quoteController.text.trim(),
+                    pageNumber: pageNum,
+                    createdAt: existingQuote?.createdAt ?? DateTime.now(),
+                  );
+                  Navigator.of(context).pop(quoteObj);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Save Quote'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (savedQuote != null) {
+      setState(() {
+        if (editIndex != null) {
+          _quotes[editIndex] = savedQuote;
+        } else {
+          _quotes.add(savedQuote);
+        }
       });
     }
   }
@@ -421,7 +587,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   Future<void> _submitForm() async {
     if (_isSaving) return;
 
-    // Validate form inputs
     if (!_formKey.currentState!.validate()) return;
     if (!_validateDates()) return;
 
@@ -434,7 +599,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     final allBooks = ref.read(booksProvider).value ?? [];
     final isDuplicate = allBooks.any((b) {
       if (widget.bookToEdit != null && b.id == widget.bookToEdit!.id) {
-        return false; // Skip current book in edit mode
+        return false;
       }
       final titleMatch = b.title.trim().toLowerCase() == trimmedTitle.toLowerCase();
       final authorMatch = b.authors.any(
@@ -493,10 +658,10 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         id: existingBook?.id ?? 'book-${DateTime.now().millisecondsSinceEpoch}',
         title: trimmedTitle,
         authors: authorsList,
-        coverUrl: existingBook?.coverUrl ?? widget.prefilledDraft?.coverUrl,
-        coverBytes: existingBook?.coverBytes ?? widget.prefilledDraft?.coverBytes,
+        coverUrl: _existingCoverUrl,
+        coverBytes: _coverBytes,
         genres: _selectedGenres.toList(),
-        rating: existingBook?.rating ?? widget.prefilledDraft?.rating,
+        rating: _rating,
         description: _descriptionController.text.trim(),
         startDate: _status == ReadingStatus.wantToRead ? null : _startDate,
         finishDate: (_status == ReadingStatus.finished || _status == ReadingStatus.paused)
@@ -504,7 +669,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             : null,
         status: _status,
         notes: _notesController.text.trim(),
-        quotes: existingBook?.quotes ?? widget.prefilledDraft?.quotes ?? const [],
+        quotes: _quotes,
         pageCount: pageCount,
         dateAdded: existingBook?.dateAdded ?? DateTime.now(),
       );
@@ -625,6 +790,11 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
                                 const SizedBox(height: 18),
 
+                                // Card 0: Cover Photo Upload & Preview
+                                _buildCoverUploadCard(),
+
+                                const SizedBox(height: 16),
+
                                 // Card 1: Title & Author(s)
                                 _buildTitleAuthorCard(),
 
@@ -641,18 +811,28 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
                                 const SizedBox(height: 16),
 
-                                // Card 4: Genres Multi-Select
+                                // Card 4: Rating Input (Half-star supported)
+                                _buildRatingCard(),
+
+                                const SizedBox(height: 16),
+
+                                // Card 5: Genres Multi-Select
                                 _buildGenresCard(),
 
                                 const SizedBox(height: 16),
 
-                                // Card 5: Page Count
+                                // Card 6: Page Count
                                 _buildPageCountCard(),
 
                                 const SizedBox(height: 16),
 
-                                // Card 6: Synopsis / Description & Notes
+                                // Card 7: Synopsis / Description & Notes
                                 _buildDescriptionAndNotesCard(),
+
+                                const SizedBox(height: 16),
+
+                                // Card 8: Favorite Quotes Editor
+                                _buildQuotesCard(),
 
                                 // In Edit Mode: Delete Action
                                 if (widget.isEditMode) ...[
@@ -736,9 +916,135 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ),
           ),
 
-          const SizedBox(width: 44), // Balances the back button
+          const SizedBox(width: 44),
         ],
       ),
+    );
+  }
+
+  /// Card 0: Cover Photo Upload with Preview & Change/Remove actions
+  Widget _buildCoverUploadCard() {
+    final bool hasCustomCover = _coverBytes != null || (_existingCoverUrl != null && _existingCoverUrl!.isNotEmpty);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Cover Preview (or poppy placeholder)
+          Container(
+            width: 80,
+            height: 120,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x224A3F44),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: _coverBytes != null
+                  ? Image.memory(
+                      _coverBytes!,
+                      fit: BoxFit.cover,
+                      width: 80,
+                      height: 120,
+                    )
+                  : (_existingCoverUrl != null && _existingCoverUrl!.isNotEmpty)
+                      ? Image.network(
+                          _existingCoverUrl!,
+                          fit: BoxFit.cover,
+                          width: 80,
+                          height: 120,
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                        )
+                      : _buildPlaceholder(),
+            ),
+          ),
+
+          const SizedBox(width: 18),
+
+          // Action Buttons: Pick Photo & Remove
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Book Cover',
+                  style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasCustomCover ? 'Custom photo attached' : 'Botanical placeholder active',
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+
+                // Upload / Change Button (Tap target >= 44px)
+                ElevatedButton.icon(
+                  key: const ValueKey('pick_cover_btn'),
+                  onPressed: _pickCoverImage,
+                  icon: const Icon(Icons.photo_library_outlined, size: 16),
+                  label: Text(hasCustomCover ? 'Change Cover' : 'Upload Cover'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FloralPalette.blushPink,
+                    foregroundColor: FloralPalette.deepRose,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    minimumSize: const Size(130, 44),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+
+                if (hasCustomCover) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    key: const ValueKey('remove_cover_btn'),
+                    onPressed: _removeCoverImage,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: FloralPalette.cocoa),
+                    label: Text(
+                      'Remove Custom Cover',
+                      style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(120, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    final title = _titleController.text.trim().isNotEmpty ? _titleController.text.trim() : 'Book';
+    final dummyBook = Book(
+      id: 'preview',
+      title: title,
+      authors: const [],
+      dateAdded: DateTime.now(),
+    );
+    return BookCoverThumbnail(
+      book: dummyBook,
+      width: 80,
+      height: 120,
+      borderRadius: 10,
     );
   }
 
@@ -765,7 +1071,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             controller: _titleController,
             textCapitalization: TextCapitalization.words,
             style: const TextStyle(
-              fontSize: 16, // Critical for iOS Safari: >=16px prevents zoom
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: FloralPalette.warmCharcoal,
             ),
@@ -778,6 +1084,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               }
               return null;
             },
+            onChanged: (_) => setState(() {}), // Refreshes placeholder cover preview
           ),
 
           const SizedBox(height: 16),
@@ -805,7 +1112,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             controller: _authorsController,
             textCapitalization: TextCapitalization.words,
             style: const TextStyle(
-              fontSize: 16, // Critical for iOS Safari
+              fontSize: 16,
               color: FloralPalette.warmCharcoal,
             ),
             decoration: const InputDecoration(
@@ -880,7 +1187,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   border = isSelected ? FloralPalette.deepRose : const Color(0xFFE2D6DC);
                 case ReadingStatus.paused:
                   bg = isSelected ? FloralPalette.latte : Colors.white;
-                  text = isSelected ? FloralPalette.espresso : FloralPalette.warmCharcoal; // 6.42:1 contrast
+                  text = isSelected ? FloralPalette.espresso : FloralPalette.warmCharcoal;
                   border = isSelected ? FloralPalette.cocoa : const Color(0xFFE2D6DC);
               }
 
@@ -985,7 +1292,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ),
           ],
 
-          // Friendly validation error message
           if (_dateValidationError != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -1061,7 +1367,123 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     );
   }
 
-  /// Card 4: Multi-Select Genres Chips + Add Custom
+  /// Card 4: Rating Input with Half-Star support (Tap targets >= 44px)
+  Widget _buildRatingCard() {
+    final double currentScore = _rating ?? 0.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Rating',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Row(
+                children: [
+                  Text(
+                    _rating != null && _rating! > 0 ? '${_rating!.toStringAsFixed(1)} / 5.0' : 'Unrated',
+                    style: JournalTypography.bodySmall(
+                      color: _rating != null && _rating! > 0 ? FloralPalette.buttercupGold : FloralPalette.unratedText,
+                    ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  if (_rating != null && _rating! > 0) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      key: const ValueKey('clear_rating_btn'),
+                      onTap: () => setState(() => _rating = null),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Text(
+                          'Clear',
+                          style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // 5-Star Row supporting half-step tap detection
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(5, (index) {
+              final starTarget = index + 1.0;
+              IconData icon;
+              Color iconColor;
+
+              if (currentScore >= starTarget) {
+                icon = Icons.star_rounded;
+                iconColor = FloralPalette.buttercupGold;
+              } else if (currentScore >= starTarget - 0.5) {
+                icon = Icons.star_half_rounded;
+                iconColor = FloralPalette.buttercupGold;
+              } else {
+                icon = Icons.star_outline_rounded;
+                iconColor = FloralPalette.latte;
+              }
+
+              return Semantics(
+                label: 'Rate ${index + 1} out of 5',
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: ValueKey('form_rating_star_${index + 1}'),
+                    borderRadius: BorderRadius.circular(12),
+                    onTapUp: (details) {
+                      // Tap left half = half step (e.g. 3.5), right half = full step (4.0)
+                      final isLeftHalf = details.localPosition.dx < 22;
+                      final double score = isLeftHalf ? (starTarget - 0.5) : starTarget;
+
+                      setState(() {
+                        if (_rating == score) {
+                          _rating = isLeftHalf ? (score - 0.5) : (score - 0.5);
+                          if (_rating != null && _rating! <= 0) _rating = null;
+                        } else {
+                          _rating = score;
+                        }
+                      });
+                    },
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          size: 32,
+                          color: iconColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card 5: Multi-Select Genres Chips + Add Custom
   Widget _buildGenresCard() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1200,7 +1622,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     );
   }
 
-  /// Card 5: Page Count (Numeric keyboard, 16px font)
+  /// Card 6: Page Count (Numeric keyboard, 16px font)
   Widget _buildPageCountCard() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1237,7 +1659,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(
-              fontSize: 16, // Critical for iOS Safari
+              fontSize: 16,
               color: FloralPalette.warmCharcoal,
             ),
             decoration: const InputDecoration(
@@ -1250,7 +1672,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     );
   }
 
-  /// Card 6: Description & Personal Notes
+  /// Card 7: Description & Personal Notes
   Widget _buildDescriptionAndNotesCard() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1273,7 +1695,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             controller: _descriptionController,
             maxLines: 4,
             style: const TextStyle(
-              fontSize: 16, // Critical for iOS Safari
+              fontSize: 16,
               color: FloralPalette.warmCharcoal,
               height: 1.4,
             ),
@@ -1307,12 +1729,166 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             controller: _notesController,
             maxLines: 4,
             style: const TextStyle(
-              fontSize: 16, // Critical for iOS Safari
+              fontSize: 16,
               color: FloralPalette.warmCharcoal,
               height: 1.4,
             ),
             decoration: const InputDecoration(
               hintText: 'Thoughts, marginalia, feelings while reading...',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card 8: Favorite Quotes Editor (Add / Edit / Delete)
+  Widget _buildQuotesCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Favorite Quotes',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'cherished lines',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Quotes List
+          if (_quotes.isEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: FloralPalette.kraftPaper.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.7), width: 0.8),
+              ),
+              child: Text(
+                'No quotes yet ~',
+                style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 15),
+              ),
+            ),
+          ] else ...[
+            ..._quotes.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final q = entry.value;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: FloralPalette.kraftPaper,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: FloralPalette.latte, width: 1.0),
+                  boxShadow: const [FloralPalette.cardShadow],
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Positioned(
+                      top: -14,
+                      right: 6,
+                      child: BookmarkRibbonDoodle(width: 12, height: 22),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '“${q.quote}”',
+                          style: JournalTypography.body(color: FloralPalette.cocoa).copyWith(
+                            fontStyle: FontStyle.italic,
+                            fontSize: 13.5,
+                            height: 1.4,
+                          ),
+                        ),
+                        if (q.pageNumber != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '— page ${q.pageNumber}',
+                            style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            InkWell(
+                              key: ValueKey('edit_quote_btn_$idx'),
+                              onTap: () => _showQuoteDialog(existingQuote: q, editIndex: idx),
+                              borderRadius: BorderRadius.circular(8),
+                              child: const Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(Icons.edit_outlined, size: 16, color: FloralPalette.cocoa),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              key: ValueKey('delete_quote_btn_$idx'),
+                              onTap: () {
+                                setState(() {
+                                  _quotes.removeAt(idx);
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: const Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(Icons.delete_outline_rounded, size: 16, color: FloralPalette.poppyRedDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          const SizedBox(height: 10),
+
+          // "+ Add Favorite Quote" Button (Tap target >= 44px)
+          OutlinedButton.icon(
+            key: const ValueKey('add_quote_btn'),
+            onPressed: () => _showQuoteDialog(),
+            icon: const Icon(Icons.format_quote_rounded, size: 18, color: FloralPalette.cocoa),
+            label: Text(
+              'Add Favorite Quote',
+              style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: FloralPalette.latte, width: 1.0),
+              backgroundColor: FloralPalette.kraftPaper.withValues(alpha: 0.5),
+              minimumSize: const Size(double.infinity, 44),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],

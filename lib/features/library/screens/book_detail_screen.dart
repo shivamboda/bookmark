@@ -746,7 +746,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Cherished lines you save in Step 4c will live here ~',
+                      'save the lines that made you pause and dream ~',
                       style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 14),
                     ),
                   ],

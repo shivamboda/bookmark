@@ -449,4 +449,122 @@ void main() {
     // Verify returned to Library and Emma is removed
     expect(find.text('Emma'), findsNothing);
   });
+  testWidgets('Step 4c-2: Rating tap on BookDetail updates Storage immediately and persists', (tester) async {
+    final mockStorage = InMemoryStorageService();
+    await mockStorage.init();
+
+    final testBook = Book(
+      id: 'test-rating-book',
+      title: 'Persuasion',
+      authors: ['Jane Austen'],
+      genres: ['Romance'],
+      status: ReadingStatus.finished,
+      rating: 3.0,
+      description: 'A quiet masterpiece.',
+      startDate: DateTime(2026, 1, 1),
+      finishDate: DateTime(2026, 1, 15),
+      dateAdded: DateTime(2026, 1, 1),
+      pageCount: 300,
+      notes: 'Treasured reread.',
+      quotes: [],
+    );
+    await mockStorage.saveBook(testBook);
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap on Persuasion
+    await tester.tap(find.text('Persuasion').last);
+    await tester.pumpAndSettle();
+
+    // Verify rating shows 3.0 / 5.0
+    expect(find.text('3.0 / 5.0'), findsOneWidget);
+
+    // Tap on 5th star
+    final star5 = find.byKey(const ValueKey('rating_star_5'));
+    await tester.ensureVisible(star5);
+    await tester.tap(star5);
+    await tester.pumpAndSettle();
+
+    // Rating in UI should now be 5.0
+    expect(find.text('5.0 / 5.0'), findsOneWidget);
+
+    // Storage should immediately have rating 5.0
+    final storedBook = await mockStorage.getBook('test-rating-book');
+    expect(storedBook?.rating, 5.0);
+  });
+
+  testWidgets('Step 4c-2: Favorite quotes can be added, edited, and deleted in form', (tester) async {
+    final mockStorage = InMemoryStorageService();
+    await mockStorage.init();
+
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap Add Book FAB
+    await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+    await tester.pumpAndSettle();
+
+    // Scroll to Add Quote button
+    final addQuoteBtn = find.byKey(const ValueKey('add_quote_btn'));
+    await tester.ensureVisible(addQuoteBtn);
+    await tester.tap(addQuoteBtn);
+    await tester.pumpAndSettle();
+
+    // Fill in quote dialog
+    await tester.enterText(find.byKey(const ValueKey('quote_text_input')), 'I declare after all there is no enjoyment like reading!');
+    await tester.enterText(find.byKey(const ValueKey('quote_page_input')), '42');
+    await tester.tap(find.text('Save Quote'));
+    await tester.pumpAndSettle();
+
+    // Verify quote appears on Kraft card
+    expect(find.text('“I declare after all there is no enjoyment like reading!”'), findsOneWidget);
+    expect(find.text('— page 42'), findsOneWidget);
+
+    // Edit quote
+    final editQuoteBtn = find.byKey(const ValueKey('edit_quote_btn_0'));
+    await tester.tap(editQuoteBtn);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const ValueKey('quote_page_input')), '43');
+    await tester.tap(find.text('Save Quote'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('— page 43'), findsOneWidget);
+
+    // Delete quote
+    final deleteQuoteBtn = find.byKey(const ValueKey('delete_quote_btn_0'));
+    await tester.tap(deleteQuoteBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('No quotes yet ~'), findsOneWidget);
+  });
 }

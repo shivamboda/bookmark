@@ -74,6 +74,11 @@ class HiveStorageService implements StorageService {
   Future<void> saveBook(Book book) async {
     if (!_isInitialized) await init();
     await _booksBox.put(book.id, book.toMap());
+    if (book.coverBytes != null) {
+      await _coversBox.put(book.id, book.coverBytes!);
+    } else if (_coversBox.containsKey(book.id)) {
+      await _coversBox.delete(book.id);
+    }
   }
 
   @override
