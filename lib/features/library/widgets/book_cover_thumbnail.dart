@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/providers.dart';
 import '../../../core/theme/palette.dart';
@@ -7,13 +7,15 @@ import '../../../models/book.dart';
 
 /// Renders a book cover with realistic book styling.
 ///
-/// If no image is available, displays a beautiful botanical cloth-cover
-/// placeholder with title and debossed floral motif, never a blank gray box.
+/// If no image is available, displays a beautiful botanical cloth/leather-cover
+/// placeholder rotating between Blush, Sage, Latte, and Cocoa with an embossed
+/// fully-opaque poppy motif and readable Fraunces typography.
 class BookCoverThumbnail extends ConsumerWidget {
   final Book book;
   final double width;
   final double height;
   final double borderRadius;
+  final bool enableHero;
 
   const BookCoverThumbnail({
     super.key,
@@ -21,6 +23,7 @@ class BookCoverThumbnail extends ConsumerWidget {
     this.width = 68,
     this.height = 100,
     this.borderRadius = 10,
+    this.enableHero = false,
   });
 
   @override
@@ -30,7 +33,7 @@ class BookCoverThumbnail extends ConsumerWidget {
     final safeWidth = width.isFinite && width > 0 ? width : 72.0;
     final safeHeight = height.isFinite && height > 0 ? height : 108.0;
 
-    return Container(
+    Widget coverWidget = Container(
       width: width.isFinite ? width : null,
       height: height.isFinite ? height : null,
       decoration: BoxDecoration(
@@ -73,13 +76,55 @@ class BookCoverThumbnail extends ConsumerWidget {
         ),
       ),
     );
+
+    if (enableHero) {
+      return Hero(
+        tag: 'book-cover-${book.id}',
+        child: coverWidget,
+      );
+    }
+
+    return coverWidget;
   }
 
   Widget _buildBotanicalPlaceholder(double safeWidth, double safeHeight) {
-    // Generate harmonious seed tint based on book title length
-    final isSage = book.title.length % 2 == 0;
-    final bgColor = isSage ? const Color(0xFFE4EDE1) : const Color(0xFFFCE6EC);
-    final accentColor = isSage ? FloralPalette.deepForestGreen : FloralPalette.rosePetal;
+    // Deterministic rotation among 4 botanical palettes:
+    // 0: Blush cloth, 1: Sage linen, 2: Latte parchment, 3: Cocoa leather
+    final variant = book.title.hashCode.abs() % 4;
+
+    Color bgColor;
+    Color borderColor;
+    Color ruleColor;
+    Color textColor;
+    Color poppyColor;
+
+    switch (variant) {
+      case 0: // Blush cloth
+        bgColor = const Color(0xFFFCE6EC);
+        borderColor = FloralPalette.rosePetal.withValues(alpha: 0.35);
+        ruleColor = FloralPalette.rosePetal.withValues(alpha: 0.55);
+        textColor = FloralPalette.warmCharcoal;
+        poppyColor = FloralPalette.poppyRed; // 100% opaque vibrant bloom
+      case 1: // Sage linen
+        bgColor = const Color(0xFFE4EDE1);
+        borderColor = FloralPalette.deepForestGreen.withValues(alpha: 0.35);
+        ruleColor = FloralPalette.deepForestGreen.withValues(alpha: 0.50);
+        textColor = FloralPalette.warmCharcoal;
+        poppyColor = FloralPalette.poppyRed; // 100% opaque, no green bleed
+      case 2: // Latte parchment
+        bgColor = const Color(0xFFEFE4D6);
+        borderColor = FloralPalette.latte;
+        ruleColor = FloralPalette.cocoa.withValues(alpha: 0.50);
+        textColor = FloralPalette.espresso;
+        poppyColor = FloralPalette.poppyRed; // 100% opaque
+      case 3: // Cocoa leather
+      default:
+        bgColor = FloralPalette.cocoa; // #7A5240
+        borderColor = FloralPalette.espresso;
+        ruleColor = FloralPalette.kraftPaper.withValues(alpha: 0.70); // Lighter rule lines on cocoa
+        textColor = FloralPalette.petalWhite; // Cream text for pristine readability (6.8:1 contrast)
+        poppyColor = FloralPalette.poppyRed; // Fully opaque vibrant poppy, identical on all 4 covers
+    }
 
     return Container(
       width: width.isFinite ? width : null,
@@ -87,30 +132,30 @@ class BookCoverThumbnail extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.0),
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Top rule: Stops well before top-right corner to never run behind status pill
+          // Top rule: Left-aligned and shortened to stop well before top-right status pill
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
               margin: const EdgeInsets.only(left: 6),
               height: 1.5,
               width: (safeWidth * 0.32).clamp(16.0, 42.0),
-              color: accentColor.withValues(alpha: 0.4),
+              color: ruleColor,
             ),
           ),
 
-          // Mini floral motif in center
+          // Fully opaque poppy motif in center (petals never translucent)
           PoppyDoodle(
             size: (safeWidth * 0.36).clamp(24.0, 52.0),
             showStem: false,
-            petalColor: accentColor.withValues(alpha: 0.7),
+            petalColor: poppyColor,
           ),
 
-          // Title snippet
+          // Title snippet (Fraunces feel, highly readable against all backgrounds)
           Text(
             book.title,
             maxLines: 2,
@@ -119,7 +164,7 @@ class BookCoverThumbnail extends ConsumerWidget {
             style: TextStyle(
               fontSize: safeWidth < 70 ? 9 : 11,
               fontWeight: FontWeight.w700,
-              color: FloralPalette.warmCharcoal,
+              color: textColor,
               height: 1.1,
             ),
           ),
@@ -128,7 +173,7 @@ class BookCoverThumbnail extends ConsumerWidget {
           Container(
             height: 1.5,
             width: safeWidth * 0.6,
-            color: accentColor.withValues(alpha: 0.4),
+            color: ruleColor,
           ),
         ],
       ),

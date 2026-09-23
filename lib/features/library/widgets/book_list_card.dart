@@ -43,9 +43,9 @@ class BookListCard extends StatelessWidget {
         badgeText = FloralPalette.deepRose;
         badgeBorder = FloralPalette.deepRose.withValues(alpha: 0.35);
       case ReadingStatus.paused:
-        badgeBg = FloralPalette.buttercupYellow.withValues(alpha: 0.40);
-        badgeText = FloralPalette.buttercupDark;
-        badgeBorder = FloralPalette.buttercupDark.withValues(alpha: 0.35);
+        badgeBg = FloralPalette.latte;
+        badgeText = FloralPalette.espresso; // 6.42:1 WCAG AA contrast on Latte
+        badgeBorder = FloralPalette.cocoa.withValues(alpha: 0.45);
     }
 
     return Container(
@@ -68,12 +68,13 @@ class BookListCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Book Cover
+                // Book Cover with Hero transition
                 BookCoverThumbnail(
                   book: book,
                   width: 72,
                   height: 106,
                   borderRadius: 8,
+                  enableHero: !isWishlist,
                 ),
 
                 const SizedBox(width: 14),

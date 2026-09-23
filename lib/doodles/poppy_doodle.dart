@@ -173,6 +173,12 @@ class _PoppyBotanicalPainter extends CustomPainter {
       petal.cubicTo(radius * 0.75, -radius * 1.20, radius * 0.95, -radius * 0.75, radius * 0.65, -radius * 0.35);
       petal.close();
 
+      // Solid base underlay to guarantee 100% opacity over any cover tone (no green/brown bleed)
+      final baseUnderlayPaint = Paint()
+        ..color = const Color(0xFFC7262F)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(petal, baseUnderlayPaint);
+
       // Opaque gradient fill: deeper ruby at center to radiant coral/poppy at wavy tips
       final fillPaint = Paint()
         ..shader = RadialGradient(
@@ -181,7 +187,7 @@ class _PoppyBotanicalPainter extends CustomPainter {
           colors: [
             const Color(0xFF9E1B24), // Deep crimson center
             const Color(0xFFC7262F),
-            petalColor,              // Vibrant poppy red
+            petalColor.withValues(alpha: 1.0), // 100% solid vibrant red
             const Color(0xFFEA5E55), // Soft luminous tip
           ],
           stops: const [0.0, 0.35, 0.75, 1.0],
@@ -199,7 +205,7 @@ class _PoppyBotanicalPainter extends CustomPainter {
 
       // Dark plum blotch at the petal base (signature poppy characteristic)
       final blotchPaint = Paint()
-        ..color = const Color(0xFF260D15).withValues(alpha: 0.92)
+        ..color = const Color(0xFF260D15)
         ..style = PaintingStyle.fill;
 
       final blotchPath = Path();
@@ -224,7 +230,7 @@ class _PoppyBotanicalPainter extends CustomPainter {
       innerPetal.cubicTo(radius * 0.65, -radius * 0.75, radius * 0.45, -radius * 0.3, 0, 0);
 
       final innerFill = Paint()
-        ..color = petalColor.withValues(alpha: 0.96)
+        ..color = petalColor.withValues(alpha: 1.0)
         ..style = PaintingStyle.fill;
 
       canvas.drawPath(innerPetal, innerFill);

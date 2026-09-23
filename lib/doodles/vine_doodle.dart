@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../core/theme/palette.dart';
 
 /// A handcrafted botanical vine border or horizontal flourish drawn via CustomPainter.
@@ -6,14 +6,14 @@ import '../core/theme/palette.dart';
 /// Features a gentle organic curving stem, alternating sage green leaves connected
 /// with delicate tiny stems (petioles), and winding tendrils for dividing sections or framing cards.
 class VineBorderDoodle extends StatelessWidget {
-  final double width;
+  final double? width;
   final double height;
   final Color? stemColor;
   final Color? leafColor;
 
   const VineBorderDoodle({
     super.key,
-    required this.width,
+    this.width,
     this.height = 24,
     this.stemColor,
     this.leafColor,
@@ -21,15 +21,20 @@ class VineBorderDoodle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: CustomPaint(
-        painter: _VineBorderPainter(
-          stemColor: stemColor ?? FloralPalette.deepForestGreen,
-          leafColor: leafColor ?? FloralPalette.sageGreen,
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double w = width ?? (constraints.maxWidth.isFinite ? constraints.maxWidth : 300.0);
+        return SizedBox(
+          width: w,
+          height: height,
+          child: CustomPaint(
+            painter: _VineBorderPainter(
+              stemColor: stemColor ?? FloralPalette.cocoa,
+              leafColor: leafColor ?? FloralPalette.sageGreen,
+            ),
+          ),
+        );
+      },
     );
   }
 }

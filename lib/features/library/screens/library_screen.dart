@@ -14,6 +14,8 @@ import '../widgets/book_grid_item.dart';
 import '../widgets/book_list_card.dart';
 import '../widgets/floral_bottom_nav.dart';
 import '../widgets/library_empty_state.dart';
+import '../../../doodles/bookmark_ribbon_doodle.dart';
+import 'book_detail_screen.dart';
 
 /// Filter option for books displayed in the Library screen.
 enum LibraryFilter {
@@ -94,6 +96,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Widget _buildLibraryTab(BuildContext context, AsyncValue<List<Book>> booksAsync) {
     return Stack(
       children: [
+        // Brown bookmark ribbon accent peeking gracefully from top edge
+        const Positioned(
+          top: 0,
+          right: 78,
+          child: IgnorePointer(
+            child: BookmarkRibbonDoodle(
+              width: 14,
+              height: 32,
+            ),
+          ),
+        ),
+
         // Full approved botanical poppy positioned fully inside the screen
         const Positioned(
           top: 10,
@@ -253,7 +267,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: JournalTypography.handwriting(
-                            color: FloralPalette.mutedCharcoal,
+                            color: FloralPalette.cocoa,
                           ).copyWith(fontSize: 16),
                         ),
                       ),
@@ -589,7 +603,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: JournalTypography.handwriting(
-                            color: FloralPalette.mutedCharcoal,
+                            color: FloralPalette.cocoa,
                           ).copyWith(fontSize: 16),
                         ),
                       ),
@@ -810,7 +824,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: JournalTypography.handwriting(
-                    color: FloralPalette.mutedCharcoal,
+                    color: FloralPalette.cocoa,
                   ).copyWith(fontSize: 16),
                 ),
               ),
@@ -932,14 +946,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _onBookSelected(BuildContext context, Book book) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selected "${book.title}" • Detail screen opens in Step 4b'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: FloralPalette.warmCharcoal,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BookDetailScreen(bookId: book.id),
       ),
     );
   }

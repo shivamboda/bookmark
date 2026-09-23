@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
 import '../../../doodles/daisy_doodle.dart';
@@ -10,6 +10,7 @@ import '../../../doodles/tulip_doodle.dart';
 ///
 /// Designed specifically for iPhone 16 standalone mode with correct SafeArea handling,
 /// 48px+ tap targets, and an organic blooming scale animation on the selected tab.
+/// Inactive tabs use warm soft brown (#8A6B5A, 4.8:1 contrast) for subtle warmth.
 class FloralBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
@@ -24,10 +25,10 @@ class FloralBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
+        color: Colors.white,
         border: const Border(
           top: BorderSide(
-            color: Color(0xFFF2DED9),
+            color: Color(0xFFE8D7C8), // Latte hairline divider
             width: 1.0,
           ),
         ),
@@ -52,7 +53,7 @@ class FloralBottomNav extends StatelessWidget {
                 icon: const PoppyDoodle(
                   size: 26,
                   showStem: false,
-                  petalColor: FloralPalette.rosePetal, // Blush poppy variant, not full red
+                  petalColor: FloralPalette.rosePetal, // Blush poppy variant
                 ),
               ),
               _buildNavItem(
@@ -75,9 +76,9 @@ class FloralBottomNav extends StatelessWidget {
               _buildNavItem(
                 index: 3,
                 label: 'Settings',
-                icon: const LeafSprigDoodle(
+                icon: LeafSprigDoodle(
                   size: 24,
-                  color: FloralPalette.deepForestGreen,
+                  color: currentIndex == 3 ? FloralPalette.deepRose : const Color(0xFF8A6B5A),
                 ),
               ),
             ],
@@ -93,6 +94,7 @@ class FloralBottomNav extends StatelessWidget {
     required Widget icon,
   }) {
     final isSelected = currentIndex == index;
+    const inactiveColor = Color(0xFF8A6B5A); // Soft brown (4.8:1 contrast on white)
 
     return Expanded(
       child: InkWell(
@@ -126,9 +128,7 @@ class FloralBottomNav extends StatelessWidget {
                 style: JournalTypography.bodySmall().copyWith(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? FloralPalette.deepRose
-                      : FloralPalette.mutedCharcoal.withValues(alpha: 0.8),
+                  color: isSelected ? FloralPalette.deepRose : inactiveColor,
                 ),
                 child: Text(label),
               ),

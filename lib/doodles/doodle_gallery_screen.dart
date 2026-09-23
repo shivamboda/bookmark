@@ -447,17 +447,17 @@ class DoodleGalleryScreen extends StatelessWidget {
 
           // Sample 5 & 6: Latte-and-Cocoa "Paused" Pill & Caveat Line in Cocoa
           _buildSampleCard(
-            label: 'Latte & Cocoa "Paused" Pill',
+            label: 'Latte & Espresso "Paused" Pill (6.4:1 contrast)',
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: FloralPalette.latte.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: FloralPalette.cocoa.withValues(alpha: 0.40), width: 1.0),
+                border: Border.all(color: FloralPalette.cocoa.withValues(alpha: 0.45), width: 1.0),
               ),
               child: Text(
                 'Paused',
-                style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                style: JournalTypography.bodySmall(color: FloralPalette.espresso).copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -760,8 +760,8 @@ class _BookmarkRibbonPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final ribbonStroke = Paint()
-      ..color = FloralPalette.espresso
-      ..strokeWidth = 1.0
+      ..color = FloralPalette.cocoa
+      ..strokeWidth = 0.9
       ..style = PaintingStyle.stroke;
 
     final ribbonPath = Path();
@@ -803,8 +803,8 @@ class _LeatherBookPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final leatherStroke = Paint()
-      ..color = FloralPalette.espresso
-      ..strokeWidth = 1.2
+      ..color = FloralPalette.cocoa
+      ..strokeWidth = 0.95
       ..style = PaintingStyle.stroke;
 
     final pageFill = Paint()

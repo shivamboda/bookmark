@@ -59,6 +59,9 @@ class JournalTypography {
         height: 1.4,
       );
 
+  /// Default body reading text
+  static TextStyle body({Color color = FloralPalette.warmCharcoal}) => bodyMedium(color: color);
+
   /// Main body reading text (comfortable line height for reviews & synopses)
   static TextStyle bodyLarge({Color color = FloralPalette.warmCharcoal}) =>
       GoogleFonts.lora(

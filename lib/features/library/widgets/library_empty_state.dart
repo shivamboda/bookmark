@@ -1,12 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
 import '../../../doodles/poppy_doodle.dart';
 
 /// Empty state display when no books match or the shelf is empty.
 ///
-/// Features a handcrafted open-journal vector illustration with a delicate
-/// blush poppy resting beside it, accompanied by warm literary copy.
+/// Features a handcrafted open leather-bound journal vector illustration
+/// with a delicate blush poppy resting beside it, accompanied by warm literary copy.
 class LibraryEmptyState extends StatelessWidget {
   final VoidCallback? onAddBook;
 
@@ -22,7 +22,7 @@ class LibraryEmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
       margin: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFF2DED9), width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
@@ -30,17 +30,17 @@ class LibraryEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Open Book & Poppy Illustration
+          // Open Leather Book & Poppy Illustration
           SizedBox(
             width: 170,
             height: 95,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Open Book Painter
+                // Open Leather-bound Book Painter
                 Positioned.fill(
                   child: CustomPaint(
-                    painter: _OpenBookPainter(),
+                    painter: _LeatherOpenBookPainter(),
                   ),
                 ),
                 // Poppy resting gracefully beside the open pages
@@ -68,11 +68,11 @@ class LibraryEmptyState extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Handwritten hint in Caveat
+          // Handwritten hint in Caveat using Cocoa accent
           Text(
             'add a favorite book or one you wish to read ~',
             textAlign: TextAlign.center,
-            style: JournalTypography.handwriting(color: FloralPalette.deepForestGreen),
+            style: JournalTypography.handwriting(color: FloralPalette.cocoa),
           ),
 
           if (onAddBook != null) ...[
@@ -96,25 +96,31 @@ class LibraryEmptyState extends StatelessWidget {
   }
 }
 
-class _OpenBookPainter extends CustomPainter {
+class _LeatherOpenBookPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final pageFill = Paint()
-      ..color = const Color(0xFFFFF7F4)
-      ..style = PaintingStyle.fill;
-
+    // Leather cover underlay in rich Cocoa
     final coverUnderlay = Paint()
-      ..color = FloralPalette.blushPink.withValues(alpha: 0.6)
+      ..color = FloralPalette.cocoa
       ..style = PaintingStyle.fill;
 
-    final inkStroke = Paint()
-      ..color = const Color(0xFFC4ADB4)
-      ..strokeWidth = 1.2
+    final leatherStroke = Paint()
+      ..color = FloralPalette.cocoa
+      ..strokeWidth = 0.95
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    final pageFill = Paint()
+      ..color = FloralPalette.kraftPaper
+      ..style = PaintingStyle.fill;
+
+    final pageStroke = Paint()
+      ..color = FloralPalette.latte
+      ..strokeWidth = 0.9
+      ..style = PaintingStyle.stroke;
+
     final linePaint = Paint()
-      ..color = const Color(0xFFE4D5D8)
+      ..color = FloralPalette.latte.withValues(alpha: 0.7)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -122,7 +128,7 @@ class _OpenBookPainter extends CustomPainter {
     final spineY = size.height * 0.25;
     final bottomY = size.height * 0.88;
 
-    // Cover underlay (slightly peeking out beneath pages)
+    // Leather cover underlay (peeking out beneath pages)
     final coverPath = Path();
     coverPath.moveTo(midX, spineY + 4);
     coverPath.cubicTo(midX - 30, spineY - 4, midX - 65, spineY - 2, 8, spineY + 14);
@@ -132,8 +138,9 @@ class _OpenBookPainter extends CustomPainter {
     coverPath.lineTo(size.width - 8, spineY + 14);
     coverPath.cubicTo(midX + 65, spineY - 2, midX + 30, spineY - 4, midX, spineY + 4);
     canvas.drawPath(coverPath, coverUnderlay);
+    canvas.drawPath(coverPath, leatherStroke);
 
-    // Left Page
+    // Left Page (Kraft Paper fill)
     final leftPage = Path();
     leftPage.moveTo(midX, spineY);
     leftPage.cubicTo(midX - 25, spineY - 6, midX - 55, spineY - 4, 12, spineY + 10);
@@ -141,9 +148,9 @@ class _OpenBookPainter extends CustomPainter {
     leftPage.cubicTo(midX - 55, bottomY - 6, midX - 25, bottomY - 8, midX, bottomY);
     leftPage.close();
     canvas.drawPath(leftPage, pageFill);
-    canvas.drawPath(leftPage, inkStroke);
+    canvas.drawPath(leftPage, pageStroke);
 
-    // Right Page
+    // Right Page (Kraft Paper fill)
     final rightPage = Path();
     rightPage.moveTo(midX, spineY);
     rightPage.cubicTo(midX + 25, spineY - 6, midX + 55, spineY - 4, size.width - 12, spineY + 10);
@@ -151,16 +158,16 @@ class _OpenBookPainter extends CustomPainter {
     rightPage.cubicTo(midX + 55, bottomY - 6, midX + 25, bottomY - 8, midX, bottomY);
     rightPage.close();
     canvas.drawPath(rightPage, pageFill);
-    canvas.drawPath(rightPage, inkStroke);
+    canvas.drawPath(rightPage, pageStroke);
 
-    // Center Spine shadow
+    // Center Spine shadow in Cocoa
     final spinePaint = Paint()
-      ..color = const Color(0xFFD4B8BE)
+      ..color = FloralPalette.cocoa
       ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset(midX, spineY), Offset(midX, bottomY), spinePaint);
 
-    // Faint simulated text lines on pages
+    // Faint simulated text lines on pages in Latte
     for (int i = 0; i < 3; i++) {
       final y = spineY + 18.0 + (i * 12.0);
       // Left lines
@@ -168,8 +175,19 @@ class _OpenBookPainter extends CustomPainter {
       // Right lines
       canvas.drawLine(Offset(midX + 16, y - 1), Offset(size.width - 24, y + 2), linePaint);
     }
+
+    // Small caramel bookmark ribbon resting across the left page
+    final ribbonPaint = Paint()
+      ..color = FloralPalette.caramel
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final ribbonPath = Path();
+    ribbonPath.moveTo(midX, spineY + 2);
+    ribbonPath.cubicTo(midX - 15, spineY + 18, midX - 28, spineY + 28, midX - 20, bottomY - 10);
+    canvas.drawPath(ribbonPath, ribbonPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _OpenBookPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _LeatherOpenBookPainter oldDelegate) => false;
 }
