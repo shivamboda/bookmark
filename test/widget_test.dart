@@ -1,3 +1,4 @@
+import 'package:bookmark/features/library/screens/add_edit_book_screen.dart';
 import 'package:bookmark/features/library/widgets/book_list_card.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -279,15 +280,173 @@ void main() {
     expect(editSize.width, greaterThanOrEqualTo(44.0));
     expect(editSize.height, greaterThanOrEqualTo(44.0));
 
-    // Tap edit button to verify placeholder snackbar
+    // Tap edit button: opens AddEditBookScreen in edit mode
     await tester.tap(editBtn);
-    await tester.pump();
-    expect(find.textContaining('Step 4c'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+    expect(find.text('Edit Book'), findsOneWidget);
+
+    // Tap back button from edit screen
+    await tester.tap(find.byKey(const ValueKey('add_edit_back_btn')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BookDetailScreen), findsOneWidget);
 
     // 8. Test Back button pops back to Library
     await tester.tap(backBtn);
     await tester.pumpAndSettle();
     expect(find.byType(BookDetailScreen), findsNothing);
     expect(find.text('Library'), findsNWidgets(2));
+  });
+
+  testWidgets('Step 4c-1: Add/Edit Book form - add new book, validation, edit, discard dialog', (WidgetTester tester) async {
+    final mockStorage = InMemoryStorageService();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(mockStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // 1. Open Add Book from Library FAB (+)
+    final fab = find.byKey(const ValueKey('add_book_fab'));
+    expect(fab, findsOneWidget);
+    await tester.tap(fab);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+    expect(find.text('Add New Book'), findsOneWidget);
+
+    // Verify tap targets >= 44px
+    final saveBtn = find.byKey(const ValueKey('save_book_btn'));
+    expect(saveBtn, findsOneWidget);
+    final Size saveSize = tester.getSize(saveBtn);
+    expect(saveSize.height, greaterThanOrEqualTo(48.0));
+
+    // 2. Validation check: attempt to save empty form
+    await tester.tap(saveBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('Please enter the book title'), findsOneWidget);
+
+    // 3. Fill required fields
+    await tester.enterText(find.byKey(const ValueKey('input_book_title')), 'Emma');
+    await tester.enterText(find.byKey(const ValueKey('input_book_authors')), 'Jane Austen');
+
+    // Change status to Finished
+    final finishedChip = find.byKey(const ValueKey('status_select_finished'));
+    await tester.ensureVisible(finishedChip);
+    await tester.pumpAndSettle();
+    await tester.tap(finishedChip);
+    await tester.pumpAndSettle();
+
+    // Select genre 'Classic'
+    final classicChip = find.byKey(const ValueKey('genre_chip_Classic'));
+    await tester.ensureVisible(classicChip);
+    await tester.pumpAndSettle();
+    await tester.tap(classicChip);
+    await tester.pumpAndSettle();
+
+    // Enter page count
+    final pageInput = find.byKey(const ValueKey('input_page_count'));
+    await tester.ensureVisible(pageInput);
+    await tester.pumpAndSettle();
+    await tester.enterText(pageInput, '474');
+
+    // Enter notes
+    final notesInput = find.byKey(const ValueKey('input_book_notes'));
+    await tester.ensureVisible(notesInput);
+    await tester.pumpAndSettle();
+    await tester.enterText(notesInput, 'A witty masterpiece of character.');
+
+    // 4. Save the book
+    await tester.tap(saveBtn);
+    await tester.pumpAndSettle();
+
+    // Dismiss floating snackbar before proceeding
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    // Returned to Library, verify Emma is listed
+    expect(find.byType(AddEditBookScreen), findsNothing);
+    expect(find.text('Emma'), findsWidgets);
+
+    // 5. Open Emma Detail Screen and Edit it
+    await tester.tap(find.text('Emma').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(BookDetailScreen), findsOneWidget);
+    expect(find.text('474 pages'), findsOneWidget);
+
+    // Tap Edit
+    await tester.tap(find.byKey(const ValueKey('detail_edit_button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+    expect(find.text('Edit Book'), findsOneWidget);
+
+    // Verify existing data is populated
+    expect(find.text('Emma'), findsWidgets);
+    expect(find.text('Jane Austen'), findsOneWidget);
+
+    // Edit notes
+    final editNotesInput = find.byKey(const ValueKey('input_book_notes'));
+    await tester.ensureVisible(editNotesInput);
+    await tester.pumpAndSettle();
+    await tester.enterText(editNotesInput, 'Updated note: Highly recommended!');
+    await tester.tap(find.byKey(const ValueKey('save_book_btn')));
+    await tester.pumpAndSettle();
+
+    // Dismiss floating snackbar before proceeding
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    // Verify Detail screen shows updated note immediately
+    expect(find.byType(AddEditBookScreen), findsNothing);
+    expect(find.text('Updated note: Highly recommended!'), findsOneWidget);
+
+    // 6. Test Discard Changes dialog
+    await tester.tap(find.byKey(const ValueKey('detail_edit_button')));
+    await tester.pumpAndSettle();
+
+    // Type a change
+    await tester.enterText(find.byKey(const ValueKey('input_book_title')), 'Emma - Volume I');
+    // Tap back button
+    await tester.tap(find.byKey(const ValueKey('add_edit_back_btn')));
+    await tester.pumpAndSettle();
+
+    // Verify discard dialog
+    expect(find.text('Discard Changes?'), findsOneWidget);
+    // Tap Keep Editing
+    await tester.tap(find.text('Keep Editing'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+
+    // Tap back button again and Discard
+    await tester.tap(find.byKey(const ValueKey('add_edit_back_btn')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddEditBookScreen), findsNothing);
+
+    // 7. Delete Book from edit screen
+    await tester.tap(find.byKey(const ValueKey('detail_edit_button')));
+    await tester.pumpAndSettle();
+
+    // Scroll to delete button
+    final deleteBtn = find.byKey(const ValueKey('delete_book_btn'));
+    await tester.ensureVisible(deleteBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(deleteBtn);
+    await tester.pumpAndSettle();
+
+    // Confirm dialog
+    expect(find.text('Remove from Shelf?'), findsOneWidget);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    // Verify returned to Library and Emma is removed
+    expect(find.text('Emma'), findsNothing);
   });
 }

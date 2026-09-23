@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// Represents the reading status of a book in "Bookmark".
 enum ReadingStatus {
   wantToRead('Want to Read'),
@@ -55,8 +58,9 @@ class Book {
   final String title;
   final List<String> authors;
   final String? coverUrl;
+  final Uint8List? coverBytes;
   final List<String> genres;
-  final double rating; // 0.0 to 5.0 with 0.5 increments
+  final double? rating; // 0.0 to 5.0 with 0.5 increments, nullable
   final String description;
   final DateTime? startDate;
   final DateTime? finishDate;
@@ -71,8 +75,9 @@ class Book {
     required this.title,
     required this.authors,
     this.coverUrl,
+    this.coverBytes,
     this.genres = const [],
-    this.rating = 0.0,
+    this.rating,
     this.description = '',
     this.startDate,
     this.finishDate,
@@ -85,20 +90,29 @@ class Book {
 
   String get authorDisplay => authors.isEmpty ? 'Unknown Author' : authors.join(', ');
 
+  bool get isRated => rating != null && rating! > 0;
+  double get ratingOrZero => rating ?? 0.0;
+
   Book copyWith({
     String? id,
     String? title,
     List<String>? authors,
     String? coverUrl,
+    Uint8List? coverBytes,
+    bool clearCoverBytes = false,
     List<String>? genres,
     double? rating,
+    bool clearRating = false,
     String? description,
     DateTime? startDate,
+    bool clearStartDate = false,
     DateTime? finishDate,
+    bool clearFinishDate = false,
     ReadingStatus? status,
     String? notes,
     List<BookQuote>? quotes,
     int? pageCount,
+    bool clearPageCount = false,
     DateTime? dateAdded,
   }) {
     return Book(
@@ -106,15 +120,16 @@ class Book {
       title: title ?? this.title,
       authors: authors ?? this.authors,
       coverUrl: coverUrl ?? this.coverUrl,
+      coverBytes: clearCoverBytes ? null : (coverBytes ?? this.coverBytes),
       genres: genres ?? this.genres,
-      rating: rating ?? this.rating,
+      rating: clearRating ? null : (rating ?? this.rating),
       description: description ?? this.description,
-      startDate: startDate ?? this.startDate,
-      finishDate: finishDate ?? this.finishDate,
+      startDate: clearStartDate ? null : (startDate ?? this.startDate),
+      finishDate: clearFinishDate ? null : (finishDate ?? this.finishDate),
       status: status ?? this.status,
       notes: notes ?? this.notes,
       quotes: quotes ?? this.quotes,
-      pageCount: pageCount ?? this.pageCount,
+      pageCount: clearPageCount ? null : (pageCount ?? this.pageCount),
       dateAdded: dateAdded ?? this.dateAdded,
     );
   }
@@ -125,6 +140,7 @@ class Book {
       'title': title,
       'authors': authors,
       'coverUrl': coverUrl,
+      'coverBytes': coverBytes != null ? base64Encode(coverBytes!) : null,
       'genres': genres,
       'rating': rating,
       'description': description,
@@ -139,13 +155,21 @@ class Book {
   }
 
   factory Book.fromMap(Map<String, dynamic> map) {
+    Uint8List? parsedCoverBytes;
+    if (map['coverBytes'] != null) {
+      try {
+        parsedCoverBytes = base64Decode(map['coverBytes'] as String);
+      } catch (_) {}
+    }
+
     return Book(
       id: map['id'] as String,
       title: map['title'] as String,
       authors: List<String>.from(map['authors'] as List? ?? []),
       coverUrl: map['coverUrl'] as String?,
+      coverBytes: parsedCoverBytes,
       genres: List<String>.from(map['genres'] as List? ?? []),
-      rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+      rating: (map['rating'] as num?)?.toDouble(),
       description: map['description'] as String? ?? '',
       startDate: map['startDate'] != null ? DateTime.parse(map['startDate'] as String) : null,
       finishDate: map['finishDate'] != null ? DateTime.parse(map['finishDate'] as String) : null,

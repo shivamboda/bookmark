@@ -8,6 +8,7 @@ import '../../../doodles/daisy_doodle.dart';
 import '../../../doodles/sketch_underline.dart';
 import '../../../doodles/vine_doodle.dart';
 import '../../../models/book.dart';
+import 'add_edit_book_screen.dart';
 import '../widgets/book_cover_thumbnail.dart';
 
 /// Step 4b: Handcrafted Botanical Book Detail Screen.
@@ -43,15 +44,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 
-  void _showEditPlaceholder(BuildContext context) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Add / Edit Book form arrives in Step 4c ✨'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: FloralPalette.deepRose,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  void _openEditScreen(BuildContext context, Book book) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddEditBookScreen(bookToEdit: book),
       ),
     );
   }
@@ -263,7 +259,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('detail_edit_button'),
-              onTap: () => _showEditPlaceholder(context),
+              onTap: () => _openEditScreen(context, book),
               borderRadius: BorderRadius.circular(14),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -429,9 +425,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 16),
               ),
               Text(
-                book.rating > 0 ? '${book.rating.toStringAsFixed(1)} / 5.0' : 'Unrated',
+                book.isRated ? '${book.rating!.toStringAsFixed(1)} / 5.0' : 'Unrated',
                 style: JournalTypography.bodySmall(
-                  color: book.rating > 0 ? FloralPalette.buttercupGold : FloralPalette.unratedText,
+                  color: book.isRated ? FloralPalette.buttercupGold : FloralPalette.unratedText,
                 ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ],
@@ -447,10 +443,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               IconData icon;
               Color iconColor;
 
-              if (book.rating >= starIndex) {
+              if (book.ratingOrZero >= starIndex) {
                 icon = Icons.star_rounded;
                 iconColor = FloralPalette.buttercupGold;
-              } else if (book.rating >= starIndex - 0.5) {
+              } else if (book.ratingOrZero >= starIndex - 0.5) {
                 icon = Icons.star_half_rounded;
                 iconColor = FloralPalette.buttercupGold;
               } else {
@@ -466,9 +462,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   onTap: () {
                     // Tap toggles: if current rating is full, drop to half; else set full
                     double newRating = starIndex;
-                    if (book.rating == starIndex) {
+                    if (book.ratingOrZero == starIndex) {
                       newRating = starIndex - 0.5;
-                    } else if (book.rating == starIndex - 0.5) {
+                    } else if (book.ratingOrZero == starIndex - 0.5) {
                       newRating = starIndex - 1.0;
                     }
                     _updateRating(book, newRating);

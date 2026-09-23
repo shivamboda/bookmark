@@ -51,7 +51,7 @@ class BookCoverThumbnail extends ConsumerWidget {
         child: FutureBuilder(
           future: storage.getCoverImage(book.id),
           builder: (context, snapshot) {
-            final bytes = snapshot.data;
+            final bytes = book.coverBytes ?? snapshot.data;
             if (bytes != null && bytes.isNotEmpty) {
               return Image.memory(
                 bytes,

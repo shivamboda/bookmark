@@ -1,0 +1,1398 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/state/providers.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/palette.dart';
+import '../../../doodles/poppy_doodle.dart';
+import '../../../doodles/sketch_underline.dart';
+import '../../../models/book.dart';
+
+/// Step 4c-1: Handcrafted Botanical Add / Edit Book Form Screen.
+///
+/// Features:
+/// - Reusable for both Add (new book) and Edit (existing book) modes
+/// - Supports prefilled drafts for future Book Search (Phase 6)
+/// - Grouped cards: Title/Authors, Status, Dates, Genres, Page Count, Notes/Synopsis
+/// - Custom botanical styling with soft pink shadows and latte hairline dividers
+/// - iOS Safari safe: 16px+ inputs (no zoom on focus), keyboard avoidance, >=44px tap targets
+/// - Unsaved changes confirmation dialog on back/swipe
+/// - Duplicate warning, graceful error handling, and delete action in edit mode
+class AddEditBookScreen extends ConsumerStatefulWidget {
+  final Book? bookToEdit;
+  final ReadingStatus? defaultStatus;
+  final Book? prefilledDraft;
+
+  const AddEditBookScreen({
+    super.key,
+    this.bookToEdit,
+    this.defaultStatus,
+    this.prefilledDraft,
+  });
+
+  bool get isEditMode => bookToEdit != null;
+
+  @override
+  ConsumerState<AddEditBookScreen> createState() => _AddEditBookScreenState();
+}
+
+class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Text Editing Controllers
+  late final TextEditingController _titleController;
+  late final TextEditingController _authorsController;
+  late final TextEditingController _pageCountController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _notesController;
+
+  // Form State
+  late ReadingStatus _status;
+  DateTime? _startDate;
+  DateTime? _finishDate;
+  final Set<String> _selectedGenres = {};
+  bool _isSaving = false;
+  String? _dateValidationError;
+
+  // Suggested botanical genre tags
+  static const List<String> _suggestedGenres = [
+    'Fantasy',
+    'Romance',
+    'Mystery',
+    'Historical Fiction',
+    'Classic',
+    'Sci-Fi',
+    'Non-fiction',
+    'Poetry',
+    'Thriller',
+    'Young Adult',
+    'Mythology',
+    'Drama',
+  ];
+
+  // Initial values snapshot to detect unsaved changes
+  late final String _initialTitle;
+  late final String _initialAuthors;
+  late final ReadingStatus _initialStatus;
+  late final DateTime? _initialStartDate;
+  late final DateTime? _initialFinishDate;
+  late final Set<String> _initialGenres;
+  late final String _initialPageCount;
+  late final String _initialDescription;
+  late final String _initialNotes;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final source = widget.bookToEdit ?? widget.prefilledDraft;
+
+    _titleController = TextEditingController(text: source?.title ?? '');
+    _authorsController = TextEditingController(
+      text: source != null ? source.authors.join(', ') : '',
+    );
+    _pageCountController = TextEditingController(
+      text: source?.pageCount != null ? source!.pageCount.toString() : '',
+    );
+    _descriptionController = TextEditingController(text: source?.description ?? '');
+    _notesController = TextEditingController(text: source?.notes ?? '');
+
+    _status = widget.bookToEdit?.status ??
+        widget.prefilledDraft?.status ??
+        widget.defaultStatus ??
+        ReadingStatus.reading;
+
+    _startDate = source?.startDate;
+    _finishDate = source?.finishDate;
+
+    if (source != null) {
+      _selectedGenres.addAll(source.genres);
+    }
+
+    // Default dates on initial load if adding new book
+    if (widget.bookToEdit == null && widget.prefilledDraft == null) {
+      if (_status == ReadingStatus.reading && _startDate == null) {
+        _startDate = DateTime.now();
+      } else if (_status == ReadingStatus.finished) {
+        _startDate ??= DateTime.now();
+        _finishDate ??= DateTime.now();
+      }
+    }
+
+    // Snapshot for dirty checking
+    _initialTitle = _titleController.text;
+    _initialAuthors = _authorsController.text;
+    _initialStatus = _status;
+    _initialStartDate = _startDate;
+    _initialFinishDate = _finishDate;
+    _initialGenres = Set.from(_selectedGenres);
+    _initialPageCount = _pageCountController.text;
+    _initialDescription = _descriptionController.text;
+    _initialNotes = _notesController.text;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _authorsController.dispose();
+    _pageCountController.dispose();
+    _descriptionController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  /// Whether user has made any unsaved edits
+  bool get _hasUnsavedChanges {
+    if (_titleController.text != _initialTitle) return true;
+    if (_authorsController.text != _initialAuthors) return true;
+    if (_status != _initialStatus) return true;
+    if (_startDate != _initialStartDate) return true;
+    if (_finishDate != _initialFinishDate) return true;
+    if (_pageCountController.text != _initialPageCount) return true;
+    if (_descriptionController.text != _initialDescription) return true;
+    if (_notesController.text != _initialNotes) return true;
+    if (!_areSetsEqual(_selectedGenres, _initialGenres)) return true;
+    return false;
+  }
+
+  bool _areSetsEqual(Set<String> a, Set<String> b) {
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
+  /// Parse authors from comma-separated input
+  List<String> _parseAuthors(String input) {
+    return input
+        .split(',')
+        .map((a) => a.trim())
+        .where((a) => a.isNotEmpty)
+        .toList();
+  }
+
+  /// Updates status with smart date defaulting
+  void _onStatusChanged(ReadingStatus newStatus) {
+    setState(() {
+      _status = newStatus;
+      _dateValidationError = null;
+
+      // Smart date rules requested by user
+      if (newStatus == ReadingStatus.reading && _startDate == null) {
+        _startDate = DateTime.now();
+      } else if (newStatus == ReadingStatus.finished) {
+        _startDate ??= DateTime.now();
+        _finishDate ??= DateTime.now();
+      } else if (newStatus == ReadingStatus.wantToRead) {
+        // Dates hidden for Want to Read
+      }
+
+      _validateDates();
+    });
+  }
+
+  /// Validate finish date is not before start date
+  bool _validateDates() {
+    if (_status == ReadingStatus.finished && _startDate != null && _finishDate != null) {
+      final startDay = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+      final finishDay = DateTime(_finishDate!.year, _finishDate!.month, _finishDate!.day);
+      if (finishDay.isBefore(startDay)) {
+        setState(() {
+          _dateValidationError = 'Finish date cannot be earlier than start date ~';
+        });
+        return false;
+      }
+    }
+    setState(() {
+      _dateValidationError = null;
+    });
+    return true;
+  }
+
+  /// Palette-themed date picker modal
+  Future<void> _pickDate({required bool isStart}) async {
+    final initial = isStart
+        ? (_startDate ?? DateTime.now())
+        : (_finishDate ?? _startDate ?? DateTime.now());
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: AppTheme.lightTheme().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: FloralPalette.deepRose,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: FloralPalette.warmCharcoal,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startDate = picked;
+        } else {
+          _finishDate = picked;
+        }
+        _validateDates();
+      });
+    }
+  }
+
+  /// Add custom genre chip
+  Future<void> _showAddCustomGenreDialog() async {
+    final controller = TextEditingController();
+    final newGenre = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Add Custom Genre',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+            decoration: const InputDecoration(
+              hintText: 'e.g. Dystopian, Memoir, Gothic',
+            ),
+            textCapitalization: TextCapitalization.words,
+            onSubmitted: (val) => Navigator.of(context).pop(val.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Add Genre'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newGenre != null && newGenre.isNotEmpty) {
+      setState(() {
+        _selectedGenres.add(newGenre);
+      });
+    }
+  }
+
+  /// Discard changes confirmation dialog
+  Future<bool> _handlePopRequest() async {
+    if (!_hasUnsavedChanges) return true;
+
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Text(
+            'Discard Changes?',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+          ),
+          content: Text(
+            'You have unsaved changes to this story. Are you sure you want to discard them?',
+            style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Keep Editing',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Discard'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return discard ?? false;
+  }
+
+  /// Delete book confirmation dialog (in Edit mode)
+  Future<void> _confirmDeleteBook() async {
+    final book = widget.bookToEdit;
+    if (book == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Text(
+            'Remove from Shelf?',
+            style: JournalTypography.headingSmall(color: FloralPalette.poppyRedDark),
+          ),
+          content: Text(
+            'Are you sure you want to remove "${book.title}" from your journal? This cannot be undone.',
+            style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Keep Book',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.poppyRedDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        await ref.read(booksProvider.notifier).deleteBook(book.id);
+
+        if (mounted) {
+          // Pop both Edit screen and Detail screen to return to Library
+          Navigator.of(context).popUntil((route) => route.isFirst);
+
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('"${book.title}" removed from your shelf'),
+              backgroundColor: FloralPalette.warmCharcoal,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unable to delete book: $e'),
+              backgroundColor: Colors.red.shade800,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Save / Update book submission
+  Future<void> _submitForm() async {
+    if (_isSaving) return;
+
+    // Validate form inputs
+    if (!_formKey.currentState!.validate()) return;
+    if (!_validateDates()) return;
+
+    final trimmedTitle = _titleController.text.trim();
+    final authorsList = _parseAuthors(_authorsController.text);
+
+    if (trimmedTitle.isEmpty || authorsList.isEmpty) return;
+
+    // Check for duplicates (same title and author, case-insensitive)
+    final allBooks = ref.read(booksProvider).value ?? [];
+    final isDuplicate = allBooks.any((b) {
+      if (widget.bookToEdit != null && b.id == widget.bookToEdit!.id) {
+        return false; // Skip current book in edit mode
+      }
+      final titleMatch = b.title.trim().toLowerCase() == trimmedTitle.toLowerCase();
+      final authorMatch = b.authors.any(
+        (a) => authorsList.any((na) => na.toLowerCase() == a.trim().toLowerCase()),
+      );
+      return titleMatch && authorMatch;
+    });
+
+    if (isDuplicate) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              'Book Already on Shelf',
+              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+            ),
+            content: Text(
+              'A story titled "$trimmedTitle" by ${authorsList.join(", ")} is already in your journal. Do you want to save another copy?',
+              style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  'Cancel',
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FloralPalette.deepRose,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Save Anyway'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (proceed != true) return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final int? pageCount = int.tryParse(_pageCountController.text.trim());
+      final existingBook = widget.bookToEdit;
+
+      final bookToSave = Book(
+        id: existingBook?.id ?? 'book-${DateTime.now().millisecondsSinceEpoch}',
+        title: trimmedTitle,
+        authors: authorsList,
+        coverUrl: existingBook?.coverUrl ?? widget.prefilledDraft?.coverUrl,
+        coverBytes: existingBook?.coverBytes ?? widget.prefilledDraft?.coverBytes,
+        genres: _selectedGenres.toList(),
+        rating: existingBook?.rating ?? widget.prefilledDraft?.rating,
+        description: _descriptionController.text.trim(),
+        startDate: _status == ReadingStatus.wantToRead ? null : _startDate,
+        finishDate: (_status == ReadingStatus.finished || _status == ReadingStatus.paused)
+            ? _finishDate
+            : null,
+        status: _status,
+        notes: _notesController.text.trim(),
+        quotes: existingBook?.quotes ?? widget.prefilledDraft?.quotes ?? const [],
+        pageCount: pageCount,
+        dateAdded: existingBook?.dateAdded ?? DateTime.now(),
+      );
+
+      if (widget.isEditMode) {
+        await ref.read(booksProvider.notifier).updateBook(bookToSave);
+      } else {
+        await ref.read(booksProvider.notifier).addBook(bookToSave);
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.isEditMode
+                  ? 'Changes saved to "$trimmedTitle" ✨'
+                  : '"$trimmedTitle" added to your shelf ✨',
+            ),
+            backgroundColor: FloralPalette.deepRose,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unable to save story: $e'),
+            backgroundColor: Colors.red.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDisplayDate(DateTime? dt) {
+    if (dt == null) return 'Select date';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _handlePopRequest();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: FloralPalette.petalWhite,
+        body: SafeArea(
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 540),
+              child: Stack(
+                children: [
+                  // Botanical Header Poppy Peeking Gracefully
+                  const Positioned(
+                    top: 10,
+                    right: 14,
+                    child: IgnorePointer(
+                      child: PoppyDoodle(
+                        size: 72,
+                        showStem: false,
+                        petalColor: FloralPalette.rosePetal,
+                      ),
+                    ),
+                  ),
+
+                  Column(
+                    children: [
+                      // Top Botanical Nav Bar
+                      _buildTopBar(context),
+
+                      // Form Body (Scrollable with keyboard avoidance)
+                      Expanded(
+                        child: Form(
+                          key: _formKey,
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: EdgeInsets.fromLTRB(20, 8, 20, bottomInset + 100),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Title and Subtitle Header
+                                Text(
+                                  widget.isEditMode ? 'Edit Book' : 'Add New Book',
+                                  style: JournalTypography.headingLarge(
+                                    color: FloralPalette.warmCharcoal,
+                                  ).copyWith(fontSize: 28),
+                                ),
+                                const SizedBox(height: 2),
+                                const HandDrawnUnderline(width: 95, color: FloralPalette.deepRose),
+                                const SizedBox(height: 6),
+                                Text(
+                                  widget.isEditMode
+                                      ? '• update details in your reading journal'
+                                      : '• welcome a new story to your shelf',
+                                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                // Card 1: Title & Author(s)
+                                _buildTitleAuthorCard(),
+
+                                const SizedBox(height: 16),
+
+                                // Card 2: Status Chips
+                                _buildStatusCard(),
+
+                                // Card 3: Reading Dates (Hidden for Want to Read)
+                                if (_status != ReadingStatus.wantToRead) ...[
+                                  const SizedBox(height: 16),
+                                  _buildDatesCard(),
+                                ],
+
+                                const SizedBox(height: 16),
+
+                                // Card 4: Genres Multi-Select
+                                _buildGenresCard(),
+
+                                const SizedBox(height: 16),
+
+                                // Card 5: Page Count
+                                _buildPageCountCard(),
+
+                                const SizedBox(height: 16),
+
+                                // Card 6: Synopsis / Description & Notes
+                                _buildDescriptionAndNotesCard(),
+
+                                // In Edit Mode: Delete Action
+                                if (widget.isEditMode) ...[
+                                  const SizedBox(height: 24),
+                                  _buildDeleteAction(),
+                                ],
+
+                                const SizedBox(height: 32),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Fixed Bottom Bar with Save Button (Tap target >= 48px)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildBottomSaveBar(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Top app bar with guaranteed 44x44 tap target
+  Widget _buildTopBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Back / Discard Button
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              key: const ValueKey('add_edit_back_btn'),
+              onTap: () async {
+                final shouldPop = await _handlePopRequest();
+                if (shouldPop && context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                    boxShadow: const [FloralPalette.cardShadow],
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: FloralPalette.cocoa,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Central Label
+          Text(
+            'BOOKMARK • JOURNAL ENTRY',
+            style: JournalTypography.bodySmall(
+              color: FloralPalette.deepForestGreen,
+            ).copyWith(
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+            ),
+          ),
+
+          const SizedBox(width: 44), // Balances the back button
+        ],
+      ),
+    );
+  }
+
+  /// Card 1: Title & Author(s) Inputs (16px+ for iOS Safari)
+  Widget _buildTitleAuthorCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Book Title *',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            key: const ValueKey('input_book_title'),
+            controller: _titleController,
+            textCapitalization: TextCapitalization.words,
+            style: const TextStyle(
+              fontSize: 16, // Critical for iOS Safari: >=16px prevents zoom
+              fontWeight: FontWeight.w600,
+              color: FloralPalette.warmCharcoal,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'Enter title (e.g. Pride and Prejudice)',
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter the book title';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Author(s) *',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'separate multiple with commas',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            key: const ValueKey('input_book_authors'),
+            controller: _authorsController,
+            textCapitalization: TextCapitalization.words,
+            style: const TextStyle(
+              fontSize: 16, // Critical for iOS Safari
+              color: FloralPalette.warmCharcoal,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'e.g. Jane Austen, or Author 1, Author 2',
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter at least one author';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card 2: Reading Status Choice Chips (Tap targets >= 44px)
+  Widget _buildStatusCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Reading Status',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'palette choice',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ReadingStatus.values.map((status) {
+              final isSelected = _status == status;
+
+              Color bg;
+              Color text;
+              Color border;
+
+              switch (status) {
+                case ReadingStatus.wantToRead:
+                  bg = isSelected ? FloralPalette.lavenderMist : Colors.white;
+                  text = isSelected ? FloralPalette.lavenderDark : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.lavenderDark : const Color(0xFFE2D6DC);
+                case ReadingStatus.reading:
+                  bg = isSelected ? const Color(0xFFD6E6D2) : Colors.white;
+                  text = isSelected ? FloralPalette.sageGreenDark : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.sageGreenDark : const Color(0xFFE2D6DC);
+                case ReadingStatus.finished:
+                  bg = isSelected ? FloralPalette.blushPink : Colors.white;
+                  text = isSelected ? FloralPalette.deepRose : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.deepRose : const Color(0xFFE2D6DC);
+                case ReadingStatus.paused:
+                  bg = isSelected ? FloralPalette.latte : Colors.white;
+                  text = isSelected ? FloralPalette.espresso : FloralPalette.warmCharcoal; // 6.42:1 contrast
+                  border = isSelected ? FloralPalette.cocoa : const Color(0xFFE2D6DC);
+              }
+
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: ValueKey('status_select_${status.name}'),
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => _onStatusChanged(status),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: border, width: isSelected ? 1.4 : 1.0),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: border.withValues(alpha: 0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        status.label,
+                        style: JournalTypography.bodySmall(color: text).copyWith(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card 3: Reading Dates (Themed Date Pickers, Tap targets >= 44px)
+  Widget _buildDatesCard() {
+    final showFinish = _status == ReadingStatus.finished || _status == ReadingStatus.paused;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.calendar_month_outlined, size: 18, color: FloralPalette.cocoa),
+              const SizedBox(width: 8),
+              Text(
+                'Reading Dates',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Start Date Button
+          _buildDatePickerTile(
+            key: const ValueKey('pick_start_date_btn'),
+            label: 'Start Date',
+            date: _startDate,
+            onTap: () => _pickDate(isStart: true),
+            onClear: () {
+              setState(() {
+                _startDate = null;
+                _validateDates();
+              });
+            },
+          ),
+
+          // Finish Date Button (Visible for Finished / Paused)
+          if (showFinish) ...[
+            const SizedBox(height: 10),
+            _buildDatePickerTile(
+              key: const ValueKey('pick_finish_date_btn'),
+              label: 'Finish Date',
+              date: _finishDate,
+              onTap: () => _pickDate(isStart: false),
+              onClear: () {
+                setState(() {
+                  _finishDate = null;
+                  _validateDates();
+                });
+              },
+            ),
+          ],
+
+          // Friendly validation error message
+          if (_dateValidationError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _dateValidationError!,
+              style: JournalTypography.bodySmall(color: FloralPalette.poppyRedDark).copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDatePickerTile({
+    required Key key,
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    required VoidCallback onClear,
+  }) {
+    return Material(
+      color: FloralPalette.petalWhite,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.event_note_rounded,
+                  size: 18,
+                  color: date != null ? FloralPalette.deepRose : FloralPalette.latte,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _formatDisplayDate(date),
+                  style: JournalTypography.bodySmall(
+                    color: date != null ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+                  ).copyWith(
+                    fontWeight: date != null ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+                if (date != null) ...[
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: onClear,
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close_rounded, size: 16, color: FloralPalette.cocoa),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Card 4: Multi-Select Genres Chips + Add Custom
+  Widget _buildGenresCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Genres & Tropes',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'select all that apply',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ..._suggestedGenres.map((genre) {
+                final isSelected = _selectedGenres.contains(genre);
+                return _buildGenreChip(genre, isSelected);
+              }),
+              ..._selectedGenres
+                  .where((g) => !_suggestedGenres.contains(g))
+                  .map((customGenre) => _buildGenreChip(customGenre, true)),
+
+              // "+ Add your own" Chip
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: const ValueKey('add_custom_genre_btn'),
+                  onTap: _showAddCustomGenreDialog,
+                  borderRadius: BorderRadius.circular(10),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: FloralPalette.kraftPaper,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: FloralPalette.latte, width: 1.0),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add_rounded, size: 16, color: FloralPalette.cocoa),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Add your own',
+                            style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenreChip(String genre, bool isSelected) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey('genre_chip_$genre'),
+        onTap: () {
+          setState(() {
+            if (isSelected) {
+              _selectedGenres.remove(genre);
+            } else {
+              _selectedGenres.add(genre);
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? FloralPalette.deepRose
+                  : FloralPalette.blushPink.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected ? FloralPalette.deepRose : const Color(0xFFF0DCD7),
+                width: 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSelected) ...[
+                  const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  genre,
+                  style: JournalTypography.bodySmall(
+                    color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
+                  ).copyWith(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Card 5: Page Count (Numeric keyboard, 16px font)
+  Widget _buildPageCountCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Page Count (Optional)',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'for reading stats',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            key: const ValueKey('input_page_count'),
+            controller: _pageCountController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(
+              fontSize: 16, // Critical for iOS Safari
+              color: FloralPalette.warmCharcoal,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'e.g. 384',
+              prefixIcon: Icon(Icons.auto_stories_outlined, color: FloralPalette.cocoa, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card 6: Description & Personal Notes
+  Widget _buildDescriptionAndNotesCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Synopsis / Description (Optional)',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            key: const ValueKey('input_book_description'),
+            controller: _descriptionController,
+            maxLines: 4,
+            style: const TextStyle(
+              fontSize: 16, // Critical for iOS Safari
+              color: FloralPalette.warmCharcoal,
+              height: 1.4,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'A glimpse into the story and its premise...',
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Personal Notes & Reflections',
+                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+              ),
+              Flexible(
+                child: Text(
+                  'private journal',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JournalTypography.handwriting(color: FloralPalette.cocoa),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            key: const ValueKey('input_book_notes'),
+            controller: _notesController,
+            maxLines: 4,
+            style: const TextStyle(
+              fontSize: 16, // Critical for iOS Safari
+              color: FloralPalette.warmCharcoal,
+              height: 1.4,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'Thoughts, marginalia, feelings while reading...',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Delete Action in Edit Mode
+  Widget _buildDeleteAction() {
+    return Center(
+      child: OutlinedButton.icon(
+        key: const ValueKey('delete_book_btn'),
+        onPressed: _confirmDeleteBook,
+        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: FloralPalette.poppyRedDark),
+        label: Text(
+          'Delete Book from Shelf',
+          style: JournalTypography.bodySmall(color: FloralPalette.poppyRedDark).copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFF2B8B8), width: 1.2),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          minimumSize: const Size(200, 44),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+    );
+  }
+
+  /// Fixed Bottom Save Bar (Safe area bottom respected, tap target >= 48px)
+  Widget _buildBottomSaveBar(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        math.max(16.0, MediaQuery.of(context).padding.bottom + 8.0),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        key: const ValueKey('save_book_btn'),
+        onPressed: _isSaving ? null : _submitForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: FloralPalette.deepRose,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: FloralPalette.deepRose.withValues(alpha: 0.5),
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 2,
+        ),
+        child: _isSaving
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.2,
+                ),
+              )
+            : Text(
+                widget.isEditMode ? 'Save Changes' : 'Add to Shelf',
+                style: JournalTypography.subheading(color: Colors.white).copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontStyle: FontStyle.normal,
+                ),
+              ),
+      ),
+    );
+  }
+}

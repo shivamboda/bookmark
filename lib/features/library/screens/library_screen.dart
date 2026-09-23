@@ -16,6 +16,7 @@ import '../widgets/floral_bottom_nav.dart';
 import '../widgets/library_empty_state.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
+import 'add_edit_book_screen.dart';
 
 /// Filter option for books displayed in the Library screen.
 enum LibraryFilter {
@@ -78,7 +79,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       floatingActionButton: (_currentNavIndex == 0 || _currentNavIndex == 1)
           ? FloatingActionButton(
               key: const ValueKey('add_book_fab'),
-              onPressed: () => _showAddBookPlaceholder(context),
+              onPressed: () => _openAddBookScreen(context),
               backgroundColor: FloralPalette.deepRose,
               foregroundColor: Colors.white,
               elevation: 3,
@@ -155,7 +156,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
                       child: LibraryEmptyState(
-                        onAddBook: () => _showAddBookPlaceholder(context),
+                        onAddBook: () => _openAddBookScreen(context, defaultStatus: ReadingStatus.reading),
                       ),
                     );
                   }
@@ -953,15 +954,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  void _showAddBookPlaceholder(BuildContext context) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Add / Edit Book form arrives in Step 4c ✨'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: FloralPalette.deepRose,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  void _openAddBookScreen(BuildContext context, {ReadingStatus? defaultStatus}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddEditBookScreen(
+          defaultStatus: defaultStatus ??
+              (_currentNavIndex == 1
+                  ? ReadingStatus.wantToRead
+                  : ReadingStatus.reading),
+        ),
       ),
     );
   }

@@ -115,7 +115,7 @@ class BookListCard extends StatelessWidget {
                             ),
                           ],
                           const Spacer(),
-                          if (book.rating > 0) ...[
+                          if (book.isRated) ...[
                             const Icon(
                               Icons.star_rounded,
                               size: 17,
@@ -123,7 +123,7 @@ class BookListCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              book.rating.toStringAsFixed(1),
+                              book.rating!.toStringAsFixed(1),
                               style: JournalTypography.bodySmall(
                                 color: FloralPalette.warmCharcoal,
                               ).copyWith(fontWeight: FontWeight.w700),

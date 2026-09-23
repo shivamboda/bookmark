@@ -140,7 +140,7 @@ class BookGridItem extends StatelessWidget {
                 // Rating (if rated)
                 Row(
                   children: [
-                    if (book.rating > 0) ...[
+                    if (book.isRated) ...[
                       const Icon(
                         Icons.star_rounded,
                         size: 15,
@@ -148,7 +148,7 @@ class BookGridItem extends StatelessWidget {
                       ),
                       const SizedBox(width: 3),
                       Text(
-                        book.rating.toStringAsFixed(1),
+                        book.rating!.toStringAsFixed(1),
                         style: JournalTypography.bodySmall(
                           color: FloralPalette.warmCharcoal,
                         ).copyWith(
