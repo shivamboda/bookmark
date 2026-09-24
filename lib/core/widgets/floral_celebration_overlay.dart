@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../doodles/poppy_doodle.dart';
+import '../../doodles/acorn_doodle.dart';
+import '../../doodles/maple_leaf_doodle.dart';
 import '../theme/app_theme.dart';
 import '../theme/palette.dart';
 
@@ -129,13 +131,36 @@ class _FloralCelebrationDialogState extends State<FloralCelebrationDialog>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Signature botanical blooming poppy motif
-                        PoppyDoodle(
-                          size: 74,
-                          showStem: false,
-                          petalColor: widget.isGoalAchieved
-                              ? const Color(0xFFD48B28)
-                              : FloralPalette.rosePetal,
+                        // Signature botanical blooming poppy motif with autumn leaf & acorn accents
+                        Stack(
+                          alignment: Alignment.center,
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Positioned(
+                              left: -28,
+                              bottom: -2,
+                              child: MapleLeafDoodle(
+                                size: 34,
+                                color: FloralPalette.rosePetal,
+                                angle: -0.32,
+                              ),
+                            ),
+                            const Positioned(
+                              right: -24,
+                              bottom: 0,
+                              child: AcornDoodle(
+                                size: 28,
+                                angle: 0.22,
+                              ),
+                            ),
+                            PoppyDoodle(
+                              size: 74,
+                              showStem: false,
+                              petalColor: widget.isGoalAchieved
+                                  ? FloralPalette.buttercupGold
+                                  : FloralPalette.poppyRed,
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 14),
 

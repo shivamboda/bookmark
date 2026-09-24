@@ -16,6 +16,10 @@ import '../widgets/floral_bottom_nav.dart';
 import '../widgets/library_empty_state.dart';
 import '../widgets/stats_dashboard_view.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
+import '../../../doodles/acorn_doodle.dart';
+import '../../../doodles/maple_leaf_doodle.dart';
+import '../../../doodles/mushroom_doodle.dart';
+
 import 'book_detail_screen.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -820,6 +824,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ),
 
+        // Floating autumn maple leaf drifting gently near the header
+        const Positioned(
+          top: 8,
+          right: 98,
+          child: IgnorePointer(
+            child: MapleLeafDoodle(
+              size: 28,
+              color: FloralPalette.rosePetal,
+              angle: -0.25,
+            ),
+          ),
+        ),
+
         Column(
           children: [
             // Top App Header
@@ -924,6 +941,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               size: 68,
               showStem: false,
               petalColor: FloralPalette.rosePetal,
+            ),
+          ),
+        ),
+
+        // Little autumn acorn resting by the wishlist header
+        const Positioned(
+          top: 14,
+          right: 92,
+          child: IgnorePointer(
+            child: AcornDoodle(
+              size: 26,
+              angle: 0.2,
             ),
           ),
         ),
@@ -1154,7 +1183,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: [FloralPalette.cardShadow],
       ),
-      child: Column(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Positioned(
+            top: -2,
+            right: 0,
+            child: IgnorePointer(
+              child: MushroomDoodle(
+                size: 32,
+                capColor: FloralPalette.rosePetal,
+                angle: 0.15,
+              ),
+            ),
+          ),
+          Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1272,7 +1315,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ],
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildSettingsTab(BuildContext context) {
@@ -1289,6 +1334,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: LeafSprigDoodle(
               size: 58,
               color: FloralPalette.deepForestGreen,
+            ),
+          ),
+        ),
+
+        // Little woodland forest mushroom tucked near settings header
+        const Positioned(
+          top: 14,
+          right: 82,
+          child: IgnorePointer(
+            child: MushroomDoodle(
+              size: 28,
+              angle: -0.15,
             ),
           ),
         ),
