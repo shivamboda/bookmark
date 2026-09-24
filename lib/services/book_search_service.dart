@@ -1,3 +1,4 @@
+import 'synopsis_service.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -31,6 +32,33 @@ class BookSearchResult {
 ///
 /// Both APIs support CORS and work from Flutter Web without a proxy.
 class BookSearchService {
+  /// Fetches and cleans a description from Google Books for a specific book title and author.
+  static Future<String?> fetchGoogleBooksDescription(String title, List<String> authors) async {
+    try {
+      final query = authors.isNotEmpty
+          ? 'intitle:"$title"+inauthor:"${authors.first}"'
+          : 'intitle:"$title"';
+      final uri = Uri.parse(
+        'https://www.googleapis.com/books/v1/volumes'
+        '?q=${Uri.encodeComponent(query)}'
+        '&maxResults=1'
+        '&printType=books',
+      );
+      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final items = json['items'] as List<dynamic>? ?? [];
+        if (items.isNotEmpty) {
+          final volumeInfo = (items.first as Map<String, dynamic>)['volumeInfo'] as Map<String, dynamic>?;
+          final rawDesc = volumeInfo?['description'];
+          final cleaned = SynopsisCleaner.cleanAndValidate(rawDesc);
+          if (cleaned.isNotEmpty) return cleaned;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   BookSearchService._();
 
   /// Maximum results to display in the search list.
@@ -77,7 +105,7 @@ class BookSearchService {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final docs = json['docs'] as List<dynamic>? ?? [];
 
-    return docs.map<BookSearchResult?>((doc) {
+    final docsMapped = docs.map<BookSearchResult?>((doc) {
       final d = doc as Map<String, dynamic>;
       final title = d['title'] as String?;
       if (title == null || title.trim().isEmpty) return null;
@@ -98,13 +126,12 @@ class BookSearchService {
       // Page count (median across editions)
       final pages = d['number_of_pages_median'] as int?;
 
-      // Description (Open Library uses first_sentence as a list or string)
+      // Description (clean and validate Open Library first_sentence or description object)
       String? desc;
-      final firstSentence = d['first_sentence'];
-      if (firstSentence is List && firstSentence.isNotEmpty) {
-        desc = firstSentence.first.toString();
-      } else if (firstSentence is String) {
-        desc = firstSentence;
+      final rawDesc = d['description'] ?? d['first_sentence'];
+      final cleaned = SynopsisCleaner.cleanAndValidate(rawDesc);
+      if (cleaned.isNotEmpty) {
+        desc = cleaned;
       }
 
       // Genres / Subjects — cleaned via keyword matching to the app's genre list
@@ -124,6 +151,30 @@ class BookSearchService {
         genres: subjects,
       );
     }).whereType<BookSearchResult>().take(_maxResults).toList();
+
+    // If Open Library description is absent or failed the quality check,
+    // automatically try Google Books for the same book before giving up.
+    final enriched = <BookSearchResult>[];
+    for (final res in docsMapped) {
+      var desc = res.description;
+      if (desc == null || desc.isEmpty) {
+        try {
+          final googleDesc = await fetchGoogleBooksDescription(res.title, res.authors);
+          if (googleDesc != null && googleDesc.isNotEmpty) {
+            desc = googleDesc;
+          }
+        } catch (_) {}
+      }
+      enriched.add(BookSearchResult(
+        title: res.title,
+        authors: res.authors,
+        coverUrl: res.coverUrl,
+        pageCount: res.pageCount,
+        description: desc,
+        genres: res.genres,
+      ));
+    }
+    return enriched;
   }
 
   // -------------------------------------------------------------------------
@@ -175,8 +226,10 @@ class BookSearchService {
       // Page count
       final pages = volumeInfo['pageCount'] as int?;
 
-      // Description
-      final desc = volumeInfo['description'] as String?;
+      // Description cleaned through SynopsisCleaner
+      final rawDesc = volumeInfo['description'];
+      final cleanedDesc = SynopsisCleaner.cleanAndValidate(rawDesc);
+      final desc = cleanedDesc.isNotEmpty ? cleanedDesc : null;
 
       // Categories — cleaned via keyword matching to the app's genre list
       final rawCategories = (volumeInfo['categories'] as List<dynamic>?)

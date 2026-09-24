@@ -137,6 +137,7 @@ class Book {
   final List<String> genres;
   final double? rating; // 0.0 to 5.0 with 0.5 increments, nullable
   final String description;
+  final bool descriptionIsUserEdited;
   final DateTime? startDate;
   final DateTime? finishDate;
   final ReadingStatus status;
@@ -154,6 +155,7 @@ class Book {
     this.genres = const [],
     this.rating,
     this.description = '',
+    this.descriptionIsUserEdited = false,
     this.startDate,
     this.finishDate,
     this.status = ReadingStatus.wantToRead,
@@ -191,6 +193,7 @@ class Book {
     double? rating,
     bool clearRating = false,
     String? description,
+    bool? descriptionIsUserEdited,
     DateTime? startDate,
     bool clearStartDate = false,
     DateTime? finishDate,
@@ -211,6 +214,7 @@ class Book {
       genres: genres ?? this.genres,
       rating: clearRating ? null : (rating ?? this.rating),
       description: description ?? this.description,
+      descriptionIsUserEdited: descriptionIsUserEdited ?? this.descriptionIsUserEdited,
       startDate: clearStartDate ? null : (startDate ?? this.startDate),
       finishDate: clearFinishDate ? null : (finishDate ?? this.finishDate),
       status: status ?? this.status,
@@ -231,6 +235,7 @@ class Book {
       'genres': genres,
       'rating': rating,
       'description': description,
+      'descriptionIsUserEdited': descriptionIsUserEdited,
       'startDate': startDate?.toIso8601String(),
       'finishDate': finishDate?.toIso8601String(),
       'status': status.name,
@@ -269,6 +274,7 @@ class Book {
       genres: cleanGenres,
       rating: (map['rating'] as num?)?.toDouble(),
       description: map['description'] as String? ?? '',
+      descriptionIsUserEdited: map['descriptionIsUserEdited'] as bool? ?? false,
       startDate: map['startDate'] != null ? DateTime.parse(map['startDate'] as String) : null,
       finishDate: map['finishDate'] != null ? DateTime.parse(map['finishDate'] as String) : null,
       status: ReadingStatus.fromString(map['status'] as String? ?? 'wantToRead'),

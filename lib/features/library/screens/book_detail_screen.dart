@@ -1,3 +1,4 @@
+import '../../../services/synopsis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/providers.dart';
@@ -38,6 +39,7 @@ class BookDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
+  bool _isSynopsisExpanded = false;
   String _formatDate(DateTime? dt) {
     if (dt == null) return 'Not yet recorded';
     const months = [
@@ -182,11 +184,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                         // Section 5: Reflections & Marginalia Notes Card
                         _buildNotesSection(context, book),
 
-                        if (book.description.isNotEmpty) ...[
-                          const SizedBox(height: 22),
-                          // Section 6: Synopsis / Description
-                          _buildSynopsisSection(context, book),
-                        ],
+                        const SizedBox(height: 22),
+                        // Section 6: Synopsis / Description
+                        _buildSynopsisSection(context, book),
 
                         const SizedBox(height: 36),
 
@@ -956,6 +956,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
   /// Synopsis Card
   Widget _buildSynopsisSection(BuildContext context, Book book) {
+    final hasDesc = book.description.trim().isNotEmpty;
+    final isLong = book.description.length > 260;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -973,13 +976,76 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
             boxShadow: [FloralPalette.cardShadow],
           ),
-          child: Text(
-            book.description,
-            style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(
-              height: 1.5,
-              fontSize: 13.5,
-            ),
-          ),
+          child: hasDesc
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (isLong && !_isSynopsisExpanded)
+                          ? SynopsisCleaner.truncatePreview(book.description, maxLength: 260)
+                          : book.description,
+                      style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(
+                        height: 1.5,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    if (isLong) ...[
+                      const SizedBox(height: 8),
+                      InkWell(
+                        key: const ValueKey('synopsis_toggle_btn'),
+                        onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _isSynopsisExpanded ? 'Show less' : 'Read more',
+                                style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                _isSynopsisExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                size: 16,
+                                color: FloralPalette.deepRose,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              : Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'No synopsis yet ~',
+                        style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        key: const ValueKey('add_synopsis_btn'),
+                        onPressed: () => _openEditScreen(context, book),
+                        icon: const Icon(Icons.edit_note_rounded, size: 18, color: FloralPalette.deepRose),
+                        label: const Text(
+                          'Add your own',
+                          style: TextStyle(
+                            color: FloralPalette.deepRose,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
       ],
     );

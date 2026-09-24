@@ -1,3 +1,4 @@
+import 'package:bookmark/services/synopsis_service.dart';
 import 'package:bookmark/doodles/maple_leaf_doodle.dart';
 import 'package:bookmark/doodles/oak_leaf_doodle.dart';
 import 'package:bookmark/doodles/acorn_doodle.dart';
@@ -2065,5 +2066,212 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
     await tester.pumpAndSettle();
     expect(find.text('Pride and Prejudice'), findsWidgets);
+  });
+
+  group('Part 2: SynopsisCleaner unit tests with realistic bad samples', () {
+    test('1. HTML stripping & entity decoding', () {
+      const rawHtml =
+          '<p><b>Pride and Prejudice</b> is an 1813 romantic novel of manners.<br/>'
+          'It follows the character development of Elizabeth Bennet.&nbsp;&amp; Jane Bennet.</p>';
+      final cleaned = SynopsisCleaner.clean(rawHtml);
+      expect(cleaned, contains('Pride and Prejudice is an 1813 romantic novel of manners.'));
+      expect(cleaned, contains('Elizabeth Bennet. & Jane Bennet.'));
+      expect(cleaned.contains('<'), isFalse);
+      expect(cleaned.contains('&amp;'), isFalse);
+      expect(cleaned.contains('&nbsp;'), isFalse);
+    });
+
+    test('2. Markdown links, headings, and horizontal rules stripping', () {
+      const rawMarkdown =
+          '## Overview\n\n'
+          'This is a **classic** masterpiece about [Elizabeth](https://en.wikipedia.org/wiki/Elizabeth_Bennet) and *Mr. Darcy*.\n\n'
+          '----------\n\n'
+          '### Themes\n'
+          'Love and social class in Georgian society.';
+      final cleaned = SynopsisCleaner.clean(rawMarkdown);
+      expect(cleaned, contains('Overview'));
+      expect(cleaned, contains('This is a classic masterpiece about Elizabeth and Mr. Darcy.'));
+      expect(cleaned, contains('Themes\nLove and social class in Georgian society.'));
+      expect(cleaned.contains('##'), isFalse);
+      expect(cleaned.contains('**'), isFalse);
+      expect(cleaned.contains('['), isFalse);
+      expect(cleaned.contains('----------'), isFalse);
+    });
+
+    test('3. Source lines, Contains lines, See also sections, and Catalog boilerplate stripping', () {
+      const rawWithBoilerplate =
+          'An epic fantasy journey across the shattered plains of Roshar.\n'
+          'Source: Wikipedia\n'
+          'Contains: Spoilers for earlier volumes\n'
+          'ISBN: 978-0-7653-2635-5\n'
+          'OCLC: 601094143\n'
+          'Edition: First Tor Hardcover Edition\n'
+          'Pagination: 1007 pages\n'
+          'Digitized by Google Books\n'
+          'See also: Brandon Sanderson bibliography\n'
+          '* Words of Radiance\n'
+          '* Oathbringer';
+      final cleaned = SynopsisCleaner.clean(rawWithBoilerplate);
+      expect(cleaned, 'An epic fantasy journey across the shattered plains of Roshar.');
+      expect(cleaned.contains('Source:'), isFalse);
+      expect(cleaned.contains('Contains:'), isFalse);
+      expect(cleaned.contains('ISBN'), isFalse);
+      expect(cleaned.contains('OCLC'), isFalse);
+      expect(cleaned.contains('See also'), isFalse);
+      expect(cleaned.contains('Oathbringer'), isFalse);
+    });
+
+    test('4. Open Library object-shaped description handling (Map with "value" or "type")', () {
+      final olObject = {
+        'type': '/type/text',
+        'value':
+            'Set in the fictional provincial town of Middlemarch, this novel explores the lives, marriages, and ideals of its inhabitants.',
+      };
+      final cleaned = SynopsisCleaner.clean(olObject);
+      expect(
+        cleaned,
+        'Set in the fictional provincial town of Middlemarch, this novel explores the lives, marriages, and ideals of its inhabitants.',
+      );
+      expect(SynopsisCleaner.isQuality(cleaned), isTrue);
+    });
+
+    test('5. Quality check: rejects all-caps shouting catalog entries', () {
+      const allCaps =
+          'THIS IS A RARE REPRINT OF THE 1912 EDITION PUBLISHED BY THE UNIVERSITY PRESS IN LONDON WITH COMPLETE INDEX AND GLOSSARY.';
+      expect(SynopsisCleaner.isQuality(allCaps), isFalse);
+      expect(SynopsisCleaner.cleanAndValidate(allCaps), '');
+    });
+
+    test('6. Quality check: rejects descriptions that are too short (< 40 chars)', () {
+      const shortDesc = 'A novel about books and dreams.';
+      expect(shortDesc.length < 40, isTrue);
+      expect(SynopsisCleaner.isQuality(shortDesc), isFalse);
+      expect(SynopsisCleaner.cleanAndValidate(shortDesc), '');
+    });
+
+    test('7. Quality check: handles empty and null gracefully', () {
+      expect(SynopsisCleaner.clean(null), '');
+      expect(SynopsisCleaner.clean(''), '');
+      expect(SynopsisCleaner.clean('     '), '');
+      expect(SynopsisCleaner.cleanAndValidate(null), '');
+      expect(SynopsisCleaner.cleanAndValidate(''), '');
+    });
+
+    test('8. Quality check: rejects metadata dumps (key-value lists) rather than prose', () {
+      const metadataDump =
+          'Title: Emma\n'
+          'Author: Jane Austen\n'
+          'Format: Paperback 12mo\n'
+          'Publisher: Penguin Classics\n'
+          'Language: English\n'
+          'Year: 1815';
+      expect(SynopsisCleaner.isQuality(metadataDump), isFalse);
+      expect(SynopsisCleaner.cleanAndValidate(metadataDump), '');
+    });
+
+    test('9. Truncate preview: collapses long text and never cuts mid-word', () {
+      const longText =
+          'In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell, nor yet a dry, bare, sandy hole with nothing in it to sit down on or to eat: it was a hobbit-hole, and that means comfort. It had a perfectly round door like a porthole, painted green, with a shiny yellow brass knob in the exact middle.';
+      final truncated = SynopsisCleaner.truncatePreview(longText, maxLength: 100);
+      expect(truncated.endsWith('...'), isTrue);
+      expect(truncated.length <= 104, isTrue);
+      final withoutDots = truncated.substring(0, truncated.length - 3);
+      final lastWord = withoutDots.split(' ').last;
+      expect(RegExp(r'^[A-Za-z]+$').hasMatch(lastWord), isTrue);
+    });
+  });
+
+  group('Part 2: BookDetailScreen Synopsis UI & Collapsible behavior', () {
+    testWidgets('Book Detail shows gentle empty state ("No synopsis yet ~") with "Add your own" action when empty', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      final book = Book(
+        id: 'no-synopsis-1',
+        title: 'A Room with a View',
+        authors: ['E. M. Forster'],
+        status: ReadingStatus.reading,
+        description: '',
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      await storage.saveBook(book);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: MaterialApp(
+            home: BookDetailScreen(bookId: book.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Synopsis'), findsOneWidget);
+      expect(find.text('No synopsis yet ~'), findsOneWidget);
+      expect(find.byKey(const ValueKey('add_synopsis_btn')), findsOneWidget);
+      expect(find.text('Add your own'), findsOneWidget);
+    });
+
+    testWidgets('Book Detail collapses long descriptions with "Read more" and expands to "Show less"', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      const longSynopsis =
+          'Set in the lush English countryside of Hertfordshire, Pride and Prejudice follows the turbulent relationship between Elizabeth Bennet, the daughter of a country gentleman, and Fitzwilliam Darcy, a rich and aristocratic landowner. As they navigate the societal pressures of 19th-century England, they must overcome their respective biases of pride and prejudice in order to find mutual love, respect, and lasting happiness together amidst family eccentricities.';
+      final book = Book(
+        id: 'long-synopsis-1',
+        title: 'Pride and Prejudice',
+        authors: ['Jane Austen'],
+        status: ReadingStatus.finished,
+        description: longSynopsis,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      await storage.saveBook(book);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: MaterialApp(
+            home: BookDetailScreen(bookId: book.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially collapsed with "Read more"
+      expect(find.text('Synopsis'), findsOneWidget);
+      expect(find.text('Read more'), findsOneWidget);
+      expect(find.text('Show less'), findsNothing);
+
+      // Scroll to "Read more" button and tap
+      await tester.ensureVisible(find.byKey(const ValueKey('synopsis_toggle_btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('synopsis_toggle_btn')));
+      await tester.pumpAndSettle();
+
+      // Now expanded with full text and "Show less"
+      expect(find.text('Show less'), findsOneWidget);
+      expect(find.text('Read more'), findsNothing);
+      expect(find.text(longSynopsis), findsOneWidget);
+
+      // Scroll to "Show less" button and tap
+      await tester.ensureVisible(find.byKey(const ValueKey('synopsis_toggle_btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('synopsis_toggle_btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Read more'), findsOneWidget);
+      expect(find.text('Show less'), findsNothing);
+    });
   });
 }

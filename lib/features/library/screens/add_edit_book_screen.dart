@@ -665,6 +665,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         genres: _selectedGenres.toList(),
         rating: _rating,
         description: _descriptionController.text.trim(),
+        descriptionIsUserEdited: _descriptionController.text.trim().isNotEmpty || (existingBook?.descriptionIsUserEdited ?? false),
         startDate: _status == ReadingStatus.wantToRead ? null : _startDate,
         finishDate: (_status == ReadingStatus.finished || _status == ReadingStatus.paused)
             ? _finishDate
