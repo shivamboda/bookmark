@@ -1,3 +1,4 @@
+import '../../../core/widgets/apple_centered_field.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -743,18 +744,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               constraints: const BoxConstraints(maxWidth: 540),
               child: Stack(
                 children: [
-                  // Botanical Header Poppy Peeking Gracefully
-                  const Positioned(
-                    top: 10,
-                    right: 14,
-                    child: IgnorePointer(
-                      child: PoppyDoodle(
-                        size: 72,
-                        showStem: false,
-                        petalColor: FloralPalette.rosePetal,
-                      ),
-                    ),
-                  ),
+
 
                   Column(
                     children: [
@@ -917,7 +907,18 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ),
           ),
 
-          const SizedBox(width: 44),
+          // Botanical Header Poppy: Beautifully framed in a 44x44 container, never cut off!
+          const SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: PoppyDoodle(
+                size: 38,
+                showStem: false,
+                petalColor: FloralPalette.rosePetal,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1067,8 +1068,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            key: const ValueKey('input_book_title'),
+          AppleCenteredTextFormField(
+            fieldKey: const ValueKey('input_book_title'),
             controller: _titleController,
             textCapitalization: TextCapitalization.words,
             style: const TextStyle(
@@ -1108,8 +1109,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            key: const ValueKey('input_book_authors'),
+          AppleCenteredTextFormField(
+            fieldKey: const ValueKey('input_book_authors'),
             controller: _authorsController,
             textCapitalization: TextCapitalization.words,
             style: const TextStyle(
@@ -1562,8 +1563,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            key: const ValueKey('input_page_count'),
+          AppleCenteredTextFormField(
+            fieldKey: const ValueKey('input_page_count'),
             controller: _pageCountController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -1599,8 +1600,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            key: const ValueKey('input_book_description'),
+          AppleCenteredTextFormField(
+            fieldKey: const ValueKey('input_book_description'),
             controller: _descriptionController,
             maxLines: 4,
             style: const TextStyle(
@@ -1633,8 +1634,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            key: const ValueKey('input_book_notes'),
+          AppleCenteredTextFormField(
+            fieldKey: const ValueKey('input_book_notes'),
             controller: _notesController,
             maxLines: 4,
             style: const TextStyle(

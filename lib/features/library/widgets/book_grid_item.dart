@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import '../../../core/widgets/floral_rating_bar.dart';
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
 import '../../../models/book.dart';
@@ -141,10 +142,9 @@ class BookGridItem extends StatelessWidget {
                 Row(
                   children: [
                     if (book.isRated) ...[
-                      const Icon(
-                        Icons.star_rounded,
+                      const BotanicalBlossomIcon(
                         size: 15,
-                        color: FloralPalette.buttercupGold, // Deeper buttercup gold, visible on white
+                        fillFraction: 1.0,
                       ),
                       const SizedBox(width: 3),
                       Text(

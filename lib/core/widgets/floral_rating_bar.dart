@@ -322,3 +322,28 @@ class BotanicalBlossomPainter extends CustomPainter {
     return oldDelegate.fillFraction != fillFraction;
   }
 }
+
+
+/// A compact botanical blossom icon used for ratings on cards, badges, and lists.
+class BotanicalBlossomIcon extends StatelessWidget {
+  final double size;
+  final double fillFraction;
+
+  const BotanicalBlossomIcon({
+    super.key,
+    this.size = 17,
+    this.fillFraction = 1.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: BotanicalBlossomPainter(fillFraction: fillFraction),
+      ),
+    );
+  }
+}

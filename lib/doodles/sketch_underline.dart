@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 /// A handcrafted, organic pen/brush underline drawn via CustomPainter.
 ///

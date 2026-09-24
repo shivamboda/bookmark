@@ -1,3 +1,4 @@
+import 'package:bookmark/doodles/poppy_doodle.dart';
 import 'package:bookmark/core/widgets/floral_rating_bar.dart';
 import 'package:bookmark/core/widgets/floral_celebration_overlay.dart';
 import 'package:bookmark/features/library/screens/book_search_screen.dart';
@@ -1840,6 +1841,61 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FloralCelebrationDialog), findsNothing);
+  });
+
+
+  testWidgets('Botanical updates: Home screen blossom rating, unclipped header poppy, and Apple auto-centering text fields', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final storage = InMemoryStorageService();
+    await storage.saveBook(Book(
+      id: 'b-flower-test',
+      title: 'The Secret History',
+      authors: const ['Donna Tartt'],
+      rating: 4.5,
+      status: ReadingStatus.finished,
+      finishDate: DateTime.now(),
+      dateAdded: DateTime.now(),
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Verify Home screen displays BotanicalBlossomIcon instead of star icon
+    expect(find.byType(BotanicalBlossomIcon), findsWidgets);
+    expect(find.text('4.5'), findsOneWidget);
+
+    // 2. Open Add Book screen
+    await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+    await tester.pumpAndSettle();
+
+    // Search screen -> tap Enter Details Manually
+    await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddEditBookScreen), findsOneWidget);
+
+    // Verify top bar contains the unclipped PoppyDoodle (inside 44x44 container)
+    expect(find.byType(PoppyDoodle), findsWidgets);
+
+    // 3. Verify Apple-style auto-centering on text field tap / focus
+    final titleField = find.byKey(const ValueKey('input_book_title'));
+    expect(titleField, findsOneWidget);
+    await tester.tap(titleField);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    // Verify input enters text cleanly
+    await tester.enterText(titleField, 'Emma');
+    await tester.pumpAndSettle();
+    expect(find.text('Emma'), findsWidgets);
   });
 
 }

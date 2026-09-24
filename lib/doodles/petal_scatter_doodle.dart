@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../core/theme/palette.dart';
 
 /// A handcrafted drifting petal scatter motif drawn via CustomPainter.

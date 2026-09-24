@@ -1,3 +1,4 @@
+import '../../../core/widgets/floral_rating_bar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
@@ -102,10 +103,9 @@ class BookListCard extends StatelessWidget {
                             ),
                             const Spacer(),
                             if (book.isRated) ...[
-                              const Icon(
-                                Icons.star_rounded,
-                                size: 17,
-                                color: FloralPalette.buttercupGold,
+                              const BotanicalBlossomIcon(
+                                size: 16,
+                                fillFraction: 1.0,
                               ),
                               const SizedBox(width: 3),
                               Text(

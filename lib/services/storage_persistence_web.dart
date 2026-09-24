@@ -1,4 +1,4 @@
-﻿import 'dart:js_interop';
+import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 Future<bool> requestStoragePersistence() async {
