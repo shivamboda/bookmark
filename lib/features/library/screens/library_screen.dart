@@ -196,14 +196,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       margin: const EdgeInsets.fromLTRB(18, 0, 18, 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7F2),
+        color: FloralPalette.bannerBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Row(
         children: [
-          const Icon(Icons.shield_outlined, color: Color(0xFFD48B28), size: 22),
+          const Icon(Icons.shield_outlined, color: FloralPalette.buttercupGold, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -608,9 +608,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAF6F3),
+                    color: FloralPalette.softIvory,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF2DED9)),
+                    border: Border.all(color: FloralPalette.cardBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1227,7 +1227,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF2DED9)),
+                        border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
                       ),
                       child: Column(
@@ -1335,7 +1335,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF2DED9)),
+                        border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
                       ),
                       child: Column(
@@ -1345,7 +1345,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             children: [
                               Icon(
                                 _isStoragePersisted ? Icons.verified_user_rounded : Icons.shield_outlined,
-                                color: _isStoragePersisted ? FloralPalette.sageGreenDark : const Color(0xFFD48B28),
+                                color: _isStoragePersisted ? FloralPalette.sageGreenDark : FloralPalette.buttercupGold,
                                 size: 22,
                               ),
                               const SizedBox(width: 8),
@@ -1353,7 +1353,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 child: Text(
                                   _isStoragePersisted ? 'Storage: Protected' : 'Standard Device Storage',
                                   style: JournalTypography.headingSmall(
-                                    color: _isStoragePersisted ? FloralPalette.sageGreenDark : const Color(0xFFD48B28),
+                                    color: _isStoragePersisted ? FloralPalette.sageGreenDark : FloralPalette.buttercupGold,
                                   ),
                                 ),
                               ),
@@ -1392,7 +1392,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF2DED9)),
+                        border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
                       ),
                       child: Column(
@@ -1636,7 +1636,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+              border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
               boxShadow: const [FloralPalette.cardShadow],
             ),
             child: TextField(
@@ -1688,7 +1688,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           color: isSelected ? FloralPalette.deepRose : Colors.white,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isSelected ? FloralPalette.deepRose : const Color(0xFFF0DCD7),
+                            color: isSelected ? FloralPalette.deepRose : FloralPalette.cardBorder,
                             width: 1.0,
                           ),
                           boxShadow: isSelected
@@ -1784,7 +1784,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _selectedGenre != null ? FloralPalette.deepRose : const Color(0xFFF0DCD7),
+                      color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
                       width: 1.0,
                     ),
                   ),
@@ -1855,7 +1855,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFF0DCD7), width: 1.0),
+                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1891,7 +1891,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFF0DCD7), width: 1.0),
+                      border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     ),
                     child: Icon(
                       _isGridView ? Icons.view_agenda_rounded : Icons.grid_view_rounded,

@@ -111,7 +111,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
             "couldn't reach the library shelves right now ~",
             style: TextStyle(fontFamily: 'Caveat', fontSize: 16),
           ),
-          backgroundColor: const Color(0xFFB84B6B),
+          backgroundColor: FloralPalette.deepRose,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 3),
@@ -368,7 +368,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: const [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
@@ -423,7 +423,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: const [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
@@ -446,7 +446,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.2),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: TextField(
@@ -738,7 +738,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Material(

@@ -236,7 +236,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: const [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
@@ -291,7 +291,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: const [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
@@ -315,7 +315,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -406,7 +406,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                             decoration: BoxDecoration(
                               color: FloralPalette.blushPink.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFF2DED9), width: 0.8),
+                              border: Border.all(color: FloralPalette.cardBorder, width: 0.8),
                             ),
                             child: Text(
                               g,
@@ -435,7 +435,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -451,7 +451,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               Text(
                 book.isRated ? '${book.rating!.toStringAsFixed(1)} / 5.0' : 'Unrated',
                 style: JournalTypography.bodySmall(
-                  color: book.isRated ? const Color(0xFFD48B28) : FloralPalette.unratedText,
+                  color: book.isRated ? FloralPalette.buttercupGold : FloralPalette.unratedText,
                 ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ],
@@ -478,7 +478,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -970,7 +970,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+            border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
             boxShadow: const [FloralPalette.cardShadow],
           ),
           child: Text(
@@ -1135,7 +1135,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                 decoration: BoxDecoration(
                   color: FloralPalette.petalWhite,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+                  border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                 ),
                 child: Row(
                   children: [
@@ -1218,7 +1218,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                     decoration: BoxDecoration(
                       color: FloralPalette.petalWhite,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFF2DED9)),
+                      border: Border.all(color: FloralPalette.cardBorder),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1279,7 +1279,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                     decoration: BoxDecoration(
                       color: FloralPalette.petalWhite,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFF2DED9)),
+                      border: Border.all(color: FloralPalette.cardBorder),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1320,7 +1320,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                     decoration: BoxDecoration(
                       color: FloralPalette.petalWhite,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFF2DED9)),
+                      border: Border.all(color: FloralPalette.cardBorder),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

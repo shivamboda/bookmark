@@ -206,7 +206,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: isDark ? const Color(0x22FFFFFF) : const Color(0x33F8C8D4),
+            color: isDark ? const Color(0x22FFFFFF) : FloralPalette.cardBorder,
             width: 1.0,
           ),
         ),
@@ -241,13 +241,13 @@ class AppTheme {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: isDark ? const Color(0x33FFFFFF) : const Color(0x44F8C8D4),
+            color: isDark ? const Color(0x33FFFFFF) : FloralPalette.cardBorder,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: isDark ? const Color(0x33FFFFFF) : const Color(0x44F8C8D4),
+            color: isDark ? const Color(0x33FFFFFF) : FloralPalette.cardBorder,
           ),
         ),
         focusedBorder: OutlineInputBorder(

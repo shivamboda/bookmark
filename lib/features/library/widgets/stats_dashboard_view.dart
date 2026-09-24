@@ -123,7 +123,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -207,7 +207,7 @@ class StatsDashboardView extends ConsumerWidget {
                         child: PoppyDoodle(
                           size: 58,
                           showStem: false,
-                          petalColor: isReached ? const Color(0xFFD48B28) : FloralPalette.rosePetal,
+                          petalColor: isReached ? FloralPalette.buttercupGold : FloralPalette.rosePetal,
                         ),
                       ),
                     ],
@@ -219,7 +219,7 @@ class StatsDashboardView extends ConsumerWidget {
                       value: progress,
                       backgroundColor: FloralPalette.blushPink.withValues(alpha: 0.3),
                       valueColor: AlwaysStoppedAnimation(
-                        isReached ? const Color(0xFFD48B28) : FloralPalette.deepRose,
+                        isReached ? FloralPalette.buttercupGold : FloralPalette.deepRose,
                       ),
                       minHeight: 12,
                     ),
@@ -248,7 +248,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -344,7 +344,7 @@ class StatsDashboardView extends ConsumerWidget {
           child: _buildMetricTile(
             label: 'Avg Rating',
             value: avgRating != null ? avgRating.toStringAsFixed(1) : '—',
-            color: const Color(0xFFD48B28),
+            color: FloralPalette.buttercupGold,
             icon: Icons.star_rounded,
           ),
         ),
@@ -363,7 +363,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -421,7 +421,7 @@ class StatsDashboardView extends ConsumerWidget {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: maxY,
-              color: const Color(0xFFFAF6F3),
+              color: FloralPalette.softIvory,
             ),
           ),
         ],
@@ -434,7 +434,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -548,7 +548,7 @@ class StatsDashboardView extends ConsumerWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxY > 6 ? 2 : 1,
                   getDrawingHorizontalLine: (value) => const FlLine(
-                    color: Color(0xFFF2DED9),
+                    color: FloralPalette.cardBorder,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
@@ -575,7 +575,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Row(
@@ -630,7 +630,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Row(
@@ -639,10 +639,10 @@ class StatsDashboardView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFDF4E7),
+              color: FloralPalette.kraftPaper,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.star_rounded, color: Color(0xFFD48B28), size: 28),
+            child: const Icon(Icons.star_rounded, color: FloralPalette.buttercupGold, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -660,7 +660,7 @@ class StatsDashboardView extends ConsumerWidget {
                       Text(
                         avgRating.toStringAsFixed(1),
                         style: JournalTypography.headingLarge(
-                          color: const Color(0xFFD48B28),
+                          color: FloralPalette.buttercupGold,
                         ).copyWith(fontSize: 28),
                       ),
                       const SizedBox(width: 8),
@@ -670,7 +670,7 @@ class StatsDashboardView extends ConsumerWidget {
                           return Icon(
                             filled ? Icons.star_rounded : Icons.star_border_rounded,
                             size: 18,
-                            color: const Color(0xFFD48B28),
+                            color: FloralPalette.buttercupGold,
                           );
                         }),
                       ),
@@ -720,7 +720,7 @@ class StatsDashboardView extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF2DED9)),
+          border: Border.all(color: FloralPalette.cardBorder),
           boxShadow: const [FloralPalette.cardShadow],
         ),
         child: Column(
@@ -760,7 +760,7 @@ class StatsDashboardView extends ConsumerWidget {
       FloralPalette.deepRose,
       FloralPalette.sageGreenDark,
       FloralPalette.lavenderDark,
-      Color(0xFFD48B28),
+      FloralPalette.buttercupGold,
       FloralPalette.mutedCharcoal,
     ];
 
@@ -770,7 +770,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -887,7 +887,7 @@ class StatsDashboardView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9)),
+        border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(
@@ -895,7 +895,7 @@ class StatsDashboardView extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.military_tech_rounded, color: Color(0xFFD48B28), size: 22),
+              const Icon(Icons.military_tech_rounded, color: FloralPalette.buttercupGold, size: 22),
               const SizedBox(width: 8),
               Text(
                 'Highest-Rated Reads',
@@ -928,7 +928,7 @@ class StatsDashboardView extends ConsumerWidget {
                         child: Text(
                           '#$rank',
                           style: JournalTypography.handwriting(
-                            color: rank == 1 ? const Color(0xFFD48B28) : FloralPalette.mutedCharcoal,
+                            color: rank == 1 ? FloralPalette.buttercupGold : FloralPalette.mutedCharcoal,
                           ).copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -980,21 +980,21 @@ class StatsDashboardView extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFDF4E7),
+                          color: FloralPalette.kraftPaper,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFF6D6A2)),
+                          border: Border.all(color: FloralPalette.blushPink),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, size: 14, color: Color(0xFFD48B28)),
+                            const Icon(Icons.star_rounded, size: 14, color: FloralPalette.buttercupGold),
                             const SizedBox(width: 3),
                             Text(
                               book.rating!.toStringAsFixed(1),
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFD48B28),
+                                color: FloralPalette.buttercupGold,
                               ),
                             ),
                           ],

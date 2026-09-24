@@ -30,7 +30,7 @@ class LibraryEmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.2),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Column(

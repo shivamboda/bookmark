@@ -78,7 +78,7 @@ class FloralBottomNav extends StatelessWidget {
                 label: 'Settings',
                 icon: LeafSprigDoodle(
                   size: 24,
-                  color: currentIndex == 3 ? FloralPalette.deepRose : const Color(0xFF8A6B5A),
+                  color: currentIndex == 3 ? FloralPalette.deepRose : FloralPalette.unratedText,
                 ),
               ),
             ],
@@ -94,7 +94,7 @@ class FloralBottomNav extends StatelessWidget {
     required Widget icon,
   }) {
     final isSelected = currentIndex == index;
-    const inactiveColor = Color(0xFF8A6B5A); // Soft brown (4.8:1 contrast on white)
+    const inactiveColor = FloralPalette.unratedText; // Soft brown (4.8:1 contrast on white)
 
     return Expanded(
       child: InkWell(

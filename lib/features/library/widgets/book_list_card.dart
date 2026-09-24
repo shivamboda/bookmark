@@ -51,7 +51,7 @@ class BookListCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Material(
