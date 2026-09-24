@@ -1188,6 +1188,7 @@ void main() {
     final searchField = find.byKey(const ValueKey('library_search_input'));
     expect(searchField, findsOneWidget);
     await tester.enterText(searchField, 'Hail Mary');
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.text('Project Hail Mary'), findsWidgets);
@@ -1195,21 +1196,23 @@ void main() {
 
     // 2. Search by author
     await tester.enterText(searchField, 'Sanderson');
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.text('The Way of Kings'), findsWidgets);
     expect(find.text('Words of Radiance'), findsWidgets);
     expect(find.text('Project Hail Mary'), findsNothing);
 
-    // 3. Search non-matching query -> triggers friendly empty result
+    // 3. Search non-matching query -> triggers friendly online search fallback card
     await tester.enterText(searchField, 'Nonexistent Query XYZ');
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nothing matches that yet ~'), findsOneWidget);
-    expect(find.text('try adjusting your search, filters, or shelves ~'), findsOneWidget);
-    expect(find.byKey(const ValueKey('clear_filters_btn')), findsOneWidget);
+    expect(find.text('Nothing on your shelf matches "Nonexistent Query XYZ".'), findsOneWidget);
+    expect(find.text('Would you like to search for "Nonexistent Query XYZ" online?'), findsOneWidget);
+    expect(find.byKey(const ValueKey('search_online_fallback_btn')), findsOneWidget);
 
-    // 4. Tap reset button
+    // 4. Tap clear search button
     await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
     await tester.pumpAndSettle();
 
@@ -1969,5 +1972,98 @@ void main() {
     expect(find.byType(AcornDoodle), findsWidgets);
     expect(find.byType(MushroomDoodle), findsOneWidget);
     expect(find.byType(FallingLeavesDoodle), findsOneWidget);
+  });
+
+  testWidgets('Part 1: Library search fallback card, debounce, online search launch, and filter hiding notice', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final b1 = Book(
+      id: 'part1-1',
+      title: 'Pride and Prejudice',
+      authors: ['Jane Austen'],
+      genres: ['Romance', 'Classic'],
+      status: ReadingStatus.finished,
+      dateAdded: DateTime(2026, 9, 20),
+    );
+    final b2 = Book(
+      id: 'part1-2',
+      title: 'Dune',
+      authors: ['Frank Herbert'],
+      genres: ['Sci-Fi'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime(2026, 9, 21),
+    );
+    await storage.saveBook(b1);
+    await storage.saveBook(b2);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final searchField = find.byKey(const ValueKey('library_search_input'));
+    expect(searchField, findsOneWidget);
+
+    // 1. Debounce check: typing does not immediately flash the card before 300ms
+    await tester.enterText(searchField, 'Harry Potter');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const ValueKey('search_online_fallback_btn')), findsNothing);
+
+    // After 300ms debounce expires: friendly fallback card appears
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing on your shelf matches "Harry Potter".'), findsOneWidget);
+    expect(find.text('Would you like to search for "Harry Potter" online?'), findsOneWidget);
+    final onlineBtn = find.byKey(const ValueKey('search_online_fallback_btn'));
+    expect(onlineBtn, findsOneWidget);
+
+    // 2. Tap the online search button -> opens BookSearchScreen with query pre-filled
+    await tester.tap(onlineBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BookSearchScreen), findsOneWidget);
+    final onlineSearchField = find.byKey(const ValueKey('book_search_input'));
+    expect(onlineSearchField, findsOneWidget);
+    expect(tester.widget<TextField>(onlineSearchField).controller?.text, 'Harry Potter');
+
+    // Pop back to library
+    Navigator.of(tester.element(find.byType(BookSearchScreen))).pop();
+    await tester.pumpAndSettle();
+
+    // Clear search
+    await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
+    await tester.pumpAndSettle();
+    expect(find.text('Pride and Prejudice'), findsWidgets);
+
+    // 3. Filter hiding matches:
+    // Filter library by "Reading" chip
+    await tester.tap(find.byKey(const ValueKey('status_chip_reading')));
+    await tester.pumpAndSettle();
+    expect(find.text('Dune'), findsWidgets);
+    expect(find.text('Pride and Prejudice'), findsNothing);
+
+    // Now search for "Pride" (which is Finished, not Reading)
+    await tester.enterText(searchField, 'Pride');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    // Since 'Pride and Prejudice' exists in the library, fallback tells user that filters are hiding matches
+    expect(find.text('Filters are hiding matches for "Pride"'), findsOneWidget);
+    expect(find.textContaining('Try clearing your filters to see 1 matching book on your shelf ~'), findsOneWidget);
+    expect(find.byKey(const ValueKey('clear_filters_btn')), findsOneWidget);
+
+    // Tapping "Clear Filters" clears the active filter and reveals the book
+    await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
+    await tester.pumpAndSettle();
+    expect(find.text('Pride and Prejudice'), findsWidgets);
   });
 }

@@ -26,11 +26,13 @@ import 'package:http/http.dart' as http;
 /// - Fully styled in Poppy Blush / Fraunces-Lora-Caveat botanical design
 class BookSearchScreen extends ConsumerStatefulWidget {
   final ReadingStatus defaultStatus;
+  final String? initialQuery;
   final Future<List<BookSearchResult>> Function(String query)? searchFn;
 
   const BookSearchScreen({
     super.key,
     this.defaultStatus = ReadingStatus.reading,
+    this.initialQuery,
     this.searchFn,
   });
 
@@ -47,6 +49,21 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
   bool _hasSearched = false;
   List<BookSearchResult> _results = [];
   
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
+      final q = widget.initialQuery!.trim();
+      _searchController.text = q;
+      _searchController.selection = TextSelection.fromPosition(TextPosition(offset: q.length));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _executeSearch(q);
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {

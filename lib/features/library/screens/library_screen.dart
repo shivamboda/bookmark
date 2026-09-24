@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +73,40 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   LibrarySortOption _sortOption = LibrarySortOption.dateAdded;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Timer? _searchDebounceTimer;
+
+  void _onLibrarySearchChanged(String val) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _searchQuery = val.trim();
+        });
+      }
+    });
+  }
+
+  void _clearLibrarySearch() {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+    });
+  }
+
+  void _openOnlineSearch(BuildContext context, String query) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BookSearchScreen(
+          initialQuery: query,
+          defaultStatus: _activeStatusFilter == LibraryStatusFilter.reading
+              ? ReadingStatus.reading
+              : ReadingStatus.wantToRead,
+        ),
+      ),
+    );
+  }
+
   int _currentNavIndex = 0;
   bool _isBackupBannerDismissed = false;
   DateTime? _lastBackupDate;
@@ -86,6 +121,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -881,7 +917,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   final books = _filterAndSortBooks(allBooks);
 
                   if (books.isEmpty) {
-                    return _buildNoMatchesState();
+                    return _buildNoMatchesState(allBooks);
                   }
 
                   if (_isGridView) {
@@ -1747,7 +1783,127 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   /// Friendly empty state when search or filters return 0 results
-  Widget _buildNoMatchesState() {
+  Widget _buildNoMatchesState(List<Book> allBooks) {
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      final globalMatches = allBooks.where((b) {
+        final titleMatch = b.title.toLowerCase().contains(query);
+        final authorMatch = b.authors.any((a) => a.toLowerCase().contains(query));
+        return titleMatch || authorMatch;
+      }).toList();
+
+      if (globalMatches.isEmpty) {
+        // Zero matches anywhere in library -> Offer online search fallback card
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+              decoration: BoxDecoration(
+                color: FloralPalette.softIvory,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
+                boxShadow: [FloralPalette.cardShadow],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const TulipDoodle(size: 56, showStem: false, petalColor: FloralPalette.rosePetal),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Nothing on your shelf matches "$_searchQuery".',
+                    textAlign: TextAlign.center,
+                    style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 17),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Would you like to search for "$_searchQuery" online?',
+                    textAlign: TextAlign.center,
+                    style: JournalTypography.body(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 13.5),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    key: const ValueKey('search_online_fallback_btn'),
+                    onPressed: () => _openOnlineSearch(context, _searchQuery),
+                    icon: const Icon(Icons.travel_explore_rounded, size: 18),
+                    label: Text('Search online for "$_searchQuery"'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FloralPalette.deepRose,
+                      foregroundColor: FloralPalette.softIvory,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    key: const ValueKey('clear_filters_btn'),
+                    onPressed: _clearLibrarySearch,
+                    child: Text(
+                      'Clear search',
+                      style: JournalTypography.bodySmall(color: FloralPalette.cocoa),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      } else {
+        // Matches exist in library, but active status/genre filters are hiding them
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+              decoration: BoxDecoration(
+                color: FloralPalette.softIvory,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
+                boxShadow: [FloralPalette.cardShadow],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TulipDoodle(size: 56, showStem: false, petalColor: FloralPalette.sageGreenDark),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Filters are hiding matches for "$_searchQuery"',
+                    textAlign: TextAlign.center,
+                    style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 17),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Try clearing your filters to see ${globalMatches.length} matching ${globalMatches.length == 1 ? "book" : "books"} on your shelf ~',
+                    textAlign: TextAlign.center,
+                    style: JournalTypography.body(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 13.5),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    key: const ValueKey('clear_filters_btn'),
+                    onPressed: () {
+                      setState(() {
+                        _activeStatusFilter = LibraryStatusFilter.all;
+                        _selectedGenre = null;
+                      });
+                    },
+                    icon: const Icon(Icons.filter_alt_off_rounded, size: 18),
+                    label: const Text('Clear Filters'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FloralPalette.deepRose,
+                      foregroundColor: FloralPalette.softIvory,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    // Default empty filter state (no search query typed)
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
@@ -1774,6 +1930,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 setState(() {
                   _activeStatusFilter = LibraryStatusFilter.all;
                   _selectedGenre = null;
+                  _searchDebounceTimer?.cancel();
                   _searchController.clear();
                   _searchQuery = '';
                 });
@@ -1837,19 +1994,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: TextField(
               key: const ValueKey('library_search_input'),
               controller: _searchController,
-              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              onChanged: _onLibrarySearchChanged,
               style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Search shelf by title or author...',
                 hintStyle: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 12.5),
                 prefixIcon: const Icon(Icons.search_rounded, size: 18, color: FloralPalette.cocoa),
-                suffixIcon: _searchQuery.isNotEmpty
+                suffixIcon: (_searchQuery.isNotEmpty || _searchController.text.isNotEmpty)
                     ? IconButton(
                         icon: Icon(Icons.clear_rounded, size: 16, color: FloralPalette.mutedCharcoal),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
+                        onPressed: _clearLibrarySearch,
                       )
                     : null,
                 border: InputBorder.none,
