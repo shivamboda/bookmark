@@ -121,7 +121,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -246,7 +246,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -305,7 +305,7 @@ class StatsDashboardView extends ConsumerWidget {
             label: const Text('Find Your Next Read'),
             style: ElevatedButton.styleFrom(
               backgroundColor: FloralPalette.deepRose,
-              foregroundColor: Colors.white,
+              foregroundColor: FloralPalette.softIvory,
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
@@ -361,7 +361,7 @@ class StatsDashboardView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -432,7 +432,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -490,7 +490,7 @@ class StatsDashboardView extends ConsumerWidget {
                       return BarTooltipItem(
                         '$month: $count ${count == 1 ? "book" : "books"}',
                         const TextStyle(
-                          color: Colors.white,
+                          color: FloralPalette.softIvory,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -573,7 +573,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -628,7 +628,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -718,7 +718,7 @@ class StatsDashboardView extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: FloralPalette.softIvory,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: FloralPalette.cardBorder),
           boxShadow: const [FloralPalette.cardShadow],
@@ -768,7 +768,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],
@@ -885,7 +885,7 @@ class StatsDashboardView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
         boxShadow: const [FloralPalette.cardShadow],

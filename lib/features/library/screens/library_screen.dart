@@ -172,7 +172,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               key: const ValueKey('add_book_fab'),
               onPressed: () => _openAddBookScreen(context),
               backgroundColor: FloralPalette.deepRose,
-              foregroundColor: Colors.white,
+              foregroundColor: FloralPalette.softIvory,
               elevation: 3,
               tooltip: 'Add Book',
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -294,7 +294,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         // Offer choice between Web Share and direct download
         showModalBottomSheet(
           context: context,
-          backgroundColor: Colors.white,
+          backgroundColor: FloralPalette.softIvory,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -414,7 +414,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 key: const ValueKey('restore_file_button'),
                 style: FilledButton.styleFrom(
                   backgroundColor: FloralPalette.deepRose,
-                  foregroundColor: Colors.white,
+                  foregroundColor: FloralPalette.softIvory,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -491,7 +491,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   hintText: '{"metadata": {"format_version": 1, ...}}',
                   hintStyle: TextStyle(fontSize: 12, color: FloralPalette.mutedCharcoal.withValues(alpha: 0.5)),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: FloralPalette.softIvory,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: FloralPalette.blushPink),
@@ -509,7 +509,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: FloralPalette.deepRose,
-              foregroundColor: Colors.white,
+              foregroundColor: FloralPalette.softIvory,
             ),
             onPressed: () {
               final text = controller.text.trim();
@@ -572,7 +572,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: FloralPalette.softIvory,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -746,7 +746,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: FloralPalette.deepRose,
-              foregroundColor: Colors.white,
+              foregroundColor: FloralPalette.softIvory,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Replace Everything'),
@@ -1225,7 +1225,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
@@ -1253,7 +1253,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   onPressed: () => ref.read(yearlyGoalProvider.notifier).setGoal(12),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: FloralPalette.deepRose,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: FloralPalette.softIvory,
                                     minimumSize: const Size(44, 44),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1333,7 +1333,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
@@ -1390,7 +1390,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
                         boxShadow: const [FloralPalette.cardShadow],
@@ -1442,7 +1442,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   label: const Text('Export Library'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: FloralPalette.deepRose,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: FloralPalette.softIvory,
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                   ),
@@ -1479,7 +1479,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         label: const Text('Open Botanical Doodle Sketchbook'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FloralPalette.deepRose,
-                          foregroundColor: Colors.white,
+                          foregroundColor: FloralPalette.softIvory,
                           minimumSize: const Size(double.infinity, 48),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
@@ -1587,7 +1587,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               label: const Text('Reset Filters'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               ),
@@ -1634,7 +1634,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           Container(
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: FloralPalette.softIvory,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
               boxShadow: const [FloralPalette.cardShadow],
@@ -1685,7 +1685,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? FloralPalette.deepRose : Colors.white,
+                          color: isSelected ? FloralPalette.deepRose : FloralPalette.softIvory,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isSelected ? FloralPalette.deepRose : FloralPalette.cardBorder,
@@ -1732,7 +1732,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     _selectedGenre = (genre.isEmpty || genre == '__all__') ? null : genre;
                   });
                 },
-                color: Colors.white,
+                color: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 itemBuilder: (context) {
                   return [
@@ -1781,7 +1781,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   decoration: BoxDecoration(
                     color: _selectedGenre != null
                         ? FloralPalette.blushPink.withValues(alpha: 0.3)
-                        : Colors.white,
+                        : FloralPalette.softIvory,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
@@ -1826,7 +1826,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 key: const ValueKey('sort_option_button'),
                 initialValue: _sortOption,
                 onSelected: (opt) => _setSortOption(opt),
-                color: Colors.white,
+                color: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 itemBuilder: (context) {
                   return LibrarySortOption.values.map(
@@ -1853,7 +1853,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: FloralPalette.softIvory,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                   ),
@@ -1889,7 +1889,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: FloralPalette.softIvory,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     ),

@@ -28,7 +28,7 @@ class LibraryEmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
       margin: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
@@ -89,7 +89,7 @@ class LibraryEmptyState extends StatelessWidget {
               label: Text(buttonLabel ?? 'Add a Book'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 elevation: 0,

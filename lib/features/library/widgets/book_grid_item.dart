@@ -44,13 +44,13 @@ class BookGridItem extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
       child: Material(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,

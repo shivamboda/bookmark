@@ -278,8 +278,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
           data: AppTheme.lightTheme().copyWith(
             colorScheme: const ColorScheme.light(
               primary: FloralPalette.deepRose,
-              onPrimary: Colors.white,
-              surface: Colors.white,
+              onPrimary: FloralPalette.softIvory,
+              surface: FloralPalette.softIvory,
               onSurface: FloralPalette.warmCharcoal,
             ),
           ),
@@ -307,7 +307,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: FloralPalette.softIvory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Add Custom Genre',
@@ -335,7 +335,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               onPressed: () => Navigator.of(context).pop(controller.text.trim()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Add Genre'),
@@ -364,7 +364,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: FloralPalette.softIvory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           title: Text(
             existingQuote != null ? 'Edit Favorite Quote' : 'Add Favorite Quote',
@@ -445,7 +445,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Save Quote'),
@@ -474,7 +474,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: FloralPalette.softIvory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           title: Text(
             'Discard Changes?',
@@ -498,7 +498,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Discard'),
@@ -520,7 +520,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: FloralPalette.softIvory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           title: Text(
             'Remove from Shelf?',
@@ -544,7 +544,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.poppyRedDark,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Delete'),
@@ -615,7 +615,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            backgroundColor: Colors.white,
+            backgroundColor: FloralPalette.softIvory,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             title: Text(
               'Book Already on Shelf',
@@ -637,7 +637,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FloralPalette.deepRose,
-                  foregroundColor: Colors.white,
+                  foregroundColor: FloralPalette.softIvory,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Save Anyway'),
@@ -865,7 +865,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         children: [
           // Back / Discard Button
           Material(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('add_edit_back_btn'),
@@ -931,7 +931,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1055,7 +1055,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1137,7 +1137,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1176,21 +1176,21 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
               switch (status) {
                 case ReadingStatus.wantToRead:
-                  bg = isSelected ? FloralPalette.lavenderMist : Colors.white;
-                  text = isSelected ? FloralPalette.lavenderDark : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.lavenderDark : const Color(0xFFE2D6DC);
+                  bg = isSelected ? const Color(0xFF5B3D4A) : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? const Color(0xFF7A5263) : FloralPalette.cardBorder;
                 case ReadingStatus.reading:
-                  bg = isSelected ? const Color(0xFFD6E6D2) : Colors.white;
-                  text = isSelected ? FloralPalette.sageGreenDark : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.sageGreenDark : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.deepForestGreen : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.sageGreen : FloralPalette.cardBorder;
                 case ReadingStatus.finished:
-                  bg = isSelected ? FloralPalette.blushPink : Colors.white;
-                  text = isSelected ? FloralPalette.deepRose : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.deepRose : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.deepRose : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.rosePetal : FloralPalette.cardBorder;
                 case ReadingStatus.paused:
-                  bg = isSelected ? FloralPalette.latte : Colors.white;
-                  text = isSelected ? FloralPalette.espresso : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.cocoa : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.cocoa : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.caramel : FloralPalette.cardBorder;
               }
 
               return Material(
@@ -1243,7 +1243,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1374,7 +1374,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1394,7 +1394,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1537,7 +1537,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1587,7 +1587,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1657,7 +1657,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -1840,7 +1840,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         math.max(16.0, MediaQuery.of(context).padding.bottom + 8.0),
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         border: Border(top: BorderSide(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0)),
         boxShadow: [
           BoxShadow(
@@ -1855,7 +1855,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         onPressed: _isSaving ? null : _submitForm,
         style: ElevatedButton.styleFrom(
           backgroundColor: FloralPalette.deepRose,
-          foregroundColor: Colors.white,
+          foregroundColor: FloralPalette.softIvory,
           disabledBackgroundColor: FloralPalette.deepRose.withValues(alpha: 0.5),
           minimumSize: const Size(double.infinity, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1866,7 +1866,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: FloralPalette.softIvory,
                   strokeWidth: 2.2,
                 ),
               )

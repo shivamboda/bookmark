@@ -156,7 +156,7 @@ class AppTheme {
         text = FloralPalette.warmCharcoal;
     }
 
-    final isDark = mode == FloralThemeMode.midnightGarden;
+    final isDark = mode == FloralThemeMode.midnightGarden || mode == FloralThemeMode.poppyBlush;
 
     final baseTextTheme = isDark
         ? ThemeData.dark().textTheme

@@ -25,7 +25,7 @@ class FloralBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         border: const Border(
           top: BorderSide(
             color: Color(0xFFE8D7C8), // Latte hairline divider

@@ -159,7 +159,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            backgroundColor: Colors.white,
+            backgroundColor: FloralPalette.softIvory,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             title: Text(
               'Already in Your Journal ~',
@@ -181,7 +181,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FloralPalette.deepRose,
-                  foregroundColor: Colors.white,
+                  foregroundColor: FloralPalette.softIvory,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text('Add to Wishlist'),
@@ -356,7 +356,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         children: [
           // Back Button
           Material(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('search_back_button'),
@@ -411,7 +411,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
 
           // Shortcut: Add Manually button in navbar (>=44x44 hit target)
           Material(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('search_nav_manual_btn'),
@@ -444,7 +444,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
   Widget _buildSearchField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
@@ -603,7 +603,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
   /// Suggestion chip that populates search query
   Widget _buildSearchChip(String label) {
     return Material(
-      color: Colors.white,
+      color: FloralPalette.softIvory,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -680,7 +680,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
               label: const Text('Add Manually Instead'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 minimumSize: const Size(200, 48),
@@ -736,7 +736,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],

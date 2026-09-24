@@ -224,7 +224,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         children: [
           // Back Button
           Material(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('detail_back_button'),
@@ -279,7 +279,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
           // Edit Button (Placeholder for Step 4c)
           Material(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('detail_edit_button'),
@@ -313,7 +313,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -433,7 +433,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -476,7 +476,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -517,21 +517,21 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
               switch (status) {
                 case ReadingStatus.wantToRead:
-                  bg = isSelected ? FloralPalette.lavenderMist : Colors.white;
-                  text = isSelected ? FloralPalette.lavenderDark : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.lavenderDark : const Color(0xFFE2D6DC);
+                  bg = isSelected ? const Color(0xFF5B3D4A) : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? const Color(0xFF7A5263) : FloralPalette.cardBorder;
                 case ReadingStatus.reading:
-                  bg = isSelected ? const Color(0xFFD6E6D2) : Colors.white;
-                  text = isSelected ? FloralPalette.sageGreenDark : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.sageGreenDark : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.deepForestGreen : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.sageGreen : FloralPalette.cardBorder;
                 case ReadingStatus.finished:
-                  bg = isSelected ? FloralPalette.blushPink : Colors.white;
-                  text = isSelected ? FloralPalette.deepRose : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.deepRose : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.deepRose : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.rosePetal : FloralPalette.cardBorder;
                 case ReadingStatus.paused:
-                  bg = isSelected ? FloralPalette.latte : Colors.white;
-                  text = isSelected ? FloralPalette.espresso : FloralPalette.warmCharcoal; // 6.42:1 contrast
-                  border = isSelected ? FloralPalette.cocoa : const Color(0xFFE2D6DC);
+                  bg = isSelected ? FloralPalette.cocoa : FloralPalette.softIvory;
+                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
+                  border = isSelected ? FloralPalette.caramel : FloralPalette.cardBorder;
               }
 
               return Material(
@@ -582,7 +582,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
@@ -824,7 +824,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
             boxShadow: const [FloralPalette.cardShadow],
@@ -865,7 +865,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.deepRose.withValues(alpha: 0.4), width: 1.2),
         boxShadow: const [FloralPalette.cardShadow],
@@ -920,7 +920,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: FloralPalette.deepRose,
-                foregroundColor: Colors.white,
+                foregroundColor: FloralPalette.softIvory,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
@@ -968,7 +968,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
             boxShadow: const [FloralPalette.cardShadow],
@@ -1037,8 +1037,8 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
               primary: FloralPalette.deepRose,
-              onPrimary: Colors.white,
-              surface: Colors.white,
+              onPrimary: FloralPalette.softIvory,
+              surface: FloralPalette.softIvory,
               onSurface: FloralPalette.warmCharcoal,
             ),
           ),
@@ -1085,7 +1085,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: FloralPalette.softIvory,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
@@ -1249,7 +1249,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                     onPressed: _isSaving ? null : _handleConfirm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: FloralPalette.deepRose,
-                      foregroundColor: Colors.white,
+                      foregroundColor: FloralPalette.softIvory,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
@@ -1392,7 +1392,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                     onPressed: _isSaving ? null : _handleConfirm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: FloralPalette.deepRose,
-                      foregroundColor: Colors.white,
+                      foregroundColor: FloralPalette.softIvory,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
