@@ -17,6 +17,13 @@ import '../widgets/library_empty_state.dart';
 import '../widgets/stats_dashboard_view.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
+import '../../../services/backup_service.dart';
+import '../../../services/storage_service.dart';
+import '../../../services/backup_transport.dart';
+
 import 'book_search_screen.dart';
 
 /// Status filter options for books displayed in the Library screen.
@@ -63,6 +70,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int _currentNavIndex = 0;
+  bool _isBackupBannerDismissed = false;
+  DateTime? _lastBackupDate;
+  bool _isStoragePersisted = false;
+
 
   @override
   void initState() {
@@ -82,6 +93,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final savedGrid = await storage.getSetting('library_is_grid_view');
       final savedSort = await storage.getSetting('library_sort_option');
 
+      final savedBackup = await storage.getSetting('last_backup_date');
+      final persisted = await storage.getSetting('storage_persisted');
+
       if (mounted) {
         setState(() {
           if (savedGrid is bool) {
@@ -92,6 +106,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               (o) => o.name == savedSort,
               orElse: () => LibrarySortOption.dateAdded,
             );
+          }
+          if (savedBackup is String) {
+            _lastBackupDate = DateTime.tryParse(savedBackup);
+          }
+          if (persisted is bool) {
+            _isStoragePersisted = persisted;
           }
         });
       }
@@ -163,6 +183,498 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+
+  bool _shouldShowBackupBanner(List<Book> books) {
+    if (_isBackupBannerDismissed) return false;
+    if (books.isEmpty) return false;
+    if (_lastBackupDate == null) return true;
+    final days = DateTime.now().difference(_lastBackupDate!).inDays;
+    return days > 30;
+  }
+
+  Widget _buildBackupReminderBanner(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF2DED9)),
+        boxShadow: const [FloralPalette.cardShadow],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.shield_outlined, color: Color(0xFFD48B28), size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Gentle backup reminder ~',
+                  style: JournalTypography.handwriting(color: FloralPalette.warmCharcoal).copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _lastBackupDate == null
+                      ? "You have books in your library and haven't backed up yet."
+                      : "It has been over 30 days since your last library backup.",
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          TextButton(
+            onPressed: () => setState(() => _currentNavIndex = 3),
+            style: TextButton.styleFrom(
+              foregroundColor: FloralPalette.deepRose,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(40, 36),
+            ),
+            child: const Text('Back Up', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 18),
+            color: FloralPalette.mutedCharcoal,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            tooltip: 'Dismiss reminder',
+            onPressed: () => setState(() => _isBackupBannerDismissed = true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _checkStoragePersistence() async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final granted = await storage.requestPersistentStorage();
+      await storage.setSetting('storage_persisted', granted);
+      if (mounted) {
+        setState(() => _isStoragePersisted = granted);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              granted
+                  ? 'Storage protection granted! Your library is safeguarded.'
+                  : 'Storage protection was not granted. Please back up your library regularly.',
+            ),
+            backgroundColor: granted ? FloralPalette.sageGreenDark : FloralPalette.deepRose,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Persistence request error: $e');
+    }
+  }
+
+  String _formatLastBackup() {
+    if (_lastBackupDate == null) return 'Never';
+    return DateFormat.yMMMd().add_jm().format(_lastBackupDate!);
+  }
+
+  Future<void> _handleExport(BuildContext context) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final books = await storage.getAllBooks();
+      final jsonString = await BackupService.exportLibraryJson(storage);
+
+      final dateStr = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      final fileName = 'bookmark_backup_$dateStr.json';
+
+      final canShare = isWebShareSupported();
+
+      if (!context.mounted) return;
+
+      if (canShare) {
+        // Offer choice between Web Share and direct download
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Export Library Backup',
+                      style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Ready to export ${books.length} books with all quotes, notes, and covers.',
+                      style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                    ),
+                    const SizedBox(height: 20),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFF9EAE1),
+                        child: Icon(Icons.share_rounded, color: FloralPalette.deepRose),
+                      ),
+                      title: const Text('Share Backup File'),
+                      subtitle: const Text('Send via AirDrop, Messages, Drive, or Email'),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await BackupService.downloadOrShareBackup(
+                          jsonContent: jsonString,
+                          customFileName: fileName,
+                          preferShare: true,
+                        );
+                        _updateBackupState();
+                      },
+                    ),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFEBF3ED),
+                        child: Icon(Icons.file_download_rounded, color: FloralPalette.sageGreenDark),
+                      ),
+                      title: const Text('Download Backup JSON'),
+                      subtitle: const Text('Save file directly to your device downloads'),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await BackupService.downloadOrShareBackup(
+                          jsonContent: jsonString,
+                          customFileName: fileName,
+                          preferShare: false,
+                        );
+                        _updateBackupState();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      } else {
+        // Direct download
+        await BackupService.downloadOrShareBackup(
+          jsonContent: jsonString,
+          customFileName: fileName,
+          preferShare: false,
+        );
+        _updateBackupState();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Library backup downloaded! (${books.length} books exported)'),
+              backgroundColor: FloralPalette.sageGreenDark,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export backup: $e'), backgroundColor: Colors.red.shade800),
+        );
+      }
+    }
+  }
+
+  void _updateBackupState() {
+    setState(() {
+      _lastBackupDate = DateTime.now();
+      _isBackupBannerDismissed = true;
+    });
+  }
+
+  Future<void> _handleImport(BuildContext context) async {
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (files.isEmpty) return;
+
+      final fileBytes = await files.first.xFile.readAsBytes();
+      if (fileBytes.isEmpty) {
+        if (context.mounted) {
+          _showErrorDialog(context, 'Unable to read the selected file. Please try again.');
+        }
+        return;
+      }
+
+      final jsonContent = utf8.decode(fileBytes);
+      final validation = BackupService.validateBackupJson(jsonContent);
+
+      if (!context.mounted) return;
+
+      if (!validation.isValid) {
+        _showErrorDialog(
+          context,
+          validation.errorMessage ?? 'The selected file is not a valid Bookmark backup.',
+        );
+        return;
+      }
+
+      // Show summary and choices dialog (Merge vs Replace)
+      _showImportOptionsModal(context, validation);
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorDialog(context, 'Error reading backup file: $e');
+      }
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: FloralPalette.deepRose),
+            const SizedBox(width: 8),
+            Text('Backup Notice', style: JournalTypography.headingSmall()),
+          ],
+        ),
+        content: Text(message, style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Understood', style: TextStyle(color: FloralPalette.deepRose)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportOptionsModal(BuildContext context, BackupValidationResult validation) {
+    final storage = ref.read(storageServiceProvider);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8D7C8),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Restore Library Backup',
+                  style: JournalTypography.headingMedium(color: FloralPalette.warmCharcoal),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Backup contents:',
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFAF6F3),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF2DED9)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('• ${validation.bookCount} books in backup', style: JournalTypography.bodySmall()),
+                      const SizedBox(height: 4),
+                      Text('• ${validation.quotesCount} favorite quotes', style: JournalTypography.bodySmall()),
+                      const SizedBox(height: 4),
+                      Text('• ${validation.coversCount} cached cover images', style: JournalTypography.bodySmall()),
+                      if (validation.readingGoal != null) ...[
+                        const SizedBox(height: 4),
+                        Text('• Reading goal: ${validation.readingGoal} books', style: JournalTypography.bodySmall()),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Choose how you want to restore:',
+                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+
+                // Option 1: MERGE
+                InkWell(
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await _executeImport(context, storage, validation.data!, merge: true);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: FloralPalette.sageGreenDark),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.merge_type_rounded, color: FloralPalette.sageGreenDark, size: 28),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Merge with Existing Library',
+                                style: JournalTypography.headingSmall(color: FloralPalette.sageGreenDark).copyWith(fontSize: 16),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Adds new books and updates older ones. Duplicate titles with different IDs are safely skipped.',
+                                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Option 2: REPLACE
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _confirmReplace(context, storage, validation.data!);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: FloralPalette.deepRose),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: FloralPalette.deepRose, size: 28),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Replace Entire Library',
+                                style: JournalTypography.headingSmall(color: FloralPalette.deepRose).copyWith(fontSize: 16),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Wipes existing books and restores this backup completely, including covers, goal, and settings.',
+                                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmReplace(BuildContext context, StorageService storage, Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_rounded, color: FloralPalette.deepRose),
+            const SizedBox(width: 8),
+            Text('Confirm Replace', style: JournalTypography.headingSmall()),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to replace your entire library?\n\nExisting books, quotes, and notes not present in this backup will be permanently removed.',
+          style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await _executeImport(context, storage, data, merge: false);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FloralPalette.deepRose,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Replace Everything'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeImport(
+    BuildContext context,
+    StorageService storage,
+    Map<String, dynamic> data, {
+    required bool merge,
+  }) async {
+    try {
+      final summary = await BackupService.performImport(storage, data, merge: merge);
+
+      ref.invalidate(booksProvider);
+      ref.invalidate(yearlyGoalProvider);
+
+      setState(() {
+        _lastBackupDate = DateTime.now();
+        _isBackupBannerDismissed = true;
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(summary.toUserMessage()),
+            backgroundColor: FloralPalette.sageGreenDark,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorDialog(context, 'Import failed: $e\n\nYour existing library was left unchanged.');
+      }
+    }
+  }
+
   // ==========================================
   // TAB 0: LIBRARY SCREEN
   // ==========================================
@@ -198,6 +710,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           children: [
             // Top App Header
             _buildHeader(context),
+
+            // Backup reminder banner (dismissible, if >30 days or never backed up with books)
+            if (_shouldShowBackupBanner(booksAsync.value ?? []))
+              _buildBackupReminderBanner(context),
 
             // Filter Chips, Search & View Mode Toggle Bar
             _buildControlsBar(booksAsync.value ?? []),
@@ -692,6 +1208,149 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               ),
                             ),
                           ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Storage Protection Status Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFF2DED9)),
+                        boxShadow: const [FloralPalette.cardShadow],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _isStoragePersisted ? Icons.verified_user_rounded : Icons.shield_outlined,
+                                color: _isStoragePersisted ? FloralPalette.sageGreenDark : const Color(0xFFD48B28),
+                                size: 22,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _isStoragePersisted ? 'Storage: Protected' : 'Standard Device Storage',
+                                  style: JournalTypography.headingSmall(
+                                    color: _isStoragePersisted ? FloralPalette.sageGreenDark : const Color(0xFFD48B28),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _isStoragePersisted
+                                ? 'Persistent browser storage is granted on this device. Your books will not be automatically purged by the browser.'
+                                : 'Your library is stored on this device. Please back up regularly.',
+                            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                          ),
+                          if (!_isStoragePersisted) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: _checkStoragePersistence,
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: const Text('Check / Request Protection'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: FloralPalette.deepRose,
+                                side: const BorderSide(color: FloralPalette.deepRose),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Backup & Restore Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFF2DED9)),
+                        boxShadow: const [FloralPalette.cardShadow],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text('Library Backup & Restore', style: JournalTypography.headingSmall()),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: FloralPalette.blushPink.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'v1 JSON',
+                                  style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Last backup: ${_formatLastBackup()}',
+                            style: JournalTypography.handwriting(color: FloralPalette.deepRose).copyWith(fontSize: 14),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Save a copy of all books, quotes, ratings, notes, and cover images to a single file. You can restore or transfer your library anytime.',
+                            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  key: const ValueKey('export_library_button'),
+                                  onPressed: () => _handleExport(context),
+                                  icon: const Icon(Icons.file_download_outlined, size: 18),
+                                  label: const Text('Export Library'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: FloralPalette.deepRose,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  key: const ValueKey('import_library_button'),
+                                  onPressed: () => _handleImport(context),
+                                  icon: const Icon(Icons.file_upload_outlined, size: 18),
+                                  label: const Text('Restore Library'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: FloralPalette.sageGreenDark,
+                                    side: const BorderSide(color: FloralPalette.sageGreenDark),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

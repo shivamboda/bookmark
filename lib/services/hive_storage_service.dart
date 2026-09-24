@@ -1,8 +1,8 @@
-﻿import 'dart:convert';
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import '../models/book.dart';
 import 'storage_persistence.dart';
+import 'backup_service.dart';
 import 'storage_service.dart';
 
 /// Concrete storage implementation using Hive CE (Community Edition).
@@ -122,68 +122,11 @@ class HiveStorageService implements StorageService {
   }
 
   @override
-  Future<Map<String, dynamic>> exportAllData() async {
-    if (!_isInitialized) await init();
-    final books = await getAllBooks();
-
-    // Encode cover images into base64 for safe JSON transport
-    final coversMap = <String, String>{};
-    for (final key in _coversBox.keys) {
-      final bytes = await getCoverImage(key.toString());
-      if (bytes != null) {
-        coversMap[key.toString()] = base64Encode(bytes);
-      }
-    }
-
-    final settingsMap = <String, dynamic>{};
-    for (final key in _settingsBox.keys) {
-      settingsMap[key.toString()] = _settingsBox.get(key);
-    }
-
-    return {
-      'app': 'Bookmark',
-      'version': 1,
-      'exportedAt': DateTime.now().toIso8601String(),
-      'books': books.map((b) => b.toMap()).toList(),
-      'covers': coversMap,
-      'settings': settingsMap,
-    };
-  }
+  Future<Map<String, dynamic>> exportAllData() => BackupService.createExportPayload(this);
 
   @override
-  Future<void> importAllData(Map<String, dynamic> data, {bool merge = false}) async {
-    if (!_isInitialized) await init();
-
-    if (!merge) {
-      await _booksBox.clear();
-      await _coversBox.clear();
-    }
-
-    // Restore books
-    final booksRaw = data['books'] as List? ?? [];
-    for (final item in booksRaw) {
-      final bookMap = Map<String, dynamic>.from(item as Map);
-      final book = Book.fromMap(bookMap);
-      await _booksBox.put(book.id, book.toMap());
-    }
-
-    // Restore covers
-    final coversRaw = data['covers'] as Map? ?? {};
-    for (final entry in coversRaw.entries) {
-      try {
-        final bytes = base64Decode(entry.value.toString());
-        await _coversBox.put(entry.key.toString(), bytes);
-      } catch (e) {
-        debugPrint('Error restoring cover image: $e');
-      }
-    }
-
-    // Restore settings
-    final settingsRaw = data['settings'] as Map? ?? {};
-    for (final entry in settingsRaw.entries) {
-      await _settingsBox.put(entry.key.toString(), entry.value);
-    }
-  }
+  Future<void> importAllData(Map<String, dynamic> data, {bool merge = false}) =>
+      BackupService.performImport(this, data, merge: merge);
 
   @override
   Future<bool> requestPersistentStorage() => requestStoragePersistence();

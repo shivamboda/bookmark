@@ -11,6 +11,14 @@ void main() async {
   // Initialize decoupled Hive CE storage
   await globalStorageService.init();
 
+  // Request browser storage persistence and record the result
+  try {
+    final isPersisted = await globalStorageService.requestPersistentStorage();
+    await globalStorageService.setSetting('storage_persisted', isPersisted);
+  } catch (e) {
+    debugPrint('Storage persistence check: \$e');
+  }
+
   runApp(
     ProviderScope(
       overrides: [

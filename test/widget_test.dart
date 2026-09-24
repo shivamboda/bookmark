@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bookmark/main.dart';
 import 'package:bookmark/models/book.dart';
 import 'package:bookmark/services/storage_service.dart';
+import 'package:bookmark/services/backup_service.dart';
 import 'package:bookmark/core/state/providers.dart';
 import 'package:bookmark/features/library/widgets/library_empty_state.dart';
 import 'package:bookmark/features/library/screens/book_detail_screen.dart';
@@ -55,10 +56,11 @@ class InMemoryStorageService implements StorageService {
   Future<void> setSetting(String key, dynamic value) async => _settings[key] = value;
 
   @override
-  Future<Map<String, dynamic>> exportAllData() async => {'books': []};
+  Future<Map<String, dynamic>> exportAllData() => BackupService.createExportPayload(this);
 
   @override
-  Future<void> importAllData(Map<String, dynamic> data, {bool merge = false}) async {}
+  Future<void> importAllData(Map<String, dynamic> data, {bool merge = false}) =>
+      BackupService.performImport(this, data, merge: merge);
 
   @override
   Future<bool> requestPersistentStorage() async => true;
@@ -1484,6 +1486,283 @@ void main() {
     expect(find.text('The Starlight Garden'), findsWidgets);
     expect(find.text('Whispering Winds'), findsWidgets);
     expect(find.text('Silent Nebulae'), findsNothing); // Unrated book not in showcase
+  });
+
+
+  test('Phase 10: Export then Import (Replace) round trip preserves everything', () async {
+    final storage = InMemoryStorageService();
+
+    final testCoverBytes = Uint8List.fromList([1, 2, 3, 4, 5, 255, 128, 64]);
+    final book1 = Book(
+      id: 'round-1',
+      title: 'A Feather in the Wind',
+      authors: const ['Emily St. John', 'Arthur Conan'],
+      genres: const ['Historical Fiction', 'Mystery'],
+      rating: 4.5,
+      description: 'A deeply personal journey across eras.',
+      notes: 'Read this during autumn rain. Unforgettable atmosphere.',
+      quotes: [
+        BookQuote(id: 'q-1', quote: 'Memory is an untamed garden.', pageNumber: 42, createdAt: DateTime(2026, 8, 2)),
+        BookQuote(id: 'q-2', quote: 'We wander until we find the quiet.', pageNumber: 180, createdAt: DateTime(2026, 8, 3)),
+      ],
+      pageCount: 384,
+      status: ReadingStatus.finished,
+      startDate: DateTime(2026, 8, 1),
+      finishDate: DateTime(2026, 8, 14),
+      dateAdded: DateTime(2026, 7, 20),
+    );
+
+    final book2 = Book(
+      id: 'round-2',
+      title: 'Echoes of the Sea',
+      authors: const ['Marlowe Reed'],
+      genres: const ['Romance', 'Young Adult'],
+      rating: 5.0,
+      description: 'Lyrical coastal prose.',
+      notes: 'Borrow copy from local archive.',
+      quotes: [
+        BookQuote(id: 'q-3', quote: 'The ocean remembers what words forget.', createdAt: DateTime(2026, 9, 2)),
+      ],
+      pageCount: 290,
+      status: ReadingStatus.reading,
+      startDate: DateTime(2026, 9, 1),
+      finishDate: null,
+      dateAdded: DateTime(2026, 8, 25),
+    );
+
+    await storage.saveBook(book1);
+    await storage.saveCoverImage(book1.id, testCoverBytes);
+    await storage.saveBook(book2);
+    await storage.setSetting('yearly_goal', 30);
+    await storage.setSetting('library_sort_option', 'rating');
+
+    // 1. Export data
+    final exportJson = await BackupService.exportLibraryJson(storage);
+    expect(exportJson.isNotEmpty, true);
+
+    // Verify metadata & validation
+    final validation = BackupService.validateBackupJson(exportJson);
+    expect(validation.isValid, true);
+    expect(validation.bookCount, 2);
+    expect(validation.quotesCount, 3);
+    expect(validation.coversCount, 1);
+    expect(validation.readingGoal, 30);
+
+    // 2. Wipe storage completely (new instance)
+    final emptyStorage = InMemoryStorageService();
+
+    // 3. Perform Replace Import
+    final summary = await BackupService.performImport(emptyStorage, validation.data!, merge: false);
+    expect(summary.isReplace, true);
+    expect(summary.totalBooksInLibrary, 2);
+    expect(summary.restoredCoversCount, 1);
+    expect(summary.restoredGoal, 30);
+
+    // 4. Verify round-trip fidelity across every field
+    final restoredBooks = await emptyStorage.getAllBooks();
+    expect(restoredBooks.length, 2);
+
+    final restored1 = restoredBooks.firstWhere((b) => b.id == 'round-1');
+    expect(restored1.title, book1.title);
+    expect(restored1.authors, book1.authors);
+    expect(restored1.genres, book1.genres);
+    expect(restored1.rating, 4.5);
+    expect(restored1.description, book1.description);
+    expect(restored1.notes, book1.notes);
+    expect(restored1.quotes.length, 2);
+    expect(restored1.quotes[0].quote, 'Memory is an untamed garden.');
+    expect(restored1.quotes[0].pageNumber, 42);
+    expect(restored1.quotes[1].quote, 'We wander until we find the quiet.');
+    expect(restored1.quotes[1].pageNumber, 180);
+    expect(restored1.pageCount, 384);
+    expect(restored1.status, ReadingStatus.finished);
+    expect(restored1.startDate, book1.startDate);
+    expect(restored1.finishDate, book1.finishDate);
+    expect(restored1.dateAdded, book1.dateAdded);
+
+    final restoredCover = await emptyStorage.getCoverImage('round-1');
+    expect(restoredCover, isNotNull);
+    expect(restoredCover, equals(testCoverBytes));
+
+    final restoredGoal = await emptyStorage.getSetting('yearly_goal');
+    expect(restoredGoal, 30);
+
+    final restoredSort = await emptyStorage.getSetting('library_sort_option');
+    expect(restoredSort, 'rating');
+  });
+
+  test('Phase 10: Merge keeps existing IDs, adds new IDs, and skips same title+author with different ID', () async {
+    final storage = InMemoryStorageService();
+    final baseTime = DateTime(2026, 5, 1);
+
+    // 1. Existing Book in library
+    final existingBook = Book(
+      id: 'exist-1',
+      title: 'Pride and Prejudice',
+      authors: const ['Jane Austen'],
+      genres: const ['Classic'],
+      status: ReadingStatus.finished,
+      dateAdded: baseTime,
+    );
+    await storage.saveBook(existingBook);
+
+    // 2. Incoming backup to MERGE:
+    // a) Older copy of exist-1 -> should be kept as-is
+    final olderExist = Book(
+      id: 'exist-1',
+      title: 'Pride and Prejudice (Old)',
+      authors: const ['Jane Austen'],
+      genres: const ['Classic'],
+      status: ReadingStatus.reading,
+      dateAdded: baseTime.subtract(const Duration(days: 5)),
+    );
+
+    // b) Brand new book (new ID, unique title+author) -> should be added
+    final brandNewBook = Book(
+      id: 'brand-new-2',
+      title: 'Emma',
+      authors: const ['Jane Austen'],
+      genres: const ['Classic'],
+      status: ReadingStatus.wantToRead,
+      dateAdded: baseTime,
+    );
+
+    // c) Duplicate title + author with a DIFFERENT ID -> should be skipped!
+    final duplicateDifferentId = Book(
+      id: 'diff-id-999',
+      title: 'Pride and Prejudice',
+      authors: const ['Jane Austen'],
+      genres: const ['Romance'],
+      status: ReadingStatus.wantToRead,
+      dateAdded: baseTime,
+    );
+
+    final payload = {
+      'metadata': {
+        'format_version': 1,
+        'app_version': '1.0.0',
+        'export_date': baseTime.toIso8601String(),
+        'book_count': 3
+      },
+      'books': [
+        olderExist.toMap(),
+        brandNewBook.toMap(),
+        duplicateDifferentId.toMap(),
+      ],
+      'covers': {},
+    };
+
+    final summary = await BackupService.performImport(storage, payload, merge: true);
+
+    expect(summary.isReplace, false);
+    expect(summary.addedCount, 1); // Only brand-new-2
+    expect(summary.keptExistingCount, 1); // exist-1 kept because incoming was older
+    expect(summary.skippedDuplicatesCount, 1); // diff-id-999 skipped
+    expect(summary.totalBooksInLibrary, 2); // exist-1 + brand-new-2
+
+    final books = await storage.getAllBooks();
+    expect(books.length, 2);
+    expect(books.any((b) => b.id == 'exist-1'), true);
+    expect(books.any((b) => b.id == 'brand-new-2'), true);
+    expect(books.any((b) => b.id == 'diff-id-999'), false); // Duplicate was NOT added
+
+    // Existing book title was preserved (not overwritten by older incoming)
+    final kept = books.firstWhere((b) => b.id == 'exist-1');
+    expect(kept.title, 'Pride and Prejudice');
+  });
+
+  test('Phase 10: Malformed file refuses import and leaves library completely unchanged', () async {
+    final storage = InMemoryStorageService();
+
+    final originalBook = Book(
+      id: 'safe-1',
+      title: 'The Secret Garden',
+      authors: const ['Frances Hodgson Burnett'],
+      genres: const ['Classic'],
+      status: ReadingStatus.finished,
+      dateAdded: DateTime.now(),
+    );
+    await storage.saveBook(originalBook);
+
+    // Case 1: Invalid JSON syntax
+    final invalidJsonRes = BackupService.validateBackupJson('{not: "valid" json');
+    expect(invalidJsonRes.isValid, false);
+    expect(invalidJsonRes.errorMessage, contains('not a valid JSON document'));
+
+    // Case 2: Wrong format_version
+    final wrongVersionJson = '{"metadata": {"format_version": 99}, "books": []}';
+    final wrongVersionRes = BackupService.validateBackupJson(wrongVersionJson);
+    expect(wrongVersionRes.isValid, false);
+    expect(wrongVersionRes.errorMessage, contains('Unsupported backup format'));
+
+    // Case 3: Missing required books collection
+    final missingBooksJson = '{"metadata": {"format_version": 1}}';
+    final missingBooksRes = BackupService.validateBackupJson(missingBooksJson);
+    expect(missingBooksRes.isValid, false);
+    expect(missingBooksRes.errorMessage, contains('missing its book collection'));
+
+    // Case 4: Corrupted book missing title or id
+    final corruptedBookJson = '{"metadata": {"format_version": 1}, "books": [{"id": "bad-1"}]}';
+    final corruptedBookRes = BackupService.validateBackupJson(corruptedBookJson);
+    expect(corruptedBookRes.isValid, false);
+    expect(corruptedBookRes.errorMessage, contains('missing a required title or identifier'));
+
+    // Verify storage was NEVER touched
+    final afterBooks = await storage.getAllBooks();
+    expect(afterBooks.length, 1);
+    expect(afterBooks.first.id, 'safe-1');
+    expect(afterBooks.first.title, 'The Secret Garden');
+  });
+
+  testWidgets('Phase 10: Settings displays honest storage status and backup habit reminder banner appears when needed', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    // User has 1 book, never backed up
+    await storage.saveBook(Book(
+      id: 'habit-1',
+      title: 'The Blue Castle',
+      authors: const ['L.M. Montgomery'],
+      genres: const ['Romance'],
+      status: ReadingStatus.reading,
+      dateAdded: DateTime.now(),
+    ));
+    await storage.setSetting('storage_persisted', false);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Library tab shows the gentle backup reminder banner
+    expect(find.text('Gentle backup reminder ~'), findsOneWidget);
+    expect(find.textContaining('haven\'t backed up yet'), findsOneWidget);
+
+    // 2. Dismiss the banner
+    await tester.tap(find.byTooltip('Dismiss reminder'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gentle backup reminder ~'), findsNothing);
+
+    // 3. Go to Settings tab
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    // 4. Honest Storage Protection status shown (persisted == false)
+    expect(find.text('Standard Device Storage'), findsOneWidget);
+    expect(find.textContaining('Your library is stored on this device. Please back up regularly.'), findsOneWidget);
+    expect(find.text('Last backup: Never'), findsOneWidget);
+
+    // 5. Export and Restore buttons are present
+    expect(find.byKey(const ValueKey('export_library_button')), findsOneWidget);
+    expect(find.byKey(const ValueKey('import_library_button')), findsOneWidget);
   });
 
 }
