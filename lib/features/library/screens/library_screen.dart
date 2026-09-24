@@ -1353,36 +1353,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           ),
                         ],
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
-
-                    // Theme Palette Information
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF2DED9)),
-                        boxShadow: const [FloralPalette.cardShadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Theme & Palette', style: JournalTypography.headingSmall()),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const PoppyDoodle(size: 24, showStem: false, petalColor: FloralPalette.rosePetal),
-                              const SizedBox(width: 8),
-                              Text('Poppy Blush (Signature)', style: JournalTypography.subheading()),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text('Crafted with love for romantic book lovers', style: JournalTypography.bodySmall()),
-                        ],
-                      ),
                     ),
 
                     // Developer Doodle Showcase (strictly kDebugMode, no emoji)
