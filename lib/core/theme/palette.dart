@@ -32,7 +32,7 @@ class FloralPalette {
   static Color get kraftPaper => isDark ? const Color(0xFF382B22) : const Color(0xFFF3E7DA);
   static Color get sageGreenDark => isDark ? const Color(0xFF8E9E60) : const Color(0xFF5F6B3A);
   static Color get deepForestGreen => isDark ? const Color(0xFF8E9E60) : const Color(0xFF5F6B3A);
-  static Color get unratedText => isDark ? const Color(0xFF9E8C80) : const Color(0xFF8A6B5A);
+  static Color get unratedText => isDark ? const Color(0xFFC9B8AB) : const Color(0xFF7A5C4D);
 
   // Signature Core Colors (Shared Autumn Accents)
   static const Color blushPink = Color(0xFFF2C9A0); // Primary soft accent: Apricot (#F2C9A0)

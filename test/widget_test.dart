@@ -1,3 +1,4 @@
+import 'package:bookmark/core/widgets/status_pill.dart';
 import 'package:bookmark/services/synopsis_service.dart';
 import 'package:bookmark/doodles/maple_leaf_doodle.dart';
 import 'package:bookmark/doodles/oak_leaf_doodle.dart';
@@ -2272,6 +2273,83 @@ void main() {
 
       expect(find.text('Read more'), findsOneWidget);
       expect(find.text('Show less'), findsNothing);
+    });
+  });
+
+  group('Part 3: Status pill readability & Unrated text contrast', () {
+    test('Status pill colors achieve >= 7.2:1 text contrast and >= 6.6:1 fill contrast on dark card', () {
+      double relLum(double r, double g, double b) {
+        double ch(double s) {
+          return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) * ((s + 0.055) / 1.055) * 1.0;
+        }
+        return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+      }
+
+      double contrast(Color c1, Color c2) {
+        final l1 = relLum(c1.r, c1.g, c1.b);
+        final l2 = relLum(c2.r, c2.g, c2.b);
+        final lighter = l1 > l2 ? l1 : l2;
+        final darker = l1 > l2 ? l2 : l1;
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      const darkCard = Color(0xFF2B211A);
+
+      for (final status in ReadingStatus.values) {
+        final style = StatusPillStyle.of(status);
+        final textVsFill = contrast(style.text, style.fill);
+        final fillVsCard = contrast(style.fill, darkCard);
+
+        expect(textVsFill >= 4.5, isTrue, reason: '${status.label} text vs fill should be >= 4.5:1');
+        expect(fillVsCard >= 3.0, isTrue, reason: '${status.label} fill vs card should be >= 3.0:1');
+      }
+
+      // Check Unrated text contrast on dark card
+      final unratedContrast = contrast(const Color(0xFFC9B8AB), darkCard);
+      expect(unratedContrast >= 4.5, isTrue, reason: 'Unrated text contrast should be >= 4.5:1');
+    });
+
+    testWidgets('Library list card renders StatusPill with icon and >= 12px font', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final book = Book(
+        id: 'pill-test-1',
+        title: 'The Hobbit',
+        authors: ['J.R.R. Tolkien'],
+        status: ReadingStatus.finished,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+
+      final storage = InMemoryStorageService();
+      await storage.saveBook(book);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: MaterialApp(
+            home: Scaffold(
+              body: ListView(
+                children: [
+                  BookListCard(book: book),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(StatusPill), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(find.text('Finished'), findsOneWidget);
+
+      final textWidget = tester.widget<Text>(find.text('Finished'));
+      expect(textWidget.style?.fontSize != null && textWidget.style!.fontSize! >= 12.0, isTrue);
     });
   });
 }

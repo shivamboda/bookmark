@@ -2056,7 +2056,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
                           ).copyWith(
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            fontSize: 11.5,
+                            fontSize: 13.0,
                           ),
                         ),
                       ),

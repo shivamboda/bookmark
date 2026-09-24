@@ -1,3 +1,4 @@
+import '../../../core/widgets/status_pill.dart';
 import '../../../core/widgets/floral_rating_bar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,29 +23,7 @@ class BookListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Palette-based status colors
-    Color badgeBg;
-    Color badgeText;
-    Color badgeBorder;
 
-    switch (book.status) {
-      case ReadingStatus.wantToRead:
-        badgeBg = FloralPalette.lavenderMist.withValues(alpha: 0.35);
-        badgeText = FloralPalette.lavenderDark;
-        badgeBorder = FloralPalette.lavenderDark.withValues(alpha: 0.35);
-      case ReadingStatus.reading:
-        badgeBg = FloralPalette.sageGreen.withValues(alpha: 0.35);
-        badgeText = FloralPalette.sageGreenDark;
-        badgeBorder = FloralPalette.sageGreenDark.withValues(alpha: 0.35);
-      case ReadingStatus.finished:
-        badgeBg = FloralPalette.blushPink.withValues(alpha: 0.45);
-        badgeText = FloralPalette.deepRose;
-        badgeBorder = FloralPalette.deepRose.withValues(alpha: 0.35);
-      case ReadingStatus.paused:
-        badgeBg = FloralPalette.latte;
-        badgeText = FloralPalette.espresso; // 6.42:1 WCAG AA contrast on Latte
-        badgeBorder = FloralPalette.cocoa.withValues(alpha: 0.45);
-    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -86,20 +65,10 @@ class BookListCard extends StatelessWidget {
                       if (!isWishlist) ...[
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                              decoration: BoxDecoration(
-                                color: badgeBg,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: badgeBorder, width: 0.8),
-                              ),
-                              child: Text(
-                                book.status.label,
-                                style: JournalTypography.bodySmall(color: badgeText).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 11,
-                                ),
-                              ),
+                            StatusPill(
+                              status: book.status,
+                              fontSize: 12.5,
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                             ),
                             const Spacer(),
                             if (book.isRated) ...[
@@ -119,7 +88,7 @@ class BookListCard extends StatelessWidget {
                                 'Unrated',
                                 style: JournalTypography.bodySmall(
                                   color: FloralPalette.unratedText,
-                                ).copyWith(fontSize: 11),
+                                ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ],

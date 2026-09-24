@@ -1,3 +1,4 @@
+import '../../../core/widgets/status_pill.dart';
 import '../../../core/widgets/floral_rating_bar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
@@ -19,28 +20,7 @@ class BookGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color badgeBg;
-    Color badgeText;
-    Color badgeBorder;
 
-    switch (book.status) {
-      case ReadingStatus.wantToRead:
-        badgeBg = FloralPalette.lavenderMist.withValues(alpha: 0.35);
-        badgeText = FloralPalette.lavenderDark;
-        badgeBorder = FloralPalette.lavenderDark.withValues(alpha: 0.35);
-      case ReadingStatus.reading:
-        badgeBg = FloralPalette.sageGreen.withValues(alpha: 0.35);
-        badgeText = FloralPalette.sageGreenDark;
-        badgeBorder = FloralPalette.sageGreenDark.withValues(alpha: 0.35);
-      case ReadingStatus.finished:
-        badgeBg = FloralPalette.blushPink.withValues(alpha: 0.45);
-        badgeText = FloralPalette.deepRose;
-        badgeBorder = FloralPalette.deepRose.withValues(alpha: 0.35);
-      case ReadingStatus.paused:
-        badgeBg = FloralPalette.latte;
-        badgeText = FloralPalette.espresso; // 6.42:1 WCAG AA contrast on Latte
-        badgeBorder = FloralPalette.cocoa.withValues(alpha: 0.45);
-    }
 
     return Container(
       decoration: BoxDecoration(
@@ -83,27 +63,10 @@ class BookGridItem extends StatelessWidget {
                           Positioned(
                             top: 6,
                             right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: badgeBg,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: badgeBorder, width: 0.8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.08),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                book.status.label,
-                                style: JournalTypography.bodySmall(color: badgeText).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 10,
-                                ),
-                              ),
+                            child: StatusPill(
+                              status: book.status,
+                              fontSize: 12.0,
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                             ),
                           ),
                         ],

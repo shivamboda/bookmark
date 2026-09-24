@@ -1,3 +1,4 @@
+import '../../../core/widgets/status_pill.dart';
 import '../../../services/synopsis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -510,29 +511,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             runSpacing: 8,
             children: ReadingStatus.values.map((status) {
               final isSelected = book.status == status;
+              final pillStyle = StatusPillStyle.of(status);
 
-              Color bg;
-              Color text;
-              Color border;
-
-              switch (status) {
-                case ReadingStatus.wantToRead:
-                  bg = isSelected ? const Color(0xFF5B3D4A) : FloralPalette.softIvory;
-                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
-                  border = isSelected ? const Color(0xFF7A5263) : FloralPalette.cardBorder;
-                case ReadingStatus.reading:
-                  bg = isSelected ? FloralPalette.deepForestGreen : FloralPalette.softIvory;
-                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.sageGreen : FloralPalette.cardBorder;
-                case ReadingStatus.finished:
-                  bg = isSelected ? FloralPalette.deepRose : FloralPalette.softIvory;
-                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.rosePetal : FloralPalette.cardBorder;
-                case ReadingStatus.paused:
-                  bg = isSelected ? FloralPalette.cocoa : FloralPalette.softIvory;
-                  text = isSelected ? Colors.white : FloralPalette.warmCharcoal;
-                  border = isSelected ? FloralPalette.caramel : FloralPalette.cardBorder;
-              }
+              final Color bg = isSelected ? pillStyle.fill : FloralPalette.softIvory;
+              final Color text = isSelected ? pillStyle.text : FloralPalette.warmCharcoal;
+              final Color border = isSelected ? pillStyle.border : FloralPalette.cardBorder;
 
               return Material(
                 color: Colors.transparent,
@@ -548,23 +531,34 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       decoration: BoxDecoration(
                         color: bg,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: border, width: isSelected ? 1.4 : 1.0),
+                        border: Border.all(color: border, width: isSelected ? 1.5 : 1.0),
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: border.withValues(alpha: 0.25),
-                                  blurRadius: 8,
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 )
                               ]
                             : null,
                       ),
-                      child: Text(
-                        status.label,
-                        style: JournalTypography.bodySmall(color: text).copyWith(
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          fontSize: 12,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            pillStyle.icon,
+                            size: 15,
+                            color: text,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            status.label,
+                            style: JournalTypography.bodySmall(color: text).copyWith(
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
