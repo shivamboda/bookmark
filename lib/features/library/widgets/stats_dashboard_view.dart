@@ -61,6 +61,17 @@ class StatsDashboardView extends ConsumerWidget {
     final readingCount = books.where((b) => b.status == ReadingStatus.reading).length;
     final wishlistCount = books.where((b) => b.status == ReadingStatus.wantToRead).length;
 
+    // All-time reading totals (includes Year unknown / long ago books with no finishDate)
+    final allFinishedBooks = books.where((b) => b.status == ReadingStatus.finished).toList();
+    final allRatedFinished = allFinishedBooks.where((b) => b.rating != null && b.rating! > 0).toList();
+    final double? overallAvgRating = allRatedFinished.isNotEmpty
+        ? allRatedFinished.map((b) => b.rating!).reduce((a, b) => a + b) / allRatedFinished.length
+        : null;
+    final int overallTotalPages = allFinishedBooks
+        .where((b) => b.pageCount != null && b.pageCount! > 0)
+        .fold<int>(0, (sum, b) => sum + b.pageCount!);
+    final int yearUnknownCount = allFinishedBooks.where((b) => b.finishDate == null).length;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
       child: Column(
@@ -72,9 +83,13 @@ class StatsDashboardView extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // 2. Either Empty State OR Full Stats Visualizations
-          if (finishedThisYear.isEmpty)
-            _buildEmptyState(context, currentYear, readingCount, wishlistCount)
-          else ...[
+          if (finishedThisYear.isEmpty) ...[
+            _buildEmptyState(context, currentYear, readingCount, wishlistCount),
+            if (allFinishedBooks.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _buildAllTimeTotalsCard(allFinishedBooks.length, overallTotalPages, overallAvgRating, yearUnknownCount),
+            ],
+          ] else ...[
             // Quick 3-Tile Overview Metrics
             _buildMetricsRow(finishedThisYear.length, totalPages, avgRating),
 
@@ -102,6 +117,11 @@ class StatsDashboardView extends ConsumerWidget {
 
             // Highest-Rated Books Showcase
             _buildHighestRatedShowcase(context, ratedFinished),
+
+            const SizedBox(height: 20),
+
+            // All-Time Reading Journey Card (includes Year unknown / long ago books)
+            _buildAllTimeTotalsCard(allFinishedBooks.length, overallTotalPages, overallAvgRating, yearUnknownCount),
           ],
         ],
       ),
@@ -391,8 +411,15 @@ class StatsDashboardView extends ConsumerWidget {
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final monthlyCounts = List<int>.filled(12, 0);
 
+    int approxYearOnlyCount = 0;
     for (final b in finishedBooks) {
       if (b.finishDate != null) {
+        // Approximate-dated books must NOT appear in the per-month chart
+        // (the month is invented, unless she explicitly picked a month: finishDateHasMonth == true).
+        if (b.finishDateIsApproximate && !b.finishDateHasMonth) {
+          approxYearOnlyCount++;
+          continue;
+        }
         final m = b.finishDate!.month;
         if (m >= 1 && m <= 12) {
           monthlyCounts[m - 1]++;
@@ -560,6 +587,16 @@ class StatsDashboardView extends ConsumerWidget {
               curve: Curves.easeOutCubic,
             ),
           ),
+          if (approxYearOnlyCount > 0) ...[
+            const SizedBox(height: 12),
+            Text(
+              '$approxYearOnlyCount ${approxYearOnlyCount == 1 ? "book" : "books"} read in $currentYear with approximate year only ${approxYearOnlyCount == 1 ? "is" : "are"} excluded from monthly pace.',
+              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1006,6 +1043,98 @@ class StatsDashboardView extends ConsumerWidget {
               );
             }).toList(),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // ALL-TIME READING JOURNEY (LIFETIME TOTALS)
+  // ==========================================
+  Widget _buildAllTimeTotalsCard(
+    int allFinishedCount,
+    int overallTotalPages,
+    double? overallAvgRating,
+    int yearUnknownCount,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: FloralPalette.softIvory,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.cardBorder),
+        boxShadow: [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_stories_rounded, color: FloralPalette.deepRose, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'All-Time Reading Summary',
+                  style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Reflections across your lifetime reading journey ~',
+            style: JournalTypography.handwriting(color: FloralPalette.deepRose).copyWith(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricTile(
+                  label: 'Total Books',
+                  value: '$allFinishedCount',
+                  color: FloralPalette.deepRose,
+                  icon: Icons.bookmark_added_rounded,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildMetricTile(
+                  label: 'Lifetime Pages',
+                  value: overallTotalPages > 0 ? '$overallTotalPages' : '—',
+                  color: FloralPalette.sageGreenDark,
+                  icon: Icons.menu_book_rounded,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildMetricTile(
+                  label: 'All-Time Avg',
+                  value: overallAvgRating != null ? overallAvgRating.toStringAsFixed(1) : '—',
+                  color: FloralPalette.buttercupGold,
+                  icon: Icons.star_rounded,
+                ),
+              ),
+            ],
+          ),
+          if (yearUnknownCount > 0) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.history_toggle_off_rounded, size: 16, color: FloralPalette.mutedCharcoal),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Includes $yearUnknownCount ${yearUnknownCount == 1 ? "book" : "books"} read long ago (year unknown)',
+                    style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -145,6 +145,8 @@ class Book {
   final List<BookQuote> quotes;
   final int? pageCount;
   final DateTime dateAdded;
+  final bool finishDateIsApproximate;
+  final bool finishDateHasMonth;
 
   const Book({
     required this.id,
@@ -163,12 +165,41 @@ class Book {
     this.quotes = const [],
     this.pageCount,
     required this.dateAdded,
+    this.finishDateIsApproximate = false,
+    this.finishDateHasMonth = false,
   });
 
   String get authorDisplay => authors.isEmpty ? 'Unknown Author' : authors.join(', ');
 
   bool get isRated => rating != null && rating! > 0;
   double get ratingOrZero => rating ?? 0.0;
+
+  /// Returns a human-friendly string for the completion date.
+  /// Approximate dates are formatted as 'Read in 2019' (or 'Read in June 2019'),
+  /// never as a fake exact day.
+  /// Finished books with no finish date ('Year unknown / long ago') display 'Read long ago'.
+  String get formattedCompletionDate {
+    if (status != ReadingStatus.finished && finishDate == null) {
+      return '';
+    }
+    if (finishDate == null) {
+      return 'Read long ago';
+    }
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final year = finishDate!.year;
+    final monthName = months[finishDate!.month - 1];
+
+    if (finishDateIsApproximate) {
+      if (finishDateHasMonth) {
+        return 'Read in $monthName $year';
+      }
+      return 'Read in $year';
+    }
+    return 'Finished $monthName ${finishDate!.day}, $year';
+  }
 
   /// Returns only clean, human-friendly genre labels, filtering out catalog strings.
   List<String> get cleanGenres => genres.where((g) {
@@ -204,6 +235,8 @@ class Book {
     int? pageCount,
     bool clearPageCount = false,
     DateTime? dateAdded,
+    bool? finishDateIsApproximate,
+    bool? finishDateHasMonth,
   }) {
     return Book(
       id: id ?? this.id,
@@ -222,6 +255,8 @@ class Book {
       quotes: quotes ?? this.quotes,
       pageCount: clearPageCount ? null : (pageCount ?? this.pageCount),
       dateAdded: dateAdded ?? this.dateAdded,
+      finishDateIsApproximate: finishDateIsApproximate ?? this.finishDateIsApproximate,
+      finishDateHasMonth: finishDateHasMonth ?? this.finishDateHasMonth,
     );
   }
 
@@ -243,6 +278,8 @@ class Book {
       'quotes': quotes.map((q) => q.toMap()).toList(),
       'pageCount': pageCount,
       'dateAdded': dateAdded.toIso8601String(),
+      'finishDateIsApproximate': finishDateIsApproximate,
+      'finishDateHasMonth': finishDateHasMonth,
     };
   }
 
@@ -286,6 +323,8 @@ class Book {
       dateAdded: map['dateAdded'] != null
           ? DateTime.parse(map['dateAdded'] as String)
           : DateTime.now(),
+      finishDateIsApproximate: map['finishDateIsApproximate'] as bool? ?? false,
+      finishDateHasMonth: map['finishDateHasMonth'] as bool? ?? false,
     );
   }
 }

@@ -625,9 +625,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             icon: Icons.task_alt_rounded,
             iconColor: FloralPalette.cocoa,
             label: 'Completed',
-            value: book.finishDate != null
-                ? _formatDate(book.finishDate)
-                : (book.status == ReadingStatus.finished ? 'Recently completed' : 'In progress ~'),
+            value: book.formattedCompletionDate.isNotEmpty
+                ? book.formattedCompletionDate
+                : (book.status == ReadingStatus.finished ? 'Read long ago' : 'In progress ~'),
           ),
         ],
       ),

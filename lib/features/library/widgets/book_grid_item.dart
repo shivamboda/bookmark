@@ -11,11 +11,17 @@ import 'book_cover_thumbnail.dart';
 class BookGridItem extends StatelessWidget {
   final Book book;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool isSelectionMode;
+  final bool isSelected;
 
   const BookGridItem({
     super.key,
     required this.book,
     this.onTap,
+    this.onLongPress,
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
 
   @override
@@ -34,6 +40,7 @@ class BookGridItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(18),
           hoverColor: FloralPalette.blushPink.withValues(alpha: 0.12),
           child: Padding(
@@ -59,6 +66,37 @@ class BookGridItem extends StatelessWidget {
                               enableHero: true,
                             ),
                           ),
+                          if (isSelectionMode)
+                            Positioned(
+                              top: 6,
+                              left: 6,
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected ? FloralPalette.deepRose : FloralPalette.softIvory.withValues(alpha: 0.85),
+                                  border: Border.all(
+                                    color: isSelected ? FloralPalette.deepRose : FloralPalette.mutedCharcoal.withValues(alpha: 0.6),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: isSelected
+                                    ? Icon(
+                                        Icons.check_rounded,
+                                        size: 16,
+                                        color: FloralPalette.softIvory,
+                                      )
+                                    : null,
+                              ),
+                            ),
                           // Floating Status Pill at top-right
                           Positioned(
                             top: 6,

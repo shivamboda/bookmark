@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/floral_rating_bar.dart';
 import '../../../core/state/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
@@ -74,6 +75,40 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   Timer? _searchDebounceTimer;
+
+  bool _isSelectionMode = false;
+  final Set<String> _selectedBookIds = <String>{};
+
+  void _enterSelectionMode(String bookId) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedBookIds.clear();
+      _selectedBookIds.add(bookId);
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedBookIds.clear();
+    });
+  }
+
+  void _toggleSelection(String bookId) {
+    setState(() {
+      if (_selectedBookIds.contains(bookId)) {
+        _selectedBookIds.remove(bookId);
+      } else {
+        _selectedBookIds.add(bookId);
+      }
+    });
+  }
+
+  void _selectAll(List<Book> books) {
+    setState(() {
+      _selectedBookIds.addAll(books.map((b) => b.id));
+    });
+  }
 
   void _onLibrarySearchChanged(String val) {
     _searchDebounceTimer?.cancel();
@@ -204,10 +239,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       bottomNavigationBar: FloralBottomNav(
         currentIndex: _currentNavIndex,
         onTabSelected: (index) {
+          if (_isSelectionMode) {
+            _exitSelectionMode();
+          }
           setState(() => _currentNavIndex = index);
         },
       ),
-      floatingActionButton: (_currentNavIndex == 0 || _currentNavIndex == 1)
+      floatingActionButton: (!_isSelectionMode && (_currentNavIndex == 0 || _currentNavIndex == 1))
           ? FloatingActionButton(
               key: const ValueKey('add_book_fab'),
               onPressed: () => _openAddBookScreen(context),
@@ -875,15 +913,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
         Column(
           children: [
-            // Top App Header
-            _buildHeader(context),
-
-            // Backup reminder banner (dismissible, if >30 days or never backed up with books)
-            if (_shouldShowBackupBanner(booksAsync.value ?? []))
-              _buildBackupReminderBanner(context),
-
-            // Filter Chips, Search & View Mode Toggle Bar
-            _buildControlsBar(booksAsync.value ?? []),
+            // Top App Header or Bulk Selection Header
+            if (_isSelectionMode)
+              _buildSelectionHeader(context, booksAsync.value ?? [])
+            else ...[
+              _buildHeader(context),
+              if (_shouldShowBackupBanner(booksAsync.value ?? []))
+                _buildBackupReminderBanner(context),
+              _buildControlsBar(booksAsync.value ?? []),
+            ],
 
             // Book Collection / Empty State
             Expanded(
@@ -923,7 +961,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   if (_isGridView) {
                     return GridView.builder(
                       key: const ValueKey('library_grid_view'),
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
+                      padding: EdgeInsets.fromLTRB(18, 12, 18, _isSelectionMode ? 190 : 140),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.60,
@@ -935,7 +973,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         final book = books[index];
                         return BookGridItem(
                           book: book,
-                          onTap: () => _onBookSelected(context, book),
+                          isSelectionMode: _isSelectionMode,
+                          isSelected: _selectedBookIds.contains(book.id),
+                          onTap: () {
+                            if (_isSelectionMode) {
+                              _toggleSelection(book.id);
+                            } else {
+                              _onBookSelected(context, book);
+                            }
+                          },
+                          onLongPress: () {
+                            if (!_isSelectionMode) {
+                              _enterSelectionMode(book.id);
+                            } else {
+                              _toggleSelection(book.id);
+                            }
+                          },
                         );
                       },
                     );
@@ -943,13 +996,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
                   return ListView.builder(
                     key: const ValueKey('library_list_view'),
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
+                    padding: EdgeInsets.fromLTRB(18, 12, 18, _isSelectionMode ? 190 : 140),
                     itemCount: books.length,
                     itemBuilder: (context, index) {
                       final book = books[index];
                       return BookListCard(
                         book: book,
-                        onTap: () => _onBookSelected(context, book),
+                        isSelectionMode: _isSelectionMode,
+                        isSelected: _selectedBookIds.contains(book.id),
+                        onTap: () {
+                          if (_isSelectionMode) {
+                            _toggleSelection(book.id);
+                          } else {
+                            _onBookSelected(context, book);
+                          }
+                        },
+                        onLongPress: () {
+                          if (!_isSelectionMode) {
+                            _enterSelectionMode(book.id);
+                          } else {
+                            _toggleSelection(book.id);
+                          }
+                        },
                       );
                     },
                   );
@@ -958,6 +1026,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ],
         ),
+
+        // Floating Bulk Action Bar (Docked above bottom navigation)
+        if (_isSelectionMode)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: _buildBulkActionBar(context, booksAsync.value ?? []),
+          ),
       ],
     );
   }
@@ -2335,6 +2412,734 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       MaterialPageRoute(
         builder: (_) => BookSearchScreen(defaultStatus: status),
       ),
+    );
+  }
+
+  // ==========================================
+  // BULK SELECTION MODE WIDGETS & ACTIONS
+  // ==========================================
+
+  Widget _buildSelectionHeader(BuildContext context, List<Book> allBooks) {
+    final filtered = _filterAndSortBooks(allBooks);
+    final count = _selectedBookIds.length;
+
+    return Container(
+      key: const ValueKey('library_selection_header'),
+      margin: const EdgeInsets.fromLTRB(18, 10, 18, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: FloralPalette.softIvory,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
+        boxShadow: [FloralPalette.cardShadow],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: FloralPalette.deepRose.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_rounded, color: FloralPalette.deepRose, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '$count selected',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 16),
+          ),
+          const Spacer(),
+          // Select All button (min 44px tap target)
+          TextButton(
+            key: const ValueKey('select_all_button'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              foregroundColor: FloralPalette.deepRose,
+            ),
+            onPressed: () => _selectAll(filtered),
+            child: const Text('Select all', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+          ),
+          const SizedBox(width: 4),
+          // Cancel button (min 44px tap target)
+          TextButton(
+            key: const ValueKey('cancel_selection_button'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              foregroundColor: FloralPalette.mutedCharcoal,
+            ),
+            onPressed: _exitSelectionMode,
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBulkActionBar(BuildContext context, List<Book> allBooks) {
+    final count = _selectedBookIds.length;
+    final bool hasSelection = count > 0;
+
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(22),
+      shadowColor: Colors.black26,
+      color: FloralPalette.softIvory,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: FloralPalette.softIvory,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: FloralPalette.cardBorder, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  key: const ValueKey('bulk_set_year_button'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FloralPalette.kraftPaper,
+                    foregroundColor: FloralPalette.warmCharcoal,
+                    elevation: 0,
+                    side: BorderSide(color: FloralPalette.cardBorder),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.event_outlined, size: 20, color: FloralPalette.deepRose),
+                  label: const Text('Set year', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  onPressed: hasSelection ? () => _showBulkSetYearFlow(context, allBooks) : null,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  key: const ValueKey('bulk_rate_button'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FloralPalette.kraftPaper,
+                    foregroundColor: FloralPalette.warmCharcoal,
+                    elevation: 0,
+                    side: BorderSide(color: FloralPalette.cardBorder),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.star_rounded, size: 22, color: FloralPalette.buttercupGold),
+                  label: const Text('Rate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  onPressed: hasSelection ? () => _showBulkRateFlow(context, allBooks) : null,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBulkSetYearFlow(BuildContext context, List<Book> allBooks) async {
+    final selectedBooks = allBooks.where((b) => _selectedBookIds.contains(b.id)).toList();
+    if (selectedBooks.isEmpty) return;
+
+    final nonFinished = selectedBooks.where((b) => b.status != ReadingStatus.finished).toList();
+    bool markNonFinishedAsFinished = false;
+
+    // Check if any selected books are non-Finished
+    if (nonFinished.isNotEmpty) {
+      final shouldMark = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: FloralPalette.softIvory,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: FloralPalette.cardBorder)),
+          title: Text(
+            'Mark as Finished?',
+            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+          ),
+          content: Text(
+            '${nonFinished.length} of the ${selectedBooks.length} selected books are not currently marked as Finished.\n\nWould you like to mark them as Finished now so an approximate read year can be set?',
+            style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+            ),
+            if (selectedBooks.length > nonFinished.length)
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text('Only Finished (${selectedBooks.length - nonFinished.length})', style: TextStyle(color: FloralPalette.deepForestGreen)),
+              ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: FloralPalette.softIvory,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Mark Finished & Continue'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldMark == null) return;
+      markNonFinishedAsFinished = shouldMark;
+    }
+
+    final booksToUpdate = markNonFinishedAsFinished
+        ? selectedBooks
+        : selectedBooks.where((b) => b.status == ReadingStatus.finished).toList();
+
+    if (booksToUpdate.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No finished books were selected to update.')),
+        );
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+    final pickerResult = await showDialog<_YearPickerResult>(
+      context: context,
+      builder: (ctx) => _YearPickerDialog(bookCount: booksToUpdate.length),
+    );
+
+    if (pickerResult == null || !context.mounted) return;
+
+    final String dateDescription;
+    if (pickerResult.isYearUnknown) {
+      dateDescription = 'Year unknown / read long ago';
+    } else if (pickerResult.month != null) {
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      dateDescription = '${months[pickerResult.month! - 1]} ${pickerResult.year}';
+    } else {
+      dateDescription = '${pickerResult.year}';
+    }
+
+    final String confirmSummary = markNonFinishedAsFinished && nonFinished.isNotEmpty
+        ? 'Mark ${nonFinished.length} books as Finished and set ${booksToUpdate.length} books to $dateDescription?'
+        : 'Set ${booksToUpdate.length} books to $dateDescription?';
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FloralPalette.softIvory,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: FloralPalette.cardBorder)),
+        title: Text(
+          'Confirm Bulk Update',
+          style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+        ),
+        content: Text(
+          confirmSummary,
+          style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FloralPalette.deepRose,
+              foregroundColor: FloralPalette.softIvory,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // Save previous state for Undo
+    final previousStates = { for (final b in booksToUpdate) b.id: b };
+    final updatedBooks = booksToUpdate.map((b) {
+      if (pickerResult.isYearUnknown) {
+        return b.copyWith(
+          status: ReadingStatus.finished,
+          clearFinishDate: true,
+          finishDateIsApproximate: true,
+          finishDateHasMonth: false,
+        );
+      } else if (pickerResult.month != null) {
+        return b.copyWith(
+          status: ReadingStatus.finished,
+          finishDate: DateTime(pickerResult.year!, pickerResult.month!, 15),
+          finishDateIsApproximate: true,
+          finishDateHasMonth: true,
+        );
+      } else {
+        return b.copyWith(
+          status: ReadingStatus.finished,
+          finishDate: DateTime(pickerResult.year!, 7, 2),
+          finishDateIsApproximate: true,
+          finishDateHasMonth: false,
+        );
+      }
+    }).toList();
+
+    await ref.read(booksProvider.notifier).bulkUpdateBooks(updatedBooks);
+    _exitSelectionMode();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Set ${updatedBooks.length} books to $dateDescription.'),
+          duration: const Duration(seconds: 5),
+          backgroundColor: FloralPalette.warmCharcoal,
+          action: SnackBarAction(
+            label: 'Undo',
+            textColor: FloralPalette.buttercupGold,
+            onPressed: () async {
+              await ref.read(booksProvider.notifier).bulkUpdateBooks(previousStates.values.toList());
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showBulkRateFlow(BuildContext context, List<Book> allBooks) async {
+    final selectedBooks = allBooks.where((b) => _selectedBookIds.contains(b.id)).toList();
+    if (selectedBooks.isEmpty) return;
+
+    final pickerResult = await showDialog<_RatePickerResult>(
+      context: context,
+      builder: (ctx) => _RatePickerDialog(bookCount: selectedBooks.length),
+    );
+
+    if (pickerResult == null || !context.mounted) return;
+
+    final String confirmSummary = pickerResult.clearRating
+        ? 'Clear rating for ${selectedBooks.length} books?'
+        : 'Rate ${selectedBooks.length} books ${pickerResult.rating!.toStringAsFixed(1)} stars?';
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FloralPalette.softIvory,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: FloralPalette.cardBorder)),
+        title: Text(
+          'Confirm Bulk Rating',
+          style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+        ),
+        content: Text(
+          confirmSummary,
+          style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FloralPalette.deepRose,
+              foregroundColor: FloralPalette.softIvory,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final previousStates = { for (final b in selectedBooks) b.id: b };
+    final updatedBooks = selectedBooks.map((b) {
+      if (pickerResult.clearRating) {
+        return b.copyWith(clearRating: true);
+      } else {
+        return b.copyWith(rating: pickerResult.rating);
+      }
+    }).toList();
+
+    await ref.read(booksProvider.notifier).bulkUpdateBooks(updatedBooks);
+    _exitSelectionMode();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            pickerResult.clearRating
+                ? 'Cleared rating for ${updatedBooks.length} books.'
+                : 'Rated ${updatedBooks.length} books ${pickerResult.rating!.toStringAsFixed(1)} stars.',
+          ),
+          duration: const Duration(seconds: 5),
+          backgroundColor: FloralPalette.warmCharcoal,
+          action: SnackBarAction(
+            label: 'Undo',
+            textColor: FloralPalette.buttercupGold,
+            onPressed: () async {
+              await ref.read(booksProvider.notifier).bulkUpdateBooks(previousStates.values.toList());
+            },
+          ),
+        ),
+      );
+    }
+  }
+}
+
+
+// ==========================================
+// BULK SELECTION MODAL DIALOGS
+// ==========================================
+
+class _YearPickerResult {
+  final int? year;
+  final int? month;
+  final bool isYearUnknown;
+
+  const _YearPickerResult({
+    this.year,
+    this.month,
+    required this.isYearUnknown,
+  });
+}
+
+class _YearPickerDialog extends StatefulWidget {
+  final int bookCount;
+
+  const _YearPickerDialog({required this.bookCount});
+
+  @override
+  State<_YearPickerDialog> createState() => _YearPickerDialogState();
+}
+
+class _YearPickerDialogState extends State<_YearPickerDialog> {
+  bool _isYearUnknown = false;
+  late int _selectedYear;
+  int? _selectedMonth; // null = Year only
+
+  static const List<String> _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedYear = DateTime.now().year;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentYear = DateTime.now().year;
+    final years = List<int>.generate(currentYear - 1950 + 1, (i) => currentYear - i);
+
+    return AlertDialog(
+      backgroundColor: FloralPalette.softIvory,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+      ),
+      title: Text(
+        'Set Read Year',
+        style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Set the approximate completion year for ${widget.bookCount} selected ${widget.bookCount == 1 ? "book" : "books"}:',
+              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+            ),
+            const SizedBox(height: 16),
+
+            // Option 1: Approximate Year (and optional month)
+            InkWell(
+              onTap: () => setState(() => _isYearUnknown = false),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: !_isYearUnknown ? FloralPalette.blushPink.withValues(alpha: 0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: !_isYearUnknown ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          !_isYearUnknown ? Icons.radio_button_checked : Icons.radio_button_off,
+                          size: 18,
+                          color: !_isYearUnknown ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Pick Year & Month',
+                          style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    if (!_isYearUnknown) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          // Year dropdown
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: _selectedYear,
+                              decoration: InputDecoration(
+                                labelText: 'Year',
+                                labelStyle: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              items: years.map((y) {
+                                return DropdownMenuItem(value: y, child: Text('$y'));
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedYear = val);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Optional Month dropdown
+                          Expanded(
+                            child: DropdownButtonFormField<int?>(
+                              initialValue: _selectedMonth,
+                              decoration: InputDecoration(
+                                labelText: 'Month (Optional)',
+                                labelStyle: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              items: [
+                                const DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text('All Year', style: TextStyle(fontStyle: FontStyle.italic)),
+                                ),
+                                ...List.generate(12, (index) {
+                                  return DropdownMenuItem<int?>(
+                                    value: index + 1,
+                                    child: Text(_monthNames[index]),
+                                  );
+                                }),
+                              ],
+                              onChanged: (val) => setState(() => _selectedMonth = val),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Option 2: Year unknown / long ago
+            InkWell(
+              onTap: () => setState(() => _isYearUnknown = true),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _isYearUnknown ? FloralPalette.blushPink.withValues(alpha: 0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isYearUnknown ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isYearUnknown ? Icons.radio_button_checked : Icons.radio_button_off,
+                      size: 18,
+                      color: _isYearUnknown ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Year unknown / long ago',
+                            style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Marks as Finished with no date. Excluded from year stats but counted in lifetime totals.',
+                            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FloralPalette.deepRose,
+            foregroundColor: FloralPalette.softIvory,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop(
+              _YearPickerResult(
+                year: _isYearUnknown ? null : _selectedYear,
+                month: _isYearUnknown ? null : _selectedMonth,
+                isYearUnknown: _isYearUnknown,
+              ),
+            );
+          },
+          child: const Text('Continue'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RatePickerResult {
+  final double? rating;
+  final bool clearRating;
+
+  const _RatePickerResult({
+    this.rating,
+    this.clearRating = false,
+  });
+}
+
+class _RatePickerDialog extends StatefulWidget {
+  final int bookCount;
+
+  const _RatePickerDialog({required this.bookCount});
+
+  @override
+  State<_RatePickerDialog> createState() => _RatePickerDialogState();
+}
+
+class _RatePickerDialogState extends State<_RatePickerDialog> {
+  double? _rating = 4.0;
+  bool _clearRating = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: FloralPalette.softIvory,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+      ),
+      title: Text(
+        'Rate Selected Books',
+        style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Apply a rating to ${widget.bookCount} selected ${widget.bookCount == 1 ? "book" : "books"}:',
+            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+          ),
+          const SizedBox(height: 20),
+
+          if (!_clearRating) ...[
+            Center(
+              child: FloralRatingBar(
+                rating: _rating,
+                blossomSize: 32,
+                onRatingChanged: (newRating) {
+                  setState(() {
+                    _rating = newRating;
+                    _clearRating = false;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _rating != null ? '${_rating!.toStringAsFixed(1)} Stars' : 'Unrated',
+              style: JournalTypography.headingMedium(color: FloralPalette.buttercupGold).copyWith(fontSize: 20),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: FloralPalette.blushPink.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Rating will be cleared (Unrated)',
+                style: JournalTypography.body(color: FloralPalette.deepRose).copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _clearRating ? FloralPalette.deepRose : FloralPalette.mutedCharcoal,
+              side: BorderSide(color: _clearRating ? FloralPalette.deepRose : FloralPalette.cardBorder),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: Icon(_clearRating ? Icons.check_rounded : Icons.clear_rounded, size: 16),
+            label: Text(_clearRating ? 'Keep Rating Cleared' : 'Clear Rating'),
+            onPressed: () {
+              setState(() {
+                _clearRating = !_clearRating;
+                if (!_clearRating && _rating == null) {
+                  _rating = 4.0;
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FloralPalette.deepRose,
+            foregroundColor: FloralPalette.softIvory,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop(
+              _RatePickerResult(
+                rating: _clearRating ? null : _rating,
+                clearRating: _clearRating,
+              ),
+            );
+          },
+          child: const Text('Continue'),
+        ),
+      ],
     );
   }
 }

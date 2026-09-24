@@ -2351,5 +2351,372 @@ void main() {
       final textWidget = tester.widget<Text>(find.text('Finished'));
       expect(textWidget.style?.fontSize != null && textWidget.style!.fontSize! >= 12.0, isTrue);
     });
+  
+  group('Part 4: Bulk-select to set approximate read year, rating, and stats filters', () {
+    test('Data model: approximate flags, human-friendly formatting, and backward compatibility', () {
+      final approxYearOnly = Book(
+        id: 'approx-1',
+        title: 'Middlemarch',
+        authors: const ['George Eliot'],
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2019, 7, 2),
+        finishDateIsApproximate: true,
+        finishDateHasMonth: false,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      expect(approxYearOnly.formattedCompletionDate, equals('Read in 2019'));
+
+      final approxYearMonth = Book(
+        id: 'approx-2',
+        title: 'Silas Marner',
+        authors: const ['George Eliot'],
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2019, 6, 15),
+        finishDateIsApproximate: true,
+        finishDateHasMonth: true,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      expect(approxYearMonth.formattedCompletionDate, equals('Read in June 2019'));
+
+      final yearUnknown = Book(
+        id: 'approx-3',
+        title: 'Jane Eyre',
+        authors: const ['Charlotte Bronte'],
+        status: ReadingStatus.finished,
+        finishDate: null,
+        finishDateIsApproximate: true,
+        finishDateHasMonth: false,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      expect(yearUnknown.formattedCompletionDate, equals('Read long ago'));
+
+      final exactDate = Book(
+        id: 'exact-1',
+        title: 'Villette',
+        authors: const ['Charlotte Bronte'],
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2023, 10, 14),
+        finishDateIsApproximate: false,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      expect(exactDate.formattedCompletionDate, equals('Finished October 14, 2023'));
+
+      // Backward compatibility: older backup map without approximate flags
+      final oldBackupMap = {
+        'id': 'legacy-1',
+        'title': 'Wuthering Heights',
+        'authors': ['Emily Bronte'],
+        'genres': ['Classic', 'Gothic'],
+        'rating': 4.5,
+        'description': 'A passionate and tragic romance.',
+        'status': 'finished',
+        'startDate': '2023-01-01T00:00:00.000',
+        'finishDate': '2023-02-01T00:00:00.000',
+        'notes': 'Haunting atmosphere.',
+        'quotes': [],
+        'pageCount': 400,
+        'dateAdded': '2023-01-01T00:00:00.000',
+      };
+
+      final parsedLegacy = Book.fromMap(oldBackupMap);
+      expect(parsedLegacy.finishDateIsApproximate, isFalse);
+      expect(parsedLegacy.finishDateHasMonth, isFalse);
+      expect(parsedLegacy.title, equals('Wuthering Heights'));
+      expect(parsedLegacy.rating, equals(4.5));
+      expect(parsedLegacy.notes, equals('Haunting atmosphere.'));
+    });
+
+    test('Bulk apply preserves all other fields and undo restores previous values', () async {
+      final storage = InMemoryStorageService();
+
+      final originalQuote = BookQuote(
+        id: 'q-bulk-1',
+        quote: 'Whatever our souls are made of, his and mine are the same.',
+        pageNumber: 82,
+        createdAt: DateTime(2026, 9, 1),
+      );
+
+      final book1 = Book(
+        id: 'b-bulk-1',
+        title: 'Wuthering Heights',
+        authors: const ['Emily Bronte'],
+        genres: const ['Classic', 'Romance'],
+        rating: 3.5,
+        description: 'Heathcliff and Catherine story.',
+        notes: 'Personal favorite classic.',
+        quotes: [originalQuote],
+        pageCount: 380,
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2026, 9, 24),
+        dateAdded: DateTime(2026, 9, 1),
+      );
+
+      final book2 = Book(
+        id: 'b-bulk-2',
+        title: 'Persuasion',
+        authors: const ['Jane Austen'],
+        genres: const ['Classic', 'Regency'],
+        rating: 4.0,
+        description: 'Anne Elliot second chance romance.',
+        notes: 'Quiet, poignant beauty.',
+        quotes: [],
+        pageCount: 260,
+        status: ReadingStatus.reading,
+        dateAdded: DateTime(2026, 9, 5),
+      );
+
+      await storage.saveBook(book1);
+      await storage.saveBook(book2);
+
+      // Snapshot previous states for undo
+      final previousStates = {
+        book1.id: book1,
+        book2.id: book2,
+      };
+
+      // Perform bulk update: set year to 2018 (approximate) and rate 4.5
+      final updatedBooks = [
+        book1.copyWith(
+          finishDate: DateTime(2018, 7, 2),
+          finishDateIsApproximate: true,
+          finishDateHasMonth: false,
+          rating: 4.5,
+        ),
+        book2.copyWith(
+          status: ReadingStatus.finished,
+          finishDate: DateTime(2018, 7, 2),
+          finishDateIsApproximate: true,
+          finishDateHasMonth: false,
+          rating: 4.5,
+        ),
+      ];
+
+      for (final b in updatedBooks) {
+        await storage.saveBook(b);
+      }
+
+      // Verify updated books
+      final storedBook1 = await storage.getBook(book1.id);
+      expect(storedBook1, isNotNull);
+      expect(storedBook1!.finishDate?.year, equals(2018));
+      expect(storedBook1.finishDateIsApproximate, isTrue);
+      expect(storedBook1.finishDateHasMonth, isFalse);
+      expect(storedBook1.rating, equals(4.5));
+      // Verify all untouched fields are strictly preserved
+      expect(storedBook1.title, equals(book1.title));
+      expect(storedBook1.authors, equals(book1.authors));
+      expect(storedBook1.genres, equals(book1.genres));
+      expect(storedBook1.description, equals(book1.description));
+      expect(storedBook1.notes, equals(book1.notes));
+      expect(storedBook1.quotes.length, equals(1));
+      expect(storedBook1.quotes.first.quote, equals(originalQuote.quote));
+      expect(storedBook1.pageCount, equals(book1.pageCount));
+
+      // Simulate Undo
+      for (final prev in previousStates.values) {
+        await storage.saveBook(prev);
+      }
+
+      final restoredBook1 = await storage.getBook(book1.id);
+      final restoredBook2 = await storage.getBook(book2.id);
+
+      expect(restoredBook1!.finishDate?.year, equals(2026));
+      expect(restoredBook1.finishDateIsApproximate, isFalse);
+      expect(restoredBook1.rating, equals(3.5));
+
+      expect(restoredBook2!.status, equals(ReadingStatus.reading));
+      expect(restoredBook2.finishDate, isNull);
+      expect(restoredBook2.rating, equals(4.0));
+    });
+
+    test('Stats behavior: approximate books included in yearly totals, ratings, genres, and pages, but excluded from monthly chart', () {
+      final currentYear = DateTime.now().year;
+
+      // Book A: Exact date in current year (March 10)
+      final bookA = Book(
+        id: 'stat-a',
+        title: 'Book A (Exact)',
+        authors: const ['Author A'],
+        genres: const ['Fiction'],
+        rating: 5.0,
+        pageCount: 300,
+        status: ReadingStatus.finished,
+        finishDate: DateTime(currentYear, 3, 10),
+        finishDateIsApproximate: false,
+        dateAdded: DateTime(currentYear, 1, 1),
+      );
+
+      // Book B: Approximate year only in current year (middle of year)
+      final bookB = Book(
+        id: 'stat-b',
+        title: 'Book B (Approx Year Only)',
+        authors: const ['Author B'],
+        genres: const ['Mystery'],
+        rating: 4.0,
+        pageCount: 200,
+        status: ReadingStatus.finished,
+        finishDate: DateTime(currentYear, 7, 2),
+        finishDateIsApproximate: true,
+        finishDateHasMonth: false,
+        dateAdded: DateTime(currentYear, 1, 1),
+      );
+
+      // Book C: Approximate year and month in current year (May 15)
+      final bookC = Book(
+        id: 'stat-c',
+        title: 'Book C (Approx Year and Month)',
+        authors: const ['Author C'],
+        genres: const ['Sci-Fi'],
+        rating: 3.0,
+        pageCount: 150,
+        status: ReadingStatus.finished,
+        finishDate: DateTime(currentYear, 5, 15),
+        finishDateIsApproximate: true,
+        finishDateHasMonth: true,
+        dateAdded: DateTime(currentYear, 1, 1),
+      );
+
+      // Book D: Year unknown / long ago (Finished with no finishDate)
+      final bookD = Book(
+        id: 'stat-d',
+        title: 'Book D (Year Unknown)',
+        authors: const ['Author D'],
+        genres: const ['Poetry'],
+        rating: 4.0,
+        pageCount: 100,
+        status: ReadingStatus.finished,
+        finishDate: null,
+        finishDateIsApproximate: true,
+        finishDateHasMonth: false,
+        dateAdded: DateTime(currentYear, 1, 1),
+      );
+
+      final allBooks = [bookA, bookB, bookC, bookD];
+
+      // Yearly stats for currentYear:
+      // Includes Book A, Book B, Book C (approximate-dated books count in yearly totals)
+      // Excludes Book D (finishDate == null)
+      final finishedThisYear = allBooks.where((b) {
+        return b.status == ReadingStatus.finished &&
+            b.finishDate != null &&
+            b.finishDate!.year == currentYear;
+      }).toList();
+
+      expect(finishedThisYear.length, equals(3), reason: 'Yearly total includes Book A, B, and C');
+      expect(finishedThisYear.contains(bookB), isTrue, reason: 'Approximate-dated book is included in yearly total');
+      expect(finishedThisYear.contains(bookD), isFalse, reason: 'Year unknown book is excluded from year-based stats');
+
+      // Total pages read in current year: 300 + 200 + 150 = 650
+      final yearlyPages = finishedThisYear.fold<int>(0, (sum, b) => sum + (b.pageCount ?? 0));
+      expect(yearlyPages, equals(650));
+
+      // Yearly average rating: (5.0 + 4.0 + 3.0) / 3 = 4.0
+      final yearlyRated = finishedThisYear.where((b) => b.rating != null && b.rating! > 0).toList();
+      final double yearlyAvgRating = yearlyRated.map((b) => b.rating!).reduce((a, b) => a + b) / yearlyRated.length;
+      expect(yearlyAvgRating, equals(4.0));
+
+      // Monthly bar chart counts:
+      // Approximate year-only books (Book B) MUST be excluded from the per-month chart!
+      final monthlyCounts = List<int>.filled(12, 0);
+      for (final b in finishedThisYear) {
+        if (b.finishDate != null) {
+          if (b.finishDateIsApproximate && !b.finishDateHasMonth) {
+            continue; // Skipped
+          }
+          final m = b.finishDate!.month;
+          if (m >= 1 && m <= 12) {
+            monthlyCounts[m - 1]++;
+          }
+        }
+      }
+
+      expect(monthlyCounts[2], equals(1), reason: 'March has 1 book (Book A)');
+      expect(monthlyCounts[4], equals(1), reason: 'May has 1 book (Book C with explicit month)');
+      expect(monthlyCounts[6], equals(0), reason: 'July has 0 books (Book B approximate year-only is excluded)');
+      expect(monthlyCounts.reduce((a, b) => a + b), equals(2), reason: 'Only 2 books appear in monthly chart');
+
+      // Overall totals across all finished books:
+      // Book D ("Year unknown / long ago") IS included in overall totals and average rating!
+      final allFinished = allBooks.where((b) => b.status == ReadingStatus.finished).toList();
+      expect(allFinished.length, equals(4), reason: 'Overall total finished includes Book D');
+
+      final allRated = allFinished.where((b) => b.rating != null && b.rating! > 0).toList();
+      final double overallAvgRating = allRated.map((b) => b.rating!).reduce((a, b) => a + b) / allRated.length;
+      // (5.0 + 4.0 + 3.0 + 4.0) / 4 = 4.0
+      expect(overallAvgRating, equals(4.0), reason: 'Overall average rating includes Book D');
+    });
+
+    testWidgets('UI Interaction: Long-press enters selection mode, select all, cancel, and action bar', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      final book1 = Book(
+        id: 'sel-1',
+        title: 'The Great Gatsby',
+        authors: const ['F. Scott Fitzgerald'],
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2026, 9, 1),
+        dateAdded: DateTime(2026, 9, 1),
+      );
+      final book2 = Book(
+        id: 'sel-2',
+        title: 'Tender is the Night',
+        authors: const ['F. Scott Fitzgerald'],
+        status: ReadingStatus.finished,
+        finishDate: DateTime(2026, 9, 2),
+        dateAdded: DateTime(2026, 9, 2),
+      );
+
+      await storage.saveBook(book1);
+      await storage.saveBook(book2);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Normal mode: FAB is visible, selection header not visible
+      expect(find.byKey(const ValueKey('add_book_fab')), findsOneWidget);
+      expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
+
+      // Long press book 1 to enter selection mode
+      await tester.longPress(find.byType(BookListCard).first);
+      await tester.pumpAndSettle();
+
+      // Selection mode active:
+      expect(find.byKey(const ValueKey('library_selection_header')), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.byKey(const ValueKey('select_all_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('cancel_selection_button')), findsOneWidget);
+
+      // FAB is hidden in selection mode
+      expect(find.byKey(const ValueKey('add_book_fab')), findsNothing);
+
+      // Bottom bulk action bar is displayed with Set year and Rate
+      expect(find.byKey(const ValueKey('bulk_set_year_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('bulk_rate_button')), findsOneWidget);
+
+      // Tap "Select all"
+      await tester.tap(find.byKey(const ValueKey('select_all_button')));
+      await tester.pumpAndSettle();
+      expect(find.text('2 selected'), findsOneWidget);
+
+      // Tap "Cancel"
+      await tester.tap(find.byKey(const ValueKey('cancel_selection_button')));
+      await tester.pumpAndSettle();
+
+      // Selection mode exited:
+      expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
+      expect(find.byKey(const ValueKey('add_book_fab')), findsOneWidget);
+    });
   });
+});
 }

@@ -10,13 +10,19 @@ import 'book_cover_thumbnail.dart';
 class BookListCard extends StatelessWidget {
   final Book book;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool isWishlist;
+  final bool isSelectionMode;
+  final bool isSelected;
 
   const BookListCard({
     super.key,
     required this.book,
     this.onTap,
+    this.onLongPress,
     this.isWishlist = false,
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
 
 
@@ -38,6 +44,7 @@ class BookListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(20),
           hoverColor: FloralPalette.blushPink.withValues(alpha: 0.12),
           child: Padding(
@@ -45,6 +52,31 @@ class BookListCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (isSelectionMode) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 36, right: 12),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? FloralPalette.deepRose : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected ? FloralPalette.deepRose : FloralPalette.mutedCharcoal.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 16,
+                              color: FloralPalette.softIvory,
+                            )
+                          : null,
+                    ),
+                  ),
+                ],
                 // Book Cover with Hero transition
                 BookCoverThumbnail(
                   book: book,
