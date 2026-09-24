@@ -1,3 +1,8 @@
+import 'package:bookmark/doodles/maple_leaf_doodle.dart';
+import 'package:bookmark/doodles/oak_leaf_doodle.dart';
+import 'package:bookmark/doodles/acorn_doodle.dart';
+import 'package:bookmark/doodles/mushroom_doodle.dart';
+import 'package:bookmark/doodles/falling_leaves_doodle.dart';
 import 'package:bookmark/core/theme/palette.dart';
 import 'package:bookmark/doodles/poppy_doodle.dart';
 import 'package:bookmark/core/widgets/floral_rating_bar.dart';
@@ -1937,5 +1942,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(FloralPalette.isDark, isFalse);
     expect(await fakeStorage.getSetting('theme_mode'), equals('poppyBlush'));
+  });
+
+  testWidgets('Autumn Doodles: Maple, Oak, Acorn, Mushroom, and Falling Leaves render cleanly', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                MapleLeafDoodle(size: 60),
+                OakLeafDoodle(size: 60),
+                AcornDoodle(size: 50),
+                MushroomDoodle(size: 50),
+                FallingLeavesDoodle(width: 300, height: 60),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MapleLeafDoodle), findsWidgets);
+    expect(find.byType(OakLeafDoodle), findsWidgets);
+    expect(find.byType(AcornDoodle), findsWidgets);
+    expect(find.byType(MushroomDoodle), findsOneWidget);
+    expect(find.byType(FallingLeavesDoodle), findsOneWidget);
   });
 }

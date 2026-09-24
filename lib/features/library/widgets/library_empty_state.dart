@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
 import '../../../doodles/poppy_doodle.dart';
+import '../../../doodles/maple_leaf_doodle.dart';
 
 /// Empty state display when no books match or the shelf is empty.
 ///
@@ -47,6 +48,16 @@ class LibraryEmptyState extends StatelessWidget {
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _LeatherOpenBookPainter(),
+                  ),
+                ),
+                // Cute autumn maple leaf tucked beside the book
+                const Positioned(
+                  left: -8,
+                  bottom: -6,
+                  child: MapleLeafDoodle(
+                    size: 32,
+                    color: FloralPalette.rosePetal,
+                    angle: 0.32,
                   ),
                 ),
                 // Poppy resting gracefully beside the open pages

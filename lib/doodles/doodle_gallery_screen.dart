@@ -10,6 +10,12 @@ import 'poppy_doodle.dart';
 import 'sketch_underline.dart';
 import 'tulip_doodle.dart';
 import 'vine_doodle.dart';
+import 'acorn_doodle.dart';
+import 'falling_leaves_doodle.dart';
+import 'maple_leaf_doodle.dart';
+import 'mushroom_doodle.dart';
+import 'oak_leaf_doodle.dart';
+
 
 /// Interactive Botanical Doodle Showcase Screen.
 ///
@@ -236,7 +242,121 @@ class DoodleGalleryScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // ==========================================
-                  // 4. WARM BROWN ACCENTS (PREVIEW ONLY)
+                  // 4. AUTUMN BOTANICAL COLLECTION
+                  // ==========================================
+                  _buildSectionCard(
+                    title: 'Autumn Botanical Collection',
+                    subtitle: 'Cozy seasonal motifs: maple, oak, acorn, falling leaves & forest mushroom',
+                    child: Column(
+                      children: [
+                        // Row 1: Maple & Oak Leaves
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 14,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _buildDoodleItem(
+                              label: 'Maple (Pumpkin)',
+                              child: const MapleLeafDoodle(
+                                size: 48,
+                                color: FloralPalette.rosePetal,
+                              ),
+                            ),
+                            _buildDoodleItem(
+                              label: 'Maple (Rust)',
+                              child: const MapleLeafDoodle(
+                                size: 48,
+                                color: FloralPalette.deepRose,
+                                angle: 0.2,
+                              ),
+                            ),
+                            _buildDoodleItem(
+                              label: 'Oak (Golden)',
+                              child: const OakLeafDoodle(
+                                size: 48,
+                                color: FloralPalette.buttercupGold,
+                              ),
+                            ),
+                            _buildDoodleItem(
+                              label: 'Oak (Sage)',
+                              child: const OakLeafDoodle(
+                                size: 48,
+                                color: FloralPalette.sageGreen,
+                                angle: -0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 18),
+                        const Divider(color: Color(0xFFF4E5E1), height: 1),
+                        const SizedBox(height: 18),
+
+                        // Row 2: Acorn & Forest Mushroom
+                        Wrap(
+                          spacing: 20,
+                          runSpacing: 14,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _buildDoodleItem(
+                              label: 'Woodland Acorn',
+                              child: const AcornDoodle(size: 46),
+                            ),
+                            _buildDoodleItem(
+                              label: 'Forest Mushroom',
+                              child: const MushroomDoodle(
+                                size: 48,
+                                capColor: FloralPalette.poppyRed,
+                              ),
+                            ),
+                            _buildDoodleItem(
+                              label: 'Pumpkin Shroom',
+                              child: const MushroomDoodle(
+                                size: 48,
+                                capColor: FloralPalette.rosePetal,
+                                angle: 0.15,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 18),
+                        const Divider(color: Color(0xFFF4E5E1), height: 1),
+                        const SizedBox(height: 18),
+
+                        // Row 3: Drifting Autumn Breeze
+                        Text(
+                          'Drifting Autumn Leaves Breeze:',
+                          style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 12),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final w = constraints.maxWidth > 280 ? 280.0 : constraints.maxWidth;
+                            return Container(
+                              width: double.infinity,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: FloralPalette.petalWhite,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFFF4E5E1)),
+                              ),
+                              child: Center(
+                                child: FallingLeavesDoodle(
+                                  width: w,
+                                  height: 60,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  // ==========================================
+                  // 5. WARM BROWN ACCENTS (PREVIEW ONLY)
                   // ==========================================
                   _buildBrownAccentsCard(),
 
