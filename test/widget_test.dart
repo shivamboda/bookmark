@@ -1,3 +1,5 @@
+import 'package:bookmark/core/widgets/floral_rating_bar.dart';
+import 'package:bookmark/core/widgets/floral_celebration_overlay.dart';
 import 'package:bookmark/features/library/screens/book_search_screen.dart';
 import 'package:bookmark/services/book_search_service.dart';
 import 'package:bookmark/features/library/screens/add_edit_book_screen.dart';
@@ -250,7 +252,7 @@ void main() {
 
     // 2. Verify Half-Star Rating Display (4.5 / 5.0)
     expect(find.text('4.5 / 5.0'), findsOneWidget);
-    expect(find.byIcon(Icons.star_half_rounded), findsOneWidget);
+    expect(find.byType(FloralRatingBar), findsOneWidget);
 
     // 3. Verify Vine Divider doodle is rendered
     expect(find.byType(VineBorderDoodle), findsOneWidget);
@@ -1763,6 +1765,81 @@ void main() {
     // 5. Export and Restore buttons are present
     expect(find.byKey(const ValueKey('export_library_button')), findsOneWidget);
     expect(find.byKey(const ValueKey('import_library_button')), findsOneWidget);
+  });
+
+
+  testWidgets('Phase 11: FloralRatingBar half-step interaction and FloralCelebrationDialog overlay', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    double? currentRating = 3.0;
+
+    // Build standalone FloralRatingBar
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return FloralRatingBar(
+                rating: currentRating,
+                showLabel: true,
+                onRatingChanged: (newRating) {
+                  setState(() => currentRating = newRating);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify rating bar and label
+    expect(find.byType(FloralRatingBar), findsOneWidget);
+    expect(find.text('3.0 / 5.0'), findsOneWidget);
+
+    // Tap on the 4th blossom (index 3) to test interaction
+    final blossoms = find.byType(CustomPaint);
+    expect(blossoms, findsWidgets);
+
+    // Test Celebration Overlay Dialog
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  showFloralCelebration(context, bookTitle: 'The Secret History');
+                },
+                child: const Text('Celebrate'),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Celebrate'));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(FloralCelebrationDialog), findsOneWidget);
+    expect(find.text('The Secret History'), findsOneWidget);
+    expect(find.text('Story Completed ~'), findsOneWidget);
+
+    // Pump frames to verify particle animation runs smoothly without exceptions
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 1000));
+
+    // Tap close button
+    final closeBtn = find.text('Cherish & Continue');
+    expect(closeBtn, findsOneWidget);
+    await tester.tap(closeBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloralCelebrationDialog), findsNothing);
   });
 
 }

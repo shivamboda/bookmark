@@ -9,6 +9,9 @@ import '../../../doodles/sketch_underline.dart';
 import '../../../doodles/vine_doodle.dart';
 import '../../../models/book.dart';
 import 'add_edit_book_screen.dart';
+import '../../../core/widgets/floral_rating_bar.dart';
+import '../../../core/widgets/floral_celebration_overlay.dart';
+
 import '../widgets/book_cover_thumbnail.dart';
 
 /// Step 4b: Handcrafted Botanical Book Detail Screen.
@@ -57,10 +60,12 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     await ref.read(booksProvider.notifier).updateBook(updated);
   }
 
-  /// Hook for a future finished-book celebration animation.
-  /// Intentionally left without animation logic for future phases.
+  /// Triggers full-screen floral petal celebration when a book is finished.
   void _onBookFinishedCelebrationHook(Book finishedBook) {
     debugPrint('Book finished celebration hook triggered for "${finishedBook.title}" (ID: ${finishedBook.id})');
+    if (mounted) {
+      showFloralCelebration(context, bookTitle: finishedBook.title);
+    }
   }
 
   Future<void> _updateStatus(Book book, ReadingStatus newStatus) async {
@@ -446,68 +451,27 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               Text(
                 book.isRated ? '${book.rating!.toStringAsFixed(1)} / 5.0' : 'Unrated',
                 style: JournalTypography.bodySmall(
-                  color: book.isRated ? FloralPalette.buttercupGold : FloralPalette.unratedText,
+                  color: book.isRated ? const Color(0xFFD48B28) : FloralPalette.unratedText,
                 ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // 5-Star Row with Half-Star display and 44x44 tap targets
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(5, (index) {
-              final starIndex = index + 1.0;
-              IconData icon;
-              Color iconColor;
-
-              if (book.ratingOrZero >= starIndex) {
-                icon = Icons.star_rounded;
-                iconColor = FloralPalette.buttercupGold;
-              } else if (book.ratingOrZero >= starIndex - 0.5) {
-                icon = Icons.star_half_rounded;
-                iconColor = FloralPalette.buttercupGold;
-              } else {
-                icon = Icons.star_outline_rounded;
-                iconColor = FloralPalette.latte;
-              }
-
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: ValueKey('rating_star_${index + 1}'),
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    // Tap toggles: if current rating is full, drop to half; else set full
-                    double newRating = starIndex;
-                    if (book.ratingOrZero == starIndex) {
-                      newRating = starIndex - 0.5;
-                    } else if (book.ratingOrZero == starIndex - 0.5) {
-                      newRating = starIndex - 1.0;
-                    }
-                    _updateRating(book, newRating);
-                  },
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    child: Center(
-                      child: Icon(
-                        icon,
-                        size: 32,
-                        color: iconColor,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
+          Center(
+            child: FloralRatingBar(
+              rating: book.rating,
+              blossomSize: 34,
+              spacing: 12,
+              onRatingChanged: (newRating) {
+                _updateRating(book, newRating ?? 0.0);
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Status Selector with Palette Badges (Latte fill + Espresso text for Paused)
   Widget _buildStatusSection(BuildContext context, Book book) {
     return Container(
       padding: const EdgeInsets.all(18),

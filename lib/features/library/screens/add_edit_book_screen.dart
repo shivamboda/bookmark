@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
+import '../../../core/widgets/floral_rating_bar.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import '../../../doodles/poppy_doodle.dart';
 import '../../../doodles/sketch_underline.dart';
@@ -1369,8 +1370,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
   /// Card 4: Rating Input with Half-Star support (Tap targets >= 44px)
   Widget _buildRatingCard() {
-    final double currentScore = _rating ?? 0.0;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
@@ -1379,111 +1378,17 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
         boxShadow: const [FloralPalette.cardShadow],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Rating',
-                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
-              ),
-              Row(
-                children: [
-                  Text(
-                    _rating != null && _rating! > 0 ? '${_rating!.toStringAsFixed(1)} / 5.0' : 'Unrated',
-                    style: JournalTypography.bodySmall(
-                      color: _rating != null && _rating! > 0 ? FloralPalette.buttercupGold : FloralPalette.unratedText,
-                    ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
-                  if (_rating != null && _rating! > 0) ...[
-                    const SizedBox(width: 8),
-                    InkWell(
-                      key: const ValueKey('clear_rating_btn'),
-                      onTap: () => setState(() => _rating = null),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Text(
-                          'Clear',
-                          style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // 5-Star Row supporting half-step tap detection
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(5, (index) {
-              final starTarget = index + 1.0;
-              IconData icon;
-              Color iconColor;
-
-              if (currentScore >= starTarget) {
-                icon = Icons.star_rounded;
-                iconColor = FloralPalette.buttercupGold;
-              } else if (currentScore >= starTarget - 0.5) {
-                icon = Icons.star_half_rounded;
-                iconColor = FloralPalette.buttercupGold;
-              } else {
-                icon = Icons.star_outline_rounded;
-                iconColor = FloralPalette.latte;
-              }
-
-              return Semantics(
-                label: 'Rate ${index + 1} out of 5',
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    key: ValueKey('form_rating_star_${index + 1}'),
-                    borderRadius: BorderRadius.circular(12),
-                    onTapUp: (details) {
-                      // Tap left half = half step (e.g. 3.5), right half = full step (4.0)
-                      final isLeftHalf = details.localPosition.dx < 22;
-                      final double score = isLeftHalf ? (starTarget - 0.5) : starTarget;
-
-                      setState(() {
-                        if (_rating == score) {
-                          _rating = isLeftHalf ? (score - 0.5) : (score - 0.5);
-                          if (_rating != null && _rating! <= 0) _rating = null;
-                        } else {
-                          _rating = score;
-                        }
-                      });
-                    },
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: 32,
-                          color: iconColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
+      child: FloralRatingBar(
+        rating: _rating,
+        showLabel: true,
+        showClearButton: true,
+        blossomSize: 34,
+        spacing: 12,
+        onRatingChanged: (newRating) => setState(() => _rating = newRating),
       ),
     );
   }
 
-  /// Card 5: Multi-Select Genres Chips + Add Custom
   Widget _buildGenresCard() {
     return Container(
       padding: const EdgeInsets.all(18),
