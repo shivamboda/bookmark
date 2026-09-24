@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// Platform stub for non-web environments (tests, desktop, mobile).
 Future<bool> saveOrShareBackupPlatform({
   required String jsonContent,
@@ -8,3 +10,7 @@ Future<bool> saveOrShareBackupPlatform({
 }
 
 bool isWebShareSupported() => false;
+
+Future<Uint8List?> pickBackupFilePlatform() async {
+  return null;
+}

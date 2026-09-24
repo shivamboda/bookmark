@@ -18,7 +18,6 @@ import '../widgets/stats_dashboard_view.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
 import 'dart:convert';
-import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../services/backup_service.dart';
 import '../../../services/storage_service.dart';
@@ -391,42 +390,157 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Future<void> _handleImport(BuildContext context) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: FloralPalette.petalWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Restore Library', style: JournalTypography.headingSmall()),
+              const SizedBox(height: 6),
+              Text(
+                'Choose how you would like to restore your Bookmark library:',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                key: const ValueKey('restore_file_button'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: FloralPalette.deepRose,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.file_open_rounded, size: 20),
+                label: const Text('Select Backup File (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  _pickAndProcessFile(context);
+                },
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                key: const ValueKey('restore_paste_button'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: FloralPalette.deepRose,
+                  side: const BorderSide(color: FloralPalette.blushPink),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.content_paste_rounded, size: 20),
+                label: const Text('Paste Backup JSON Text', style: TextStyle(fontWeight: FontWeight.w600)),
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  _showPasteJsonDialog(context);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndProcessFile(BuildContext context) async {
     try {
-      final files = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
+      final fileBytes = await pickBackupFilePlatform();
+      if (fileBytes == null || fileBytes.isEmpty) return;
 
-      if (files.isEmpty) return;
-
-      final fileBytes = await files.first.xFile.readAsBytes();
-      if (fileBytes.isEmpty) {
-        if (context.mounted) {
-          _showErrorDialog(context, 'Unable to read the selected file. Please try again.');
-        }
-        return;
-      }
-
-      final jsonContent = utf8.decode(fileBytes);
-      final validation = BackupService.validateBackupJson(jsonContent);
-
+      final jsonContent = utf8.decode(fileBytes, allowMalformed: true);
       if (!context.mounted) return;
-
-      if (!validation.isValid) {
-        _showErrorDialog(
-          context,
-          validation.errorMessage ?? 'The selected file is not a valid Bookmark backup.',
-        );
-        return;
-      }
-
-      // Show summary and choices dialog (Merge vs Replace)
-      _showImportOptionsModal(context, validation);
+      _processJsonContent(context, jsonContent);
     } catch (e) {
       if (context.mounted) {
         _showErrorDialog(context, 'Error reading backup file: $e');
       }
     }
+  }
+
+  void _showPasteJsonDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dlgContext) => AlertDialog(
+        backgroundColor: FloralPalette.petalWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Paste Backup JSON', style: JournalTypography.headingSmall()),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Paste your exported Bookmark JSON text below:',
+                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 8,
+                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                decoration: InputDecoration(
+                  hintText: '{"metadata": {"format_version": 1, ...}}',
+                  hintStyle: TextStyle(fontSize: 12, color: FloralPalette.mutedCharcoal.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: FloralPalette.blushPink),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dlgContext).pop(),
+            child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: FloralPalette.deepRose,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final text = controller.text.trim();
+              Navigator.of(dlgContext).pop();
+              if (text.isNotEmpty) {
+                _processJsonContent(context, text);
+              }
+            },
+            child: const Text('Verify & Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _processJsonContent(BuildContext context, String rawJson) {
+    final cleanJson = rawJson.trim().replaceFirst('\uFEFF', '');
+    final validation = BackupService.validateBackupJson(cleanJson);
+
+    if (!context.mounted) return;
+
+    if (!validation.isValid) {
+      _showErrorDialog(
+        context,
+        validation.errorMessage ?? 'The selected file is not a valid Bookmark backup.',
+      );
+      return;
+    }
+
+    // Show summary and choices dialog (Merge vs Replace)
+    _showImportOptionsModal(context, validation);
   }
 
   void _showErrorDialog(BuildContext context, String message) {

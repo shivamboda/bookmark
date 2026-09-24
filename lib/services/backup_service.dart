@@ -148,13 +148,14 @@ class BackupService {
 
   /// Completely validates an imported backup JSON string BEFORE writing anything to storage.
   static BackupValidationResult validateBackupJson(String jsonString) {
-    if (jsonString.trim().isEmpty) {
+    final cleanJson = jsonString.trim().replaceFirst('\uFEFF', '');
+    if (cleanJson.isEmpty) {
       return const BackupValidationResult.invalid('The file is empty. Please choose a valid Bookmark backup.');
     }
 
     dynamic decoded;
     try {
-      decoded = jsonDecode(jsonString);
+      decoded = jsonDecode(cleanJson);
     } catch (_) {
       return const BackupValidationResult.invalid(
         'The selected file is not a valid JSON document. Please ensure it was exported from Bookmark.',
@@ -171,11 +172,14 @@ class BackupService {
 
     // Format version verification
     final metadata = data['metadata'];
-    final formatVersion = (metadata is Map) ? metadata['format_version'] : data['version'];
+    final formatVersionRaw = (metadata is Map)
+        ? metadata['format_version']
+        : (data['format_version'] ?? data['version']);
+    final parsedVersion = int.tryParse(formatVersionRaw?.toString() ?? '');
 
-    if (formatVersion == null || formatVersion != currentFormatVersion) {
+    if (parsedVersion == null || parsedVersion != currentFormatVersion) {
       return BackupValidationResult.invalid(
-        'Unsupported backup format (version ${formatVersion ?? "unknown"}). This version of Bookmark requires format version $currentFormatVersion.',
+        'Unsupported backup format (version ${formatVersionRaw ?? "unknown"}). This version of Bookmark requires format version $currentFormatVersion.',
       );
     }
 
