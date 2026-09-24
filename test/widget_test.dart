@@ -1320,4 +1320,170 @@ void main() {
     expect(find.byKey(const ValueKey('library_grid_view')), findsOneWidget);
   });
 
+
+  testWidgets('Phase 9: Stats tab empty state when no finished books exist in current year', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final now = DateTime.now();
+
+    // Add a book finished last year and one currently reading
+    await storage.saveBook(Book(
+      id: 'stat-old-1',
+      title: 'Past Horizons',
+      authors: const ['Old Author'],
+      genres: const ['Classic'],
+      status: ReadingStatus.finished,
+      finishDate: DateTime(now.year - 1, 6, 1),
+      dateAdded: DateTime(now.year - 1, 5, 1),
+    ));
+    await storage.saveBook(Book(
+      id: 'stat-reading-1',
+      title: 'Current Quest',
+      authors: const ['Active Writer'],
+      genres: const ['Fantasy'],
+      status: ReadingStatus.reading,
+      dateAdded: now,
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigate to Stats tab (bottom nav item 2)
+    await tester.tap(find.text('Stats'));
+    await tester.pumpAndSettle();
+
+    // Verify empty state is displayed gracefully
+    expect(find.text('Your reading journey this year is just beginning ~'), findsOneWidget);
+    expect(find.text('Set a goal for the year ~'), findsOneWidget);
+    expect(find.text('Find Your Next Read'), findsOneWidget);
+
+    // Tap "Find Your Next Read" -> navigates back to Library tab (item 0)
+    await tester.tap(find.text('Find Your Next Read'));
+    await tester.pumpAndSettle();
+
+    // Verify we are back on the Library tab
+    expect(find.text('Current Quest'), findsWidgets);
+  });
+
+  testWidgets('Phase 9: Stats calculations, charts, ratings, pages, genres, and top reads', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final storage = InMemoryStorageService();
+    final currentYear = DateTime.now().year;
+
+    // Set a yearly goal of 5 books
+    await storage.setSetting('yearly_goal', 5);
+
+    // Book 1: Finished March 10, rated 5.0, 300 pages, genres: Fantasy, nyt:bestseller
+    await storage.saveBook(Book(
+      id: 'b-stat-1',
+      title: 'The Starlight Garden',
+      authors: const ['Aria Vance'],
+      genres: const ['Fantasy', 'nyt:bestseller-2024'],
+      rating: 5.0,
+      pageCount: 300,
+      status: ReadingStatus.finished,
+      finishDate: DateTime(currentYear, 3, 10),
+      dateAdded: DateTime(currentYear, 2, 1),
+    ));
+
+    // Book 2: Finished March 25, rated 4.0, 200 pages, genres: Fantasy, Romance
+    await storage.saveBook(Book(
+      id: 'b-stat-2',
+      title: 'Whispering Winds',
+      authors: const ['Rowan Thorne'],
+      genres: const ['Fantasy', 'Romance'],
+      rating: 4.0,
+      pageCount: 200,
+      status: ReadingStatus.finished,
+      finishDate: DateTime(currentYear, 3, 25),
+      dateAdded: DateTime(currentYear, 3, 1),
+    ));
+
+    // Book 3: Finished May 12, unrated (null), missing pages (null), genres: Sci-Fi
+    await storage.saveBook(Book(
+      id: 'b-stat-3',
+      title: 'Silent Nebulae',
+      authors: const ['Nova Cross'],
+      genres: const ['Sci-Fi'],
+      rating: null,
+      pageCount: null,
+      status: ReadingStatus.finished,
+      finishDate: DateTime(currentYear, 5, 12),
+      dateAdded: DateTime(currentYear, 4, 1),
+    ));
+
+    // Book 4: Finished in previous year (must be excluded from current year stats)
+    await storage.saveBook(Book(
+      id: 'b-stat-4',
+      title: 'Last Year Legend',
+      authors: const ['Past Writer'],
+      genres: const ['Mythology'],
+      rating: 5.0,
+      pageCount: 600,
+      status: ReadingStatus.finished,
+      finishDate: DateTime(currentYear - 1, 11, 20),
+      dateAdded: DateTime(currentYear - 1, 10, 1),
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storageServiceProvider.overrideWithValue(storage)],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigate to Stats tab
+    await tester.tap(find.text('Stats'));
+    await tester.pumpAndSettle();
+
+    // 1. Reading Goal: 3 of 5 books finished (60%)
+    expect(find.text('3 of 5 books finished (60%)'), findsOneWidget);
+    expect(find.text('2 more books to reach your goal'), findsOneWidget);
+
+    // 2. Overview metrics
+    expect(find.text('Finished'), findsOneWidget);
+    expect(find.text('3'), findsWidgets); // 3 books finished this year
+    expect(find.text('500'), findsWidgets); // 300 + 200 pages (in metrics row and pages card)
+
+    // 3. Average rating: (5.0 + 4.0) / 2 = 4.5. Unrated book is excluded, not counted as 0!
+    expect(find.text('4.5'), findsWidgets);
+    expect(find.textContaining('Computed across 2 rated books (1 unrated)'), findsOneWidget);
+
+    // 4. Pages Explored Card: 500 pages with missing pages count note
+    expect(find.text('Pages Explored'), findsOneWidget);
+    expect(find.textContaining('Across 2 books (1 book had no page count recorded)'), findsOneWidget);
+
+    // 5. Genre Breakdown: Uses cleanGenres (Fantasy, Romance, Sci-Fi)
+    expect(find.text('Genre Breakdown'), findsOneWidget);
+    expect(find.textContaining('Fantasy (2)'), findsOneWidget);
+    expect(find.textContaining('Romance (1)'), findsOneWidget);
+    expect(find.textContaining('Sci-Fi (1)'), findsOneWidget);
+    // Raw catalog string is excluded
+    expect(find.textContaining('nyt:bestseller-2024'), findsNothing);
+
+    // 6. Highest-Rated Reads Showcase: Book 1 (#1) and Book 2 (#2), unrated Book 3 excluded
+    expect(find.text('Highest-Rated Reads'), findsOneWidget);
+    expect(find.text('The Starlight Garden'), findsWidgets);
+    expect(find.text('Whispering Winds'), findsWidgets);
+    expect(find.text('Silent Nebulae'), findsNothing); // Unrated book not in showcase
+  });
+
 }

@@ -14,6 +14,7 @@ import '../widgets/book_grid_item.dart';
 import '../widgets/book_list_card.dart';
 import '../widgets/floral_bottom_nav.dart';
 import '../widgets/library_empty_state.dart';
+import '../widgets/stats_dashboard_view.dart';
 import '../../../doodles/bookmark_ribbon_doodle.dart';
 import 'book_detail_screen.dart';
 import 'book_search_screen.dart';
@@ -407,9 +408,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   // TAB 2: STATS SCREEN
   // ==========================================
   Widget _buildStatsTab(BuildContext context, AsyncValue<List<Book>> booksAsync) {
-    final yearlyGoal = ref.watch(yearlyGoalProvider);
-    final currentYear = DateTime.now().year;
-
     return Stack(
       children: [
         // Daisy motif in top-right
@@ -482,97 +480,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
             Expanded(
               child: booksAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator(color: FloralPalette.deepRose)),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: FloralPalette.deepRose),
+                ),
                 error: (error, _) => Center(child: Text('Error: $error')),
                 data: (allBooks) {
-                  final finishedCount = allBooks.where((b) => b.status == ReadingStatus.finished).length;
-                  final readingCount = allBooks.where((b) => b.status == ReadingStatus.reading).length;
-                  final wishlistCount = allBooks.where((b) => b.status == ReadingStatus.wantToRead).length;
-
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
-                    child: Column(
-                      children: [
-                        // Yearly Goal Card (Dynamic Year & Friendly Unset State)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFF2DED9)),
-                            boxShadow: const [FloralPalette.cardShadow],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '$currentYear Reading Goal',
-                                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
-                              ),
-                              const SizedBox(height: 6),
-                              if (yearlyGoal == null) ...[
-                                Text(
-                                  'Set a goal for the year ~',
-                                  style: JournalTypography.handwriting(color: FloralPalette.deepRose),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Track how many books you wish to finish in $currentYear. Head over to Settings to pick a goal whenever you are ready.',
-                                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-                                ),
-                                const SizedBox(height: 12),
-                                OutlinedButton.icon(
-                                  onPressed: () => setState(() => _currentNavIndex = 3),
-                                  icon: const Icon(Icons.flag_outlined, size: 18),
-                                  label: const Text('Set Goal in Settings'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: FloralPalette.deepRose,
-                                    side: const BorderSide(color: FloralPalette.deepRose),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    minimumSize: const Size(44, 44),
-                                  ),
-                                ),
-                              ] else ...[
-                                Text(
-                                  '$finishedCount of $yearlyGoal books finished',
-                                  style: JournalTypography.handwriting(color: FloralPalette.deepRose),
-                                ),
-                                const SizedBox(height: 12),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: LinearProgressIndicator(
-                                    value: yearlyGoal > 0 ? (finishedCount / yearlyGoal).clamp(0.0, 1.0) : 0,
-                                    backgroundColor: FloralPalette.blushPink.withValues(alpha: 0.3),
-                                    valueColor: const AlwaysStoppedAnimation(FloralPalette.deepRose),
-                                    minHeight: 10,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                  return StatsDashboardView(
+                    books: allBooks,
+                    onNavigateToTab: (index) {
+                      setState(() => _currentNavIndex = index);
+                    },
+                    onOpenBook: (book) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookDetailScreen(bookId: book.id),
                         ),
-
-                        const SizedBox(height: 16),
-
-                        // Metrics Grid
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatTile('Reading', '$readingCount', FloralPalette.sageGreenDark),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatTile('Finished', '$finishedCount', FloralPalette.deepRose),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatTile('Wishlist', '$wishlistCount', FloralPalette.lavenderDark),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -580,31 +505,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildStatTile(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF2DED9)),
-        boxShadow: const [FloralPalette.cardShadow],
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: JournalTypography.headingLarge(color: color).copyWith(fontSize: 26),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 11),
-          ),
-        ],
-      ),
     );
   }
 
