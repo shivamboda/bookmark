@@ -954,9 +954,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  static const Set<String> _canonicalGenres = {
+    'Fantasy', 'Romance', 'Mystery', 'Historical Fiction', 'Classic',
+    'Sci-Fi', 'Non-fiction', 'Poetry', 'Thriller', 'Young Adult',
+    'Mythology', 'Drama',
+  };
+
+  static bool _isCleanGenreTag(String g) {
+    final trimmed = g.trim();
+    if (trimmed.isEmpty) return false;
+    if (_canonicalGenres.contains(trimmed)) return true;
+    if (trimmed.contains(':') || trimmed.contains(',') || trimmed.contains('=') || trimmed.contains('/')) return false;
+    if (trimmed.length > 20) return false;
+    final lower = trimmed.toLowerCase();
+    if (lower.contains('nyt') || lower.contains('bestseller') || lower.contains('print') || lower.contains('edition')) return false;
+    if (lower.contains('fiction') && trimmed.contains(' ')) return false;
+    return true;
+  }
+
   /// Controls bar containing search field, status filter chips, genre dropdown, sort dropdown, and list/grid toggle
   Widget _buildControlsBar(List<Book> allBooks) {
-    final availableGenres = allBooks.expand((b) => b.genres).toSet().toList()..sort();
+    final availableGenres = allBooks
+        .expand((b) => b.cleanGenres)
+        .where(_isCleanGenreTag)
+        .toSet()
+        .toList()
+      ..sort();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
@@ -1057,32 +1080,53 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           Row(
             children: [
               // Genre Filter Button / Dropdown
-              PopupMenuButton<String?>(
+              PopupMenuButton<String>(
                 key: const ValueKey('genre_filter_button'),
-                initialValue: _selectedGenre,
-                onSelected: (genre) => setState(() => _selectedGenre = genre),
+                initialValue: _selectedGenre ?? '',
+                onSelected: (genre) {
+                  setState(() {
+                    _selectedGenre = (genre.isEmpty || genre == '__all__') ? null : genre;
+                  });
+                },
                 color: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 itemBuilder: (context) {
                   return [
-                    PopupMenuItem<String?>(
-                      value: null,
-                      child: Text(
-                        'All Genres',
-                        style: JournalTypography.bodySmall(
-                          color: _selectedGenre == null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                        ).copyWith(fontWeight: _selectedGenre == null ? FontWeight.w700 : FontWeight.w500),
+                    PopupMenuItem<String>(
+                      value: '',
+                      key: const ValueKey('genre_item_all'),
+                      child: Row(
+                        children: [
+                          if (_selectedGenre == null) ...[
+                            const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            'All Genres',
+                            style: JournalTypography.bodySmall(
+                              color: _selectedGenre == null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                            ).copyWith(fontWeight: _selectedGenre == null ? FontWeight.w700 : FontWeight.w500),
+                          ),
+                        ],
                       ),
                     ),
                     ...availableGenres.map(
-                      (g) => PopupMenuItem<String?>(
+                      (g) => PopupMenuItem<String>(
                         value: g,
                         key: ValueKey('genre_item_$g'),
-                        child: Text(
-                          g,
-                          style: JournalTypography.bodySmall(
-                            color: _selectedGenre == g ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                          ).copyWith(fontWeight: _selectedGenre == g ? FontWeight.w700 : FontWeight.w500),
+                        child: Row(
+                          children: [
+                            if (_selectedGenre == g) ...[
+                              const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(
+                              g,
+                              style: JournalTypography.bodySmall(
+                                color: _selectedGenre == g ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                              ).copyWith(fontWeight: _selectedGenre == g ? FontWeight.w700 : FontWeight.w500),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1115,8 +1159,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
                         ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                      if (_selectedGenre != null) ...[
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          key: const ValueKey('clear_genre_chip_btn'),
+                          onTap: () => setState(() => _selectedGenre = null),
+                          child: const Icon(Icons.close_rounded, size: 14, color: FloralPalette.deepRose),
+                        ),
+                      ] else ...[
+                        const SizedBox(width: 2),
+                        const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                      ],
                     ],
                   ),
                 ),
@@ -1228,7 +1281,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     // 2. Genre Filter
     if (_selectedGenre != null && _selectedGenre!.isNotEmpty) {
-      filtered = filtered.where((b) => b.genres.contains(_selectedGenre)).toList();
+      filtered = filtered.where((b) => b.cleanGenres.contains(_selectedGenre)).toList();
     }
 
     // 3. Search Query (title and author)

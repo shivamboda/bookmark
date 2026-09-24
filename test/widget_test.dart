@@ -1156,7 +1156,7 @@ void main() {
       id: 'p8-search-3',
       title: 'Project Hail Mary',
       authors: ['Andy Weir'],
-      genres: ['Sci-Fi'],
+      genres: ['Sci-Fi', 'nyt:bestseller-2020', 'Sweden, fiction'],
       status: ReadingStatus.finished,
       dateAdded: DateTime(2026, 9, 22),
     );
@@ -1200,6 +1200,46 @@ void main() {
 
     // 4. Tap reset button
     await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Way of Kings'), findsWidgets);
+    expect(find.text('Project Hail Mary'), findsWidgets);
+
+    // 5. Test Genre Filter dropdown and sanitization
+    await tester.tap(find.byKey(const ValueKey('genre_filter_button')));
+    await tester.pumpAndSettle();
+
+    // Verify dirty catalog codes were filtered out from the genre dropdown list
+    expect(find.text('nyt:bestseller-2020'), findsNothing);
+    expect(find.text('Sweden, fiction'), findsNothing);
+
+    // Filter by Sci-Fi
+    await tester.tap(find.byKey(const ValueKey('genre_item_Sci-Fi')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Project Hail Mary'), findsWidgets);
+    expect(find.text('The Way of Kings'), findsNothing);
+
+    // Test clearing via the (x) button on the active genre chip
+    await tester.tap(find.byKey(const ValueKey('clear_genre_chip_btn')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Way of Kings'), findsWidgets);
+    expect(find.text('Project Hail Mary'), findsWidgets);
+
+    // Test clearing via selecting "All Genres" in dropdown
+    await tester.tap(find.byKey(const ValueKey('genre_filter_button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('genre_item_Fantasy')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Way of Kings'), findsWidgets);
+    expect(find.text('Project Hail Mary'), findsNothing);
+
+    // Re-open dropdown and tap "All Genres"
+    await tester.tap(find.byKey(const ValueKey('genre_filter_button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('genre_item_all')));
     await tester.pumpAndSettle();
 
     expect(find.text('The Way of Kings'), findsWidgets);

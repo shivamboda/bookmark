@@ -152,11 +152,11 @@ class BookListCard extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // Genres
-                      if (book.genres.isNotEmpty)
+                      if (book.cleanGenres.isNotEmpty)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: book.genres.take(3).map((g) {
+                            children: book.cleanGenres.take(3).map((g) {
                               return Container(
                                 margin: const EdgeInsets.only(right: 5),
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),

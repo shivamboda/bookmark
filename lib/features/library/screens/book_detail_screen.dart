@@ -391,11 +391,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     const SizedBox(height: 10),
 
                     // Genres wrapped
-                    if (book.genres.isNotEmpty)
+                    if (book.cleanGenres.isNotEmpty)
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
-                        children: book.genres.map((g) {
+                        children: book.cleanGenres.map((g) {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                             decoration: BoxDecoration(

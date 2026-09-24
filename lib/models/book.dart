@@ -168,6 +168,18 @@ class Book {
   bool get isRated => rating != null && rating! > 0;
   double get ratingOrZero => rating ?? 0.0;
 
+  /// Returns only clean, human-friendly genre labels, filtering out catalog strings.
+  List<String> get cleanGenres => genres.where((g) {
+    final t = g.trim();
+    if (t.isEmpty) return false;
+    if (t.contains(':') || t.contains(',') || t.contains('=') || t.contains('/')) return false;
+    if (t.length > 25) return false;
+    final lower = t.toLowerCase();
+    if (lower.contains('nyt') || lower.contains('bestseller') || lower.contains('print') || lower.contains('edition')) return false;
+    if (lower.contains('fiction') && t.contains(' ')) return false;
+    return true;
+  }).toList();
+
   Book copyWith({
     String? id,
     String? title,
@@ -237,13 +249,24 @@ class Book {
       } catch (_) {}
     }
 
+    final rawGenres = List<String>.from(map['genres'] as List? ?? []);
+    final cleanGenres = rawGenres.where((g) {
+      final t = g.trim();
+      if (t.isEmpty) return false;
+      if (t.contains(':') || t.contains(',') || t.contains('=') || t.contains('/')) return false;
+      if (t.length > 25) return false;
+      final lower = t.toLowerCase();
+      if (lower.contains('nyt') || lower.contains('bestseller')) return false;
+      return true;
+    }).toList();
+
     return Book(
       id: map['id'] as String,
       title: map['title'] as String,
       authors: List<String>.from(map['authors'] as List? ?? []),
       coverUrl: map['coverUrl'] as String?,
       coverBytes: parsedCoverBytes,
-      genres: List<String>.from(map['genres'] as List? ?? []),
+      genres: cleanGenres,
       rating: (map['rating'] as num?)?.toDouble(),
       description: map['description'] as String? ?? '',
       startDate: map['startDate'] != null ? DateTime.parse(map['startDate'] as String) : null,
