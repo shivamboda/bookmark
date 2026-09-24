@@ -31,7 +31,7 @@ class LibraryEmptyState extends StatelessWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

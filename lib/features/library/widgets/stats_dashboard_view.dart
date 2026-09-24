@@ -124,7 +124,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +140,7 @@ class StatsDashboardView extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: 'Goal Settings',
-                icon: const Icon(Icons.tune_rounded, size: 20, color: FloralPalette.mutedCharcoal),
+                icon: Icon(Icons.tune_rounded, size: 20, color: FloralPalette.mutedCharcoal),
                 onPressed: () => onNavigateToTab(3),
               ),
             ],
@@ -249,7 +249,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -364,7 +364,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         children: [
@@ -435,7 +435,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,7 +489,7 @@ class StatsDashboardView extends ConsumerWidget {
                       final count = rod.toY.toInt();
                       return BarTooltipItem(
                         '$month: $count ${count == 1 ? "book" : "books"}',
-                        const TextStyle(
+                        TextStyle(
                           color: FloralPalette.softIvory,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
@@ -547,7 +547,7 @@ class StatsDashboardView extends ConsumerWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxY > 6 ? 2 : 1,
-                  getDrawingHorizontalLine: (value) => const FlLine(
+                  getDrawingHorizontalLine: (value) => FlLine(
                     color: FloralPalette.cardBorder,
                     strokeWidth: 1,
                     dashArray: [4, 4],
@@ -576,7 +576,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +587,7 @@ class StatsDashboardView extends ConsumerWidget {
               color: FloralPalette.sageGreen.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.auto_stories_rounded, color: FloralPalette.sageGreenDark, size: 28),
+            child: Icon(Icons.auto_stories_rounded, color: FloralPalette.sageGreenDark, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -631,7 +631,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,7 +721,7 @@ class StatsDashboardView extends ConsumerWidget {
           color: FloralPalette.softIvory,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: FloralPalette.cardBorder),
-          boxShadow: const [FloralPalette.cardShadow],
+          boxShadow: [FloralPalette.cardShadow],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,7 +756,7 @@ class StatsDashboardView extends ConsumerWidget {
       }
     }
 
-    const genreColors = [
+    final genreColors = [
       FloralPalette.deepRose,
       FloralPalette.sageGreenDark,
       FloralPalette.lavenderDark,
@@ -771,7 +771,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,7 +888,7 @@ class StatsDashboardView extends ConsumerWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

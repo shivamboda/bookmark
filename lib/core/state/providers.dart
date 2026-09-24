@@ -21,7 +21,7 @@ class ThemeModeNotifier extends Notifier<FloralThemeMode> {
   @override
   FloralThemeMode build() {
     _loadTheme();
-    return FloralThemeMode.poppyBlush;
+    return FloralThemeMode.midnightGarden;
   }
 
   Future<void> _loadTheme() async {
@@ -32,13 +32,15 @@ class ThemeModeNotifier extends Notifier<FloralThemeMode> {
         (m) => m.name == saved,
         orElse: () => FloralThemeMode.poppyBlush,
       );
+      FloralPalette.currentMode = match;
       state = match;
     } catch (_) {
-      state = FloralThemeMode.poppyBlush;
+      state = FloralThemeMode.midnightGarden;
     }
   }
 
   Future<void> setTheme(FloralThemeMode mode) async {
+    FloralPalette.currentMode = mode;
     state = mode;
     final storage = ref.read(storageServiceProvider);
     await storage.setSetting('theme_mode', mode.name);

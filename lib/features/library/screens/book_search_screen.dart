@@ -369,7 +369,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                    boxShadow: const [FloralPalette.cardShadow],
+                    boxShadow: [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
                     Icons.arrow_back_rounded,
@@ -424,7 +424,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                    boxShadow: const [FloralPalette.cardShadow],
+                    boxShadow: [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
                     Icons.edit_note_rounded,
@@ -447,7 +447,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.2),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: TextField(
         key: const ValueKey('book_search_input'),
@@ -459,7 +459,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
           _executeSearch(val.trim());
         },
         textInputAction: TextInputAction.search,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           color: FloralPalette.warmCharcoal,
           fontWeight: FontWeight.w500,
@@ -478,7 +478,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   key: const ValueKey('search_clear_button'),
-                  icon: const Icon(Icons.clear_rounded, color: FloralPalette.mutedCharcoal, size: 18),
+                  icon: Icon(Icons.clear_rounded, color: FloralPalette.mutedCharcoal, size: 18),
                   onPressed: _clearSearch,
                 )
               : null,
@@ -659,7 +659,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
             const SizedBox(height: 6),
 
             // Organic pen underline flourish
-            const HandDrawnUnderline(width: 120, color: FloralPalette.latte),
+            HandDrawnUnderline(width: 120, color: FloralPalette.latte),
 
             const SizedBox(height: 12),
 
@@ -739,7 +739,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Material(
         color: Colors.transparent,

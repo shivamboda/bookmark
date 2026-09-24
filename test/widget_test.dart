@@ -1,3 +1,4 @@
+import 'package:bookmark/core/theme/palette.dart';
 import 'package:bookmark/doodles/poppy_doodle.dart';
 import 'package:bookmark/core/widgets/floral_rating_bar.dart';
 import 'package:bookmark/core/widgets/floral_celebration_overlay.dart';
@@ -1898,4 +1899,43 @@ void main() {
     expect(find.text('Emma'), findsWidgets);
   });
 
+
+  testWidgets('Theme toggle: switching between Autumn Day and Autumn Night updates state and persists', (tester) async {
+    final fakeStorage = InMemoryStorageService();
+    await fakeStorage.init();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(fakeStorage),
+        ],
+        child: const BookmarkApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Navigate to Settings (Tab index 3)
+    final settingsNav = find.text('Settings');
+    expect(settingsNav, findsWidgets);
+    await tester.tap(settingsNav.first);
+    await tester.pumpAndSettle();
+
+    // 2. Find Day and Night toggle buttons
+    final dayToggle = find.byKey(const ValueKey('theme_toggle_day'));
+    final nightToggle = find.byKey(const ValueKey('theme_toggle_night'));
+    expect(dayToggle, findsOneWidget);
+    expect(nightToggle, findsOneWidget);
+
+    // 3. Tap Autumn Night
+    await tester.tap(nightToggle);
+    await tester.pumpAndSettle();
+    expect(FloralPalette.isDark, isTrue);
+    expect(await fakeStorage.getSetting('theme_mode'), equals('midnightGarden'));
+
+    // 4. Tap Autumn Day
+    await tester.tap(dayToggle);
+    await tester.pumpAndSettle();
+    expect(FloralPalette.isDark, isFalse);
+    expect(await fakeStorage.getSetting('theme_mode'), equals('poppyBlush'));
+  });
 }

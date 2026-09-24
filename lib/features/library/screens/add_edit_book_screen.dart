@@ -276,7 +276,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       builder: (context, child) {
         return Theme(
           data: AppTheme.lightTheme().copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: FloralPalette.deepRose,
               onPrimary: FloralPalette.softIvory,
               surface: FloralPalette.softIvory,
@@ -316,7 +316,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+            style: TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
             decoration: const InputDecoration(
               hintText: 'e.g. Dystopian, Memoir, Gothic',
             ),
@@ -389,7 +389,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                     controller: quoteController,
                     maxLines: 4,
                     autofocus: true,
-                    style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+                    style: TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
                     decoration: const InputDecoration(
                       hintText: '“The words that took your breath away...”',
                     ),
@@ -413,7 +413,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                     controller: pageController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: const TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
+                    style: TextStyle(fontSize: 16, color: FloralPalette.warmCharcoal),
                     decoration: const InputDecoration(
                       hintText: 'e.g. 184',
                     ),
@@ -883,7 +883,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
-                    boxShadow: const [FloralPalette.cardShadow],
+                    boxShadow: [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
                     Icons.arrow_back_rounded,
@@ -934,7 +934,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1058,7 +1058,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1072,7 +1072,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             fieldKey: const ValueKey('input_book_title'),
             controller: _titleController,
             textCapitalization: TextCapitalization.words,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: FloralPalette.warmCharcoal,
@@ -1113,7 +1113,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             fieldKey: const ValueKey('input_book_authors'),
             controller: _authorsController,
             textCapitalization: TextCapitalization.words,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: FloralPalette.warmCharcoal,
             ),
@@ -1140,7 +1140,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1246,7 +1246,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1377,7 +1377,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: FloralRatingBar(
         rating: _rating,
@@ -1397,7 +1397,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1540,7 +1540,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1568,7 +1568,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             controller: _pageCountController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: FloralPalette.warmCharcoal,
             ),
@@ -1590,7 +1590,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1604,7 +1604,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             fieldKey: const ValueKey('input_book_description'),
             controller: _descriptionController,
             maxLines: 4,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: FloralPalette.warmCharcoal,
               height: 1.4,
@@ -1638,7 +1638,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
             fieldKey: const ValueKey('input_book_notes'),
             controller: _notesController,
             maxLines: 4,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: FloralPalette.warmCharcoal,
               height: 1.4,
@@ -1660,7 +1660,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1712,7 +1712,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   color: FloralPalette.kraftPaper,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: FloralPalette.latte, width: 1.0),
-                  boxShadow: const [FloralPalette.cardShadow],
+                  boxShadow: [FloralPalette.cardShadow],
                 ),
                 child: Stack(
                   clipBehavior: Clip.none,
@@ -1862,7 +1862,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
           elevation: 2,
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(

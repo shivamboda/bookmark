@@ -35,7 +35,7 @@ class DoodleGalleryScreen extends StatelessWidget {
           style: JournalTypography.headingMedium(color: FloralPalette.warmCharcoal),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: FloralPalette.warmCharcoal),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: FloralPalette.warmCharcoal),
           onPressed: onBackToJournal,
         ),
       ),
@@ -541,7 +541,7 @@ class DoodleGalleryScreen extends StatelessWidget {
                       ),
                       child: Text(
                         hex,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -604,7 +604,7 @@ class DoodleGalleryScreen extends StatelessWidget {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFF2DED9), width: 1.2),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

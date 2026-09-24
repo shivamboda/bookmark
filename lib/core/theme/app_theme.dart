@@ -12,108 +12,108 @@ class JournalTypography {
   JournalTypography._();
 
   /// Grand hero title (e.g. journal cover title)
-  static TextStyle headingHero({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle headingHero({Color? color}) =>
       GoogleFonts.fraunces(
         fontSize: 38,
         fontWeight: FontWeight.w700,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         letterSpacing: -0.6,
         height: 1.15,
       );
 
   /// Primary screen heading
-  static TextStyle headingLarge({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle headingLarge({Color? color}) =>
       GoogleFonts.fraunces(
         fontSize: 28,
         fontWeight: FontWeight.w700,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         letterSpacing: -0.3,
         height: 1.2,
       );
 
   /// Section or card heading
-  static TextStyle headingMedium({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle headingMedium({Color? color}) =>
       GoogleFonts.fraunces(
         fontSize: 22,
         fontWeight: FontWeight.w600,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         height: 1.25,
       );
 
   /// Small section or shelf header
-  static TextStyle headingSmall({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle headingSmall({Color? color}) =>
       GoogleFonts.fraunces(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         height: 1.3,
       );
 
   /// Elegant editorial subheading
-  static TextStyle subheading({Color color = FloralPalette.mutedCharcoal}) =>
+  static TextStyle subheading({Color? color}) =>
       GoogleFonts.lora(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         fontStyle: FontStyle.italic,
-        color: color,
+        color: color ?? FloralPalette.mutedCharcoal,
         height: 1.4,
       );
 
   /// Default body reading text
-  static TextStyle body({Color color = FloralPalette.warmCharcoal}) => bodyMedium(color: color);
+  static TextStyle body({Color? color}) => bodyMedium(color: color);
 
   /// Main body reading text (comfortable line height for reviews & synopses)
-  static TextStyle bodyLarge({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle bodyLarge({Color? color}) =>
       GoogleFonts.lora(
         fontSize: 16,
         fontWeight: FontWeight.normal,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         height: 1.6,
       );
 
   /// Secondary body text (book metadata, tags, details)
-  static TextStyle bodyMedium({Color color = FloralPalette.warmCharcoal}) =>
+  static TextStyle bodyMedium({Color? color}) =>
       GoogleFonts.lora(
         fontSize: 14,
         fontWeight: FontWeight.normal,
-        color: color,
+        color: color ?? FloralPalette.warmCharcoal,
         height: 1.5,
       );
 
   /// Small caption / timestamps
-  static TextStyle bodySmall({Color color = FloralPalette.mutedCharcoal}) =>
+  static TextStyle bodySmall({Color? color}) =>
       GoogleFonts.lora(
         fontSize: 12,
         fontWeight: FontWeight.normal,
-        color: color,
+        color: color ?? FloralPalette.mutedCharcoal,
         height: 1.4,
       );
 
   /// Expressive handwritten script (taglines, chapter headers)
-  static TextStyle handwritingLarge({Color color = FloralPalette.poppyRed}) =>
+  static TextStyle handwritingLarge({Color? color}) =>
       GoogleFonts.caveat(
         fontSize: 26,
         fontWeight: FontWeight.w600,
-        color: color,
+        color: color ?? FloralPalette.poppyRed,
         height: 1.1,
       );
 
   /// Standard handwritten note (quotes, intimate annotations)
-  static TextStyle handwriting({Color color = FloralPalette.deepForestGreen}) =>
+  static TextStyle handwriting({Color? color}) =>
       GoogleFonts.caveat(
         fontSize: 20,
         fontWeight: FontWeight.w500,
-        color: color,
+        color: color ?? FloralPalette.deepForestGreen,
         height: 1.2,
       );
 
   /// Delicate margin note or footnote tucked beside cards
-  static TextStyle marginNote({Color color = FloralPalette.mutedCharcoal}) =>
+  static TextStyle marginNote({Color? color}) =>
       GoogleFonts.caveat(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         fontStyle: FontStyle.italic,
-        color: color,
+        color: color ?? FloralPalette.mutedCharcoal,
         height: 1.1,
       );
 }
@@ -123,6 +123,9 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData lightTheme({FloralThemeMode mode = FloralThemeMode.poppyBlush}) {
+    FloralPalette.currentMode = mode;
+    final isDark = mode == FloralThemeMode.midnightGarden;
+
     Color primary;
     Color secondary;
     Color background;
@@ -143,11 +146,11 @@ class AppTheme {
         surface = Colors.white;
         text = FloralPalette.warmCharcoal;
       case FloralThemeMode.midnightGarden:
-        primary = const Color(0xFFE88FA6);
-        secondary = const Color(0xFFC7B5E8);
-        background = const Color(0xFF1E1A22); // Deep botanical plum
-        surface = const Color(0xFF2B2531);
-        text = const Color(0xFFF7EDF0);
+        primary = FloralPalette.rosePetal;
+        secondary = FloralPalette.sageGreen;
+        background = FloralPalette.petalWhite;
+        surface = FloralPalette.softIvory;
+        text = FloralPalette.warmCharcoal;
       case FloralThemeMode.poppyBlush:
         primary = FloralPalette.rosePetal;
         secondary = FloralPalette.sageGreen;
@@ -155,8 +158,6 @@ class AppTheme {
         surface = FloralPalette.softIvory;
         text = FloralPalette.warmCharcoal;
     }
-
-    final isDark = mode == FloralThemeMode.midnightGarden || mode == FloralThemeMode.poppyBlush;
 
     final baseTextTheme = isDark
         ? ThemeData.dark().textTheme
@@ -171,10 +172,10 @@ class AppTheme {
       titleMedium: JournalTypography.subheading(color: text),
       bodyLarge: JournalTypography.bodyLarge(color: text),
       bodyMedium: JournalTypography.bodyMedium(
-        color: isDark ? const Color(0xFFD6CAD0) : FloralPalette.mutedCharcoal,
+        color: FloralPalette.mutedCharcoal,
       ),
       bodySmall: JournalTypography.bodySmall(
-        color: isDark ? const Color(0xFFAFA2A8) : FloralPalette.mutedCharcoal,
+        color: FloralPalette.mutedCharcoal,
       ),
       labelLarge: GoogleFonts.lora(
         fontSize: 15,
@@ -261,4 +262,3 @@ class AppTheme {
     );
   }
 }
-

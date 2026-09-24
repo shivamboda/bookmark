@@ -199,7 +199,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         color: FloralPalette.bannerBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: FloralPalette.cardBorder),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Row(
         children: [
@@ -334,8 +334,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       },
                     ),
                     ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFEBF3ED),
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFFEBF3ED),
                         child: Icon(Icons.file_download_rounded, color: FloralPalette.sageGreenDark),
                       ),
                       title: const Text('Download Backup JSON'),
@@ -649,7 +649,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.merge_type_rounded, color: FloralPalette.sageGreenDark, size: 28),
+                        Icon(Icons.merge_type_rounded, color: FloralPalette.sageGreenDark, size: 28),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -737,7 +737,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
+            child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1141,6 +1141,140 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   // ==========================================
   // TAB 3: SETTINGS SCREEN
   // ==========================================
+    Widget _buildThemeToggleCard(BuildContext context) {
+    final activeMode = ref.watch(themeModeProvider);
+    final isDark = activeMode == FloralThemeMode.midnightGarden;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: FloralPalette.softIvory,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FloralPalette.cardBorder),
+        boxShadow: [FloralPalette.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: FloralPalette.blushPink.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isDark ? Icons.nights_stay_rounded : Icons.wb_sunny_rounded,
+                  size: 20,
+                  color: FloralPalette.deepRose,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Appearance', style: JournalTypography.headingSmall()),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Choose your reading journal mood',
+                      style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('theme_toggle_day'),
+                  onTap: () => ref.read(themeModeProvider.notifier).setTheme(FloralThemeMode.poppyBlush),
+                  borderRadius: BorderRadius.circular(14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: !isDark
+                          ? FloralPalette.deepRose
+                          : FloralPalette.petalWhite.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: !isDark ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                        width: !isDark ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.light_mode_rounded,
+                          size: 16,
+                          color: !isDark ? Colors.white : FloralPalette.warmCharcoal,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Autumn Day',
+                          style: JournalTypography.bodySmall(
+                            color: !isDark ? Colors.white : FloralPalette.warmCharcoal,
+                          ).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('theme_toggle_night'),
+                  onTap: () => ref.read(themeModeProvider.notifier).setTheme(FloralThemeMode.midnightGarden),
+                  borderRadius: BorderRadius.circular(14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? FloralPalette.deepRose
+                          : FloralPalette.petalWhite.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                        width: isDark ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.dark_mode_rounded,
+                          size: 16,
+                          color: isDark ? Colors.white : FloralPalette.warmCharcoal,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Autumn Night',
+                          style: JournalTypography.bodySmall(
+                            color: isDark ? Colors.white : FloralPalette.warmCharcoal,
+                          ).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingsTab(BuildContext context) {
     final yearlyGoal = ref.watch(yearlyGoalProvider);
     final currentYear = DateTime.now().year;
@@ -1148,7 +1282,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return Stack(
       children: [
         // Leaf sprig motif in top-right
-        const Positioned(
+        Positioned(
           top: 10,
           right: 14,
           child: IgnorePointer(
@@ -1220,6 +1354,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
                 child: Column(
                   children: [
+                    // Theme Mode Toggle (Autumn Day vs Autumn Night)
+                    _buildThemeToggleCard(context),
+                    const SizedBox(height: 16),
+
                     // Reading Goal Setting
                     Container(
                       width: double.infinity,
@@ -1228,7 +1366,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
-                        boxShadow: const [FloralPalette.cardShadow],
+                        boxShadow: [FloralPalette.cardShadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1336,7 +1474,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
-                        boxShadow: const [FloralPalette.cardShadow],
+                        boxShadow: [FloralPalette.cardShadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1393,7 +1531,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         color: FloralPalette.softIvory,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: FloralPalette.cardBorder),
-                        boxShadow: const [FloralPalette.cardShadow],
+                        boxShadow: [FloralPalette.cardShadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1457,7 +1595,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   label: const Text('Restore Library'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: FloralPalette.sageGreenDark,
-                                    side: const BorderSide(color: FloralPalette.sageGreenDark),
+                                    side: BorderSide(color: FloralPalette.sageGreenDark),
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                   ),
@@ -1637,7 +1775,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               color: FloralPalette.softIvory,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-              boxShadow: const [FloralPalette.cardShadow],
+              boxShadow: [FloralPalette.cardShadow],
             ),
             child: TextField(
               key: const ValueKey('library_search_input'),
@@ -1650,7 +1788,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 prefixIcon: const Icon(Icons.search_rounded, size: 18, color: FloralPalette.cocoa),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 16, color: FloralPalette.mutedCharcoal),
+                        icon: Icon(Icons.clear_rounded, size: 16, color: FloralPalette.mutedCharcoal),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');

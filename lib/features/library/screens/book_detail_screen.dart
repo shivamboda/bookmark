@@ -92,7 +92,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: FloralPalette.warmCharcoal),
+            icon: Icon(Icons.arrow_back_rounded, color: FloralPalette.warmCharcoal),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
@@ -237,7 +237,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                    boxShadow: const [FloralPalette.cardShadow],
+                    boxShadow: [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
                     Icons.arrow_back_rounded,
@@ -292,7 +292,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                    boxShadow: const [FloralPalette.cardShadow],
+                    boxShadow: [FloralPalette.cardShadow],
                   ),
                   child: const Icon(
                     Icons.edit_outlined,
@@ -316,7 +316,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         children: [
@@ -436,7 +436,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,7 +479,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -585,7 +585,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,7 +707,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               color: FloralPalette.kraftPaper,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: FloralPalette.latte, width: 1.0),
-              boxShadow: const [FloralPalette.cardShadow],
+              boxShadow: [FloralPalette.cardShadow],
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -746,7 +746,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 color: FloralPalette.kraftPaper, // Kraft paper note card
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: FloralPalette.latte, width: 1.0),
-                boxShadow: const [FloralPalette.cardShadow],
+                boxShadow: [FloralPalette.cardShadow],
               ),
               child: Stack(
                 clipBehavior: Clip.none,
@@ -827,7 +827,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: FloralPalette.latte.withValues(alpha: 0.6), width: 1.0),
-            boxShadow: const [FloralPalette.cardShadow],
+            boxShadow: [FloralPalette.cardShadow],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,7 +868,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         color: FloralPalette.softIvory,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: FloralPalette.deepRose.withValues(alpha: 0.4), width: 1.2),
-        boxShadow: const [FloralPalette.cardShadow],
+        boxShadow: [FloralPalette.cardShadow],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -971,7 +971,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             color: FloralPalette.softIvory,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-            boxShadow: const [FloralPalette.cardShadow],
+            boxShadow: [FloralPalette.cardShadow],
           ),
           child: Text(
             book.description,
@@ -1035,7 +1035,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: FloralPalette.deepRose,
               onPrimary: FloralPalette.softIvory,
               surface: FloralPalette.softIvory,
@@ -1084,9 +1084,9 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: FloralPalette.softIvory,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
             color: Color(0x2A402E32),
@@ -1150,7 +1150,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                           decoration: BoxDecoration(
                             color: _modeIndex == 0 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: _modeIndex == 0 ? const [FloralPalette.cardShadow] : null,
+                            boxShadow: _modeIndex == 0 ? [FloralPalette.cardShadow] : null,
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -1176,7 +1176,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                           decoration: BoxDecoration(
                             color: _modeIndex == 1 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: _modeIndex == 1 ? const [FloralPalette.cardShadow] : null,
+                            boxShadow: _modeIndex == 1 ? [FloralPalette.cardShadow] : null,
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -1327,7 +1327,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.check_circle_outline_rounded, size: 16, color: FloralPalette.sageGreenDark),
+                            Icon(Icons.check_circle_outline_rounded, size: 16, color: FloralPalette.sageGreenDark),
                             const SizedBox(width: 8),
                             Text(
                               'Finish Date: ${_formatDateShort(_finishDate)}',

@@ -94,7 +94,7 @@ class FloralBottomNav extends StatelessWidget {
     required Widget icon,
   }) {
     final isSelected = currentIndex == index;
-    const inactiveColor = FloralPalette.unratedText; // Soft brown (4.8:1 contrast on white)
+    final inactiveColor = FloralPalette.unratedText; // Soft brown (4.8:1 contrast on white)
 
     return Expanded(
       child: InkWell(
