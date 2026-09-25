@@ -30,6 +30,9 @@ import '../widgets/book_cover_thumbnail.dart';
 /// - Unsaved changes confirmation dialog on back/swipe
 /// - Duplicate warning, graceful error handling, and delete action in edit mode
 class AddEditBookScreen extends ConsumerStatefulWidget {
+  /// Tracks whether an add/edit form is actively open so app-resume recovery never disrupts an in-progress edit session.
+  static bool isFormActive = false;
+
   final Book? bookToEdit;
   final ReadingStatus? defaultStatus;
   final Book? prefilledDraft;
@@ -102,6 +105,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   @override
   void initState() {
     super.initState();
+    AddEditBookScreen.isFormActive = true;
 
     final source = widget.bookToEdit ?? widget.prefilledDraft;
 
@@ -159,6 +163,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
   @override
   void dispose() {
+    AddEditBookScreen.isFormActive = false;
     _titleController.dispose();
     _authorsController.dispose();
     _pageCountController.dispose();

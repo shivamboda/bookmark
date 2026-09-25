@@ -29,6 +29,8 @@ import '../../../services/backup_service.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/backup_transport.dart';
 
+import 'package:flutter/gestures.dart';
+import 'add_edit_book_screen.dart';
 import 'book_search_screen.dart';
 
 /// Status filter options for books displayed in the Library screen.
@@ -63,11 +65,33 @@ class LibraryScreen extends ConsumerStatefulWidget {
     this.onOpenDoodleGallery,
   });
 
+  /// Visible for testing diagnostics
+  @visibleForTesting
+  static int get resumeCount => _LibraryScreenState._resumeCount;
+
+  @visibleForTesting
+  static void resetResumeDiagnosticsForTest() {
+    _LibraryScreenState._resumeCount = 0;
+    _LibraryScreenState._lastResumeTime = null;
+    _LibraryScreenState._lastPauseTime = null;
+  }
+
+  @visibleForTesting
+  static void setLastPauseTimeForTest(DateTime time) {
+    _LibraryScreenState._lastPauseTime = time;
+  }
+
   @override
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindingObserver {
+  // Lifecycle & iOS Touch Unfreeze Diagnostics
+  static int _resumeCount = 0;
+  static DateTime? _lastResumeTime;
+  static DateTime? _lastPauseTime;
+
+
   bool _isGridView = false;
   LibraryStatusFilter _activeStatusFilter = LibraryStatusFilter.all;
   String? _selectedGenre;
@@ -152,14 +176,79 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchDebounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
+      _lastPauseTime = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      _handleAppResume();
+    }
+  }
+
+  void _handleAppResume() {
+    final now = DateTime.now();
+    final wasLongSuspension = _lastPauseTime != null &&
+        now.difference(_lastPauseTime!).inMinutes >= 5;
+
+    if (mounted) {
+      setState(() {
+        _resumeCount++;
+        _lastResumeTime = now;
+      });
+    } else {
+      _resumeCount++;
+      _lastResumeTime = now;
+    }
+
+    // 1. Reset stale pointer state and sweep stuck gesture arena members
+    // WebKit often terminates touch sequences without touchcancel when backgrounded
+    for (int i = 0; i <= 20; i++) {
+      try {
+        GestureBinding.instance.cancelPointer(i);
+        GestureBinding.instance.gestureArena.sweep(i);
+      } catch (_) {}
+    }
+
+    // 2. Force immediate frame warm up to wake up WebKit compositor
+    try {
+      WidgetsBinding.instance.scheduleWarmUpFrame();
+    } catch (_) {}
+
+    // 3. Lightweight recovery after long background (> 5 minutes)
+    // Pops modal sheets/dialogs if holding pointer traps, unless actively editing a book form
+    if (wasLongSuspension && !AddEditBookScreen.isFormActive) {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).popUntil((route) => route.isFirst || route is! PopupRoute);
+      }
+      if (_isSelectionMode) {
+        _exitSelectionMode();
+      }
+    }
+  }
+
+  String _formatLastResumeTime() {
+    if (_lastResumeTime == null) return 'never';
+    final diff = DateTime.now().difference(_lastResumeTime!);
+    if (diff.inSeconds < 45) return 'just now';
+    if (diff.inMinutes <= 1) return '1 minute ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} minutes ago';
+    if (diff.inHours == 1) return '1 hour ago';
+    if (diff.inHours < 24) return '${diff.inHours} hours ago';
+    return '${diff.inDays} days ago';
   }
 
   Future<void> _loadSettings() async {
@@ -1688,6 +1777,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               ),
                             ),
                           ],
+                          const SizedBox(height: 14),
+                          Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Icon(Icons.sync_rounded, size: 16, color: FloralPalette.mutedCharcoal),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Resume events: $_resumeCount (last: ${_formatLastResumeTime()})',
+                                  key: const ValueKey('resume_events_diagnostics_text'),
+                                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

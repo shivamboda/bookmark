@@ -12,6 +12,7 @@ import 'package:bookmark/core/widgets/floral_celebration_overlay.dart';
 import 'package:bookmark/features/library/screens/book_search_screen.dart';
 import 'package:bookmark/services/book_search_service.dart';
 import 'package:bookmark/features/library/screens/add_edit_book_screen.dart';
+import 'package:bookmark/features/library/screens/library_screen.dart';
 import 'package:bookmark/features/library/widgets/book_list_card.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -2716,6 +2717,117 @@ void main() {
       // Selection mode exited:
       expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
       expect(find.byKey(const ValueKey('add_book_fab')), findsOneWidget);
+    });
+  });
+
+  group('Part 5: iOS Safari touch unfreeze & lifecycle resume diagnostics', () {
+    testWidgets('Diagnostics line renders on Settings tab and counts resume events', (tester) async {
+      LibraryScreen.resetResumeDiagnosticsForTest();
+      final storage = InMemoryStorageService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Navigate to Settings tab (index 3)
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+
+      // Verify diagnostics line initially shows 0 events (last: never)
+      expect(find.byKey(const ValueKey('resume_events_diagnostics_text')), findsOneWidget);
+      expect(find.textContaining('Resume events: 0 (last: never)'), findsOneWidget);
+
+      // Simulate app going to background and resuming:
+      // Down: resumed -> inactive -> hidden -> paused
+      // Up:   paused -> hidden -> inactive -> resumed
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // Verify resume count updated to 1
+      expect(LibraryScreen.resumeCount, 1);
+      expect(find.textContaining('Resume events: 1'), findsOneWidget);
+      expect(find.textContaining('last: just now'), findsOneWidget);
+    });
+
+    testWidgets('Soft reset pops modal popups on long background (> 5 min) when not editing', (tester) async {
+      LibraryScreen.resetResumeDiagnosticsForTest();
+      final storage = InMemoryStorageService();
+      final book = Book(
+        id: 'p5-book-1',
+        title: 'The Great Gatsby',
+        authors: ['F. Scott Fitzgerald'],
+        status: ReadingStatus.reading,
+        dateAdded: DateTime(2026, 9, 20),
+      );
+      await storage.saveBook(book);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Long press book to enter selection mode
+      await tester.longPress(find.byType(BookListCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('library_selection_header')), findsOneWidget);
+
+      // Simulate background pause with past timestamp (> 5 minutes ago)
+      LibraryScreen.setLastPauseTimeForTest(DateTime.now().subtract(const Duration(minutes: 10)));
+
+      // Simulate resume after long pause
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // Verify selection mode was softly reset to prevent modal touch lock
+      expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
+      expect(find.byKey(const ValueKey('add_book_fab')), findsOneWidget);
+    });
+
+    testWidgets('Form active flag protects edit session when user is in AddEditBookScreen', (tester) async {
+      LibraryScreen.resetResumeDiagnosticsForTest();
+      expect(AddEditBookScreen.isFormActive, false);
+
+      final storage = InMemoryStorageService();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap FAB to open search, then open manual entry form
+      await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+      await tester.pumpAndSettle();
+
+      // In AddEditBookScreen, isFormActive is true
+      expect(AddEditBookScreen.isFormActive, true);
+      expect(find.byType(AddEditBookScreen), findsOneWidget);
+
+      // Simulate pause from 10 minutes ago and resume
+      LibraryScreen.setLastPauseTimeForTest(DateTime.now().subtract(const Duration(minutes: 10)));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // AddEditBookScreen should STILL be open - form edits are protected!
+      expect(find.byType(AddEditBookScreen), findsOneWidget);
+      expect(AddEditBookScreen.isFormActive, true);
     });
   });
 });
