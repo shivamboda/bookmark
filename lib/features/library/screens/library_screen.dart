@@ -2694,9 +2694,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Set ${updatedBooks.length} books to $dateDescription.'),
-          duration: const Duration(seconds: 5),
-          backgroundColor: FloralPalette.warmCharcoal,
+          content: Text(
+            'Set ${updatedBooks.length} books to $dateDescription.',
+            style: JournalTypography.body(color: FloralPalette.softIvory).copyWith(fontSize: 13.5),
+          ),
+          duration: const Duration(seconds: 3),
+          persist: false,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 76),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+          ),
+          backgroundColor: FloralPalette.isDark ? const Color(0xFF2C2018) : const Color(0xFF382A22),
           action: SnackBarAction(
             label: 'Undo',
             textColor: FloralPalette.buttercupGold,
@@ -2706,6 +2716,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ),
       );
+
+      // Failsafe timer ensuring dismissal after 3.5 seconds
+      Timer(const Duration(milliseconds: 3500), () {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+      });
     }
   }
 
@@ -2777,9 +2794,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             pickerResult.clearRating
                 ? 'Cleared rating for ${updatedBooks.length} books.'
                 : 'Rated ${updatedBooks.length} books ${pickerResult.rating!.toStringAsFixed(1)} stars.',
+            style: JournalTypography.body(color: FloralPalette.softIvory).copyWith(fontSize: 13.5),
           ),
-          duration: const Duration(seconds: 5),
-          backgroundColor: FloralPalette.warmCharcoal,
+          duration: const Duration(seconds: 3),
+          persist: false,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 76),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+          ),
+          backgroundColor: FloralPalette.isDark ? const Color(0xFF2C2018) : const Color(0xFF382A22),
           action: SnackBarAction(
             label: 'Undo',
             textColor: FloralPalette.buttercupGold,
@@ -2789,6 +2814,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ),
       );
+
+      // Failsafe timer ensuring dismissal after 3.5 seconds
+      Timer(const Duration(milliseconds: 3500), () {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+      });
     }
   }
 }
