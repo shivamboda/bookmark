@@ -77,6 +77,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Timer? _searchDebounceTimer;
 
   bool _isSelectionMode = false;
+  bool _isUndoSnackBarActive = false;
   final Set<String> _selectedBookIds = <String>{};
 
   void _enterSelectionMode(String bookId) {
@@ -245,7 +246,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           setState(() => _currentNavIndex = index);
         },
       ),
-      floatingActionButton: (!_isSelectionMode && (_currentNavIndex == 0 || _currentNavIndex == 1))
+      floatingActionButton: (!_isSelectionMode && !_isUndoSnackBarActive && (_currentNavIndex == 0 || _currentNavIndex == 1))
           ? FloatingActionButton(
               key: const ValueKey('add_book_fab'),
               onPressed: () => _openAddBookScreen(context),
@@ -2691,34 +2692,42 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     _exitSelectionMode();
 
     if (context.mounted) {
+      setState(() => _isUndoSnackBarActive = true);
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Set ${updatedBooks.length} books to $dateDescription.',
-            style: JournalTypography.body(color: FloralPalette.softIvory).copyWith(fontSize: 13.5),
+            style: JournalTypography.body(color: const Color(0xFF2C2018)).copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(milliseconds: 2800),
           persist: false,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 76),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+          behavior: SnackBarBehavior.fixed,
+          shape: const Border(
+            top: BorderSide(color: Color(0xFFE2D6CB), width: 1.0),
           ),
-          backgroundColor: FloralPalette.isDark ? const Color(0xFF2C2018) : const Color(0xFF382A22),
+          backgroundColor: const Color(0xFFFAF6F0),
+          elevation: 3,
           action: SnackBarAction(
             label: 'Undo',
-            textColor: FloralPalette.buttercupGold,
+            textColor: const Color(0xFFB85D19),
             onPressed: () async {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              if (mounted) setState(() => _isUndoSnackBarActive = false);
               await ref.read(booksProvider.notifier).bulkUpdateBooks(previousStates.values.toList());
             },
           ),
         ),
       );
 
-      // Failsafe timer ensuring dismissal after 3.5 seconds
-      Timer(const Duration(milliseconds: 3500), () {
+      // Auto-dismiss after 2.8 seconds and restore FAB cleanly
+      Timer(const Duration(milliseconds: 2900), () {
+        if (mounted) {
+          setState(() => _isUndoSnackBarActive = false);
+        }
         if (context.mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         }
@@ -2787,6 +2796,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     _exitSelectionMode();
 
     if (context.mounted) {
+      setState(() => _isUndoSnackBarActive = true);
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2794,29 +2804,36 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             pickerResult.clearRating
                 ? 'Cleared rating for ${updatedBooks.length} books.'
                 : 'Rated ${updatedBooks.length} books ${pickerResult.rating!.toStringAsFixed(1)} stars.',
-            style: JournalTypography.body(color: FloralPalette.softIvory).copyWith(fontSize: 13.5),
+            style: JournalTypography.body(color: const Color(0xFF2C2018)).copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(milliseconds: 2800),
           persist: false,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 76),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: FloralPalette.cardBorder, width: 1.0),
+          behavior: SnackBarBehavior.fixed,
+          shape: const Border(
+            top: BorderSide(color: Color(0xFFE2D6CB), width: 1.0),
           ),
-          backgroundColor: FloralPalette.isDark ? const Color(0xFF2C2018) : const Color(0xFF382A22),
+          backgroundColor: const Color(0xFFFAF6F0),
+          elevation: 3,
           action: SnackBarAction(
             label: 'Undo',
-            textColor: FloralPalette.buttercupGold,
+            textColor: const Color(0xFFB85D19),
             onPressed: () async {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              if (mounted) setState(() => _isUndoSnackBarActive = false);
               await ref.read(booksProvider.notifier).bulkUpdateBooks(previousStates.values.toList());
             },
           ),
         ),
       );
 
-      // Failsafe timer ensuring dismissal after 3.5 seconds
-      Timer(const Duration(milliseconds: 3500), () {
+      // Auto-dismiss after 2.8 seconds and restore FAB cleanly
+      Timer(const Duration(milliseconds: 2900), () {
+        if (mounted) {
+          setState(() => _isUndoSnackBarActive = false);
+        }
         if (context.mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         }
