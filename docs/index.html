@@ -54,6 +54,53 @@
   </style>
 </head>
 <body>
+    <script>
+    // iOS Safari PWA background resume watchdog & touch unfreeze
+    (function() {
+      function onResume(source) {
+        // 1. Drop any stuck input / virtual keyboard focus
+        try {
+          if (document.activeElement && typeof document.activeElement.blur === "function") {
+            document.activeElement.blur();
+          }
+        } catch (e) {}
+
+        // 2. Reset any Safari viewport shift/drift
+        try {
+          window.scrollTo(0, 0);
+          if (document.body) document.body.scrollTop = 0;
+          if (document.documentElement) document.documentElement.scrollTop = 0;
+        } catch (e) {}
+
+        // 3. Wake up WebKit compositor by dispatching a resize event
+        try {
+          window.dispatchEvent(new Event("resize"));
+        } catch (e) {}
+
+        // 4. Ensure no lingering splash or overlay traps pointer events
+        try {
+          var strayElements = document.querySelectorAll(".splash, #splash, .loading, #loading, [data-splash]");
+          for (var i = 0; i < strayElements.length; i++) {
+            strayElements[i].style.pointerEvents = "none";
+          }
+        } catch (e) {}
+      }
+
+      document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) {
+          onResume("visibilitychange");
+        }
+      });
+
+      window.addEventListener("pageshow", function(e) {
+        onResume("pageshow" + (e.persisted ? "-persisted" : ""));
+      });
+
+      window.addEventListener("focus", function() {
+        onResume("focus");
+      });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
