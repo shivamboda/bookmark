@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/state/providers.dart';
@@ -10,6 +11,7 @@ import 'features/library/screens/library_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Global uncaught error logging for Diagnostics screen
   FlutterError.onError = (details) {
