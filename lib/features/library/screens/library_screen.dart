@@ -2326,7 +2326,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
               decoration: InputDecoration(
                 hintText: 'Search shelf by title or author...',
                 hintStyle: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(fontSize: 12.5),
-                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: FloralPalette.cocoa),
+                prefixIcon: Icon(Icons.search_rounded, size: 18, color: FloralPalette.cocoa),
                 suffixIcon: (_searchQuery.isNotEmpty || _searchController.text.isNotEmpty)
                     ? IconButton(
                         icon: Icon(Icons.clear_rounded, size: 16, color: FloralPalette.mutedCharcoal),
@@ -2488,7 +2488,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         ),
                       ] else ...[
                         const SizedBox(width: 2),
-                        const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                        Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
                       ],
                     ],
                   ),
@@ -2536,7 +2536,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.swap_vert_rounded, size: 15, color: FloralPalette.cocoa),
+                      Icon(Icons.swap_vert_rounded, size: 15, color: FloralPalette.cocoa),
                       const SizedBox(width: 4),
                       Text(
                         _sortOption.label,
@@ -2546,7 +2546,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         ),
                       ),
                       const SizedBox(width: 2),
-                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                      Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
                     ],
                   ),
                 ),

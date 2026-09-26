@@ -158,7 +158,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                         const SizedBox(height: 20),
 
                         // Floral Vine Divider (Cocoa stem, Sage leaves)
-                        const VineBorderDoodle(
+                        VineBorderDoodle(
                           height: 20,
                           stemColor: FloralPalette.cocoa,
                           leafColor: FloralPalette.sageGreen,
@@ -235,7 +235,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: [FloralPalette.cardShadow],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_rounded,
                     color: FloralPalette.cocoa,
                     size: 22,
@@ -376,11 +376,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.auto_stories_outlined, size: 13, color: FloralPalette.cocoa),
+                            Icon(Icons.auto_stories_outlined, size: 13, color: FloralPalette.pageCountText),
                             const SizedBox(width: 4),
                             Text(
                               '${book.pageCount} pages',
-                              style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
+                              style: JournalTypography.bodySmall(color: FloralPalette.pageCountText).copyWith(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 11,
                               ),
@@ -581,7 +581,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_month_outlined, size: 18, color: FloralPalette.cocoa),
+              Icon(Icons.calendar_month_outlined, size: 18, color: FloralPalette.cocoa),
               const SizedBox(width: 8),
               Text(
                 'Reading Timeline',
@@ -1241,7 +1241,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.bookmark_border_rounded, size: 16, color: FloralPalette.cocoa),
+                            Icon(Icons.bookmark_border_rounded, size: 16, color: FloralPalette.cocoa),
                             const SizedBox(width: 8),
                             Text(
                               _alreadyFinishedStartDate == null

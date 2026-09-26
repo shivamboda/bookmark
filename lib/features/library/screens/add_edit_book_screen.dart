@@ -871,7 +871,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                     border: Border.all(color: const Color(0xFFF2DED9), width: 1.0),
                     boxShadow: [FloralPalette.cardShadow],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_rounded,
                     color: FloralPalette.cocoa,
                     size: 22,
@@ -999,7 +999,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   TextButton.icon(
                     key: const ValueKey('remove_cover_btn'),
                     onPressed: _removeCoverImage,
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: FloralPalette.cocoa),
+                    icon: Icon(Icons.delete_outline_rounded, size: 16, color: FloralPalette.cocoa),
                     label: Text(
                       'Remove Custom Cover',
                       style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(
@@ -1232,7 +1232,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_month_outlined, size: 18, color: FloralPalette.cocoa),
+              Icon(Icons.calendar_month_outlined, size: 18, color: FloralPalette.cocoa),
               const SizedBox(width: 8),
               Text(
                 'Reading Dates',
@@ -1334,8 +1334,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                   InkWell(
                     onTap: onClear,
                     borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
                       child: Icon(Icons.close_rounded, size: 16, color: FloralPalette.cocoa),
                     ),
                   ),
@@ -1431,7 +1431,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.add_rounded, size: 16, color: FloralPalette.cocoa),
+                          Icon(Icons.add_rounded, size: 16, color: FloralPalette.cocoa),
                           const SizedBox(width: 4),
                           Text(
                             'Add your own',
@@ -1551,7 +1551,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
               fontSize: 16,
               color: FloralPalette.warmCharcoal,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'e.g. 384',
               prefixIcon: Icon(Icons.auto_stories_outlined, color: FloralPalette.cocoa, size: 20),
             ),
@@ -1709,8 +1709,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                               key: ValueKey('edit_quote_btn_$idx'),
                               onTap: () => _showQuoteDialog(existingQuote: q, editIndex: idx),
                               borderRadius: BorderRadius.circular(8),
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
                                 child: Icon(Icons.edit_outlined, size: 16, color: FloralPalette.cocoa),
                               ),
                             ),
@@ -1744,7 +1744,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
           OutlinedButton.icon(
             key: const ValueKey('add_quote_btn'),
             onPressed: () => _showQuoteDialog(),
-            icon: const Icon(Icons.format_quote_rounded, size: 18, color: FloralPalette.cocoa),
+            icon: Icon(Icons.format_quote_rounded, size: 18, color: FloralPalette.cocoa),
             label: Text(
               'Add Favorite Quote',
               style: JournalTypography.bodySmall(color: FloralPalette.cocoa).copyWith(

@@ -386,7 +386,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: [FloralPalette.cardShadow],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_rounded,
                     color: FloralPalette.cocoa,
                     size: 22,
@@ -518,7 +518,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.draw_outlined,
                 size: 15,
                 color: FloralPalette.cocoa,
@@ -635,7 +635,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.search, size: 13, color: FloralPalette.cocoa),
+              Icon(Icons.search, size: 13, color: FloralPalette.cocoa),
               const SizedBox(width: 5),
               Text(
                 label,
@@ -826,7 +826,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                           ),
                           child: Text(
                             '${result.pageCount} pages',
-                            style: JournalTypography.bodySmall(color: FloralPalette.espresso).copyWith(
+                            style: JournalTypography.bodySmall(color: FloralPalette.pageCountText).copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -834,7 +834,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                         ),
                       ],
                       const SizedBox(height: 8),
-                      // Secondary "Save to Wishlist" button
+                      // Action "Save to Wishlist" button (clear, actionable contrast)
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -842,31 +842,32 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                           onTap: () => _saveToWishlist(result),
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: FloralPalette.lavenderMist.withValues(alpha: 0.4),
+                              color: FloralPalette.actionButtonFill,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: FloralPalette.lavenderDark.withValues(alpha: 0.5),
-                                width: 0.9,
+                                color: FloralPalette.actionButtonBorder,
+                                width: 1.0,
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.bookmark_add_outlined,
+                                Icon(
+                                  Icons.bookmark_add_rounded,
                                   size: 14,
-                                  color: FloralPalette.lavenderDark,
+                                  color: FloralPalette.actionButtonText,
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
                                   'Save to Wishlist',
                                   style: JournalTypography.bodySmall(
-                                    color: FloralPalette.lavenderDark,
+                                    color: FloralPalette.actionButtonText,
                                   ).copyWith(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
                                   ),
                                 ),
                               ],

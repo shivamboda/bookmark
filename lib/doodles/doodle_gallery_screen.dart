@@ -872,7 +872,7 @@ class _BookmarkRibbonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final ribbonFill = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         colors: [FloralPalette.caramel, FloralPalette.cocoa],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,

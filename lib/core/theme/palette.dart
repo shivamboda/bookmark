@@ -42,13 +42,21 @@ class FloralPalette {
   static const Color poppyRedDark = Color(0xFF9E2C1A); // Deep Poppy Ember
   static const Color sageGreen = Color(0xFFB7B36A); // Leaves and "Reading" status: Olive Sage (#B7B36A)
   static const Color lavenderMist = Color(0xFFE3C6D0); // "Want to Read" status: Dusty Mauve (#E3C6D0)
-  static const Color lavenderDark = Color(0xFF6B4E5A); // Mauve text/accent
   static const Color buttercupYellow = Color(0xFFEBB84A); // Highlights and poppy centers: Golden Amber (#EBB84A)
   static const Color buttercupDark = Color(0xFFB58014);
   static const Color buttercupGold = Color(0xFFEBB84A); // Highlights and poppy centers: Golden Amber (#EBB84A)
-  static const Color espresso = Color(0xFF4A3428); // Espresso #4A3428
-  static const Color cocoa = Color(0xFF7A5240); // Cocoa #7A5240
-  static const Color caramel = Color(0xFFB9825A); // Caramel #B9825A
+
+  // Dynamic Text, Badge, and Action Tokens (Theme-aware for verified >= 4.5:1 contrast)
+  static Color get lavenderDark => isDark ? const Color(0xFFFFEBF3) : const Color(0xFF5A3142);
+  static Color get espresso => isDark ? const Color(0xFFF5EBE1) : const Color(0xFF4A3428);
+  static Color get cocoa => isDark ? const Color(0xFFD4BDB0) : const Color(0xFF7A5240);
+  static Color get caramel => isDark ? const Color(0xFFE2B48E) : const Color(0xFFB9825A);
+
+  // Shared Pill & Action Button Style tokens
+  static Color get pageCountText => isDark ? const Color(0xFFF5EBE1) : const Color(0xFF4A3428);
+  static Color get actionButtonFill => isDark ? const Color(0xFF422E39) : const Color(0xFFF3E5EC);
+  static Color get actionButtonBorder => isDark ? const Color(0xFF8E5A73) : const Color(0xFFC48DA2);
+  static Color get actionButtonText => isDark ? const Color(0xFFFFEBF3) : const Color(0xFF5A3142);
 
   // Soft warm autumn shadow
   static Color get softShadowTint => isDark ? const Color(0x35000000) : const Color(0x18A6482A);
