@@ -27,7 +27,6 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../../services/backup_service.dart';
 import '../../../services/error_logger.dart';
-import '../../../services/synopsis_service.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/backup_transport.dart';
 
@@ -197,132 +196,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
       _lastPauseTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       _handleAppResume();
-    }
-  }
-
-
-  Future<void> _handleRecleanSynopses(BuildContext context) async {
-    final books = ref.read(booksProvider).asData?.value ?? [];
-    
-    // Find books with auto-fetched (not user-edited) descriptions that now
-    // fail the improved quality/opening-line check
-    final booksToClean = <Book>[];
-    for (final book in books) {
-      if (book.description.isNotEmpty && !book.descriptionIsUserEdited) {
-        final revalidated = SynopsisCleaner.cleanAndValidate(book.description);
-        if (revalidated.isEmpty) {
-          booksToClean.add(book);
-        }
-      }
-    }
-
-    if (!mounted) return;
-
-    if (booksToClean.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'All synopses look clean! Nothing to fix.',
-            style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(fontSize: 14),
-          ),
-          backgroundColor: FloralPalette.softIvory,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.fixed,
-          shape: const Border(top: BorderSide(color: Color(0xFFE2D6CB), width: 1.0)),
-        ),
-      );
-      return;
-    }
-
-    // Show confirmation dialog with preview count
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: FloralPalette.softIvory,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Re-clean Synopses', style: JournalTypography.headingSmall()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Found ${booksToClean.length} book${booksToClean.length == 1 ? '' : 's'} '
-              'with suspicious auto-fetched synopses (likely opening lines or wrong language).',
-              style: JournalTypography.body(color: FloralPalette.warmCharcoal),
-            ),
-            const SizedBox(height: 12),
-            ...booksToClean.take(5).map((b) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('• ', style: TextStyle(color: FloralPalette.deepRose, fontWeight: FontWeight.bold)),
-                  Expanded(
-                    child: Text(
-                      b.title,
-                      style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            )),
-            if (booksToClean.length > 5)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '...and ${booksToClean.length - 5} more',
-                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-                ),
-              ),
-            const SizedBox(height: 12),
-            Text(
-              'Their descriptions will be cleared to "No synopsis yet ~" so you can '
-              'add your own or let the app re-fetch a better one.',
-              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancel', style: TextStyle(color: FloralPalette.mutedCharcoal)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: FloralPalette.deepRose,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text('Clean ${booksToClean.length} synopses'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true || !mounted) return;
-
-    // Clear the descriptions
-    final updatedBooks = booksToClean.map((b) => b.copyWith(description: '')).toList();
-    await ref.read(booksProvider.notifier).bulkUpdateBooks(updatedBooks);
-
-    if (mounted && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Cleaned ${updatedBooks.length} synopsis${updatedBooks.length == 1 ? '' : 'es'}.',
-            style: JournalTypography.body(color: FloralPalette.warmCharcoal).copyWith(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          backgroundColor: FloralPalette.softIvory,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.fixed,
-          shape: const Border(top: BorderSide(color: Color(0xFFE2D6CB), width: 1.0)),
-        ),
-      );
     }
   }
 
@@ -2014,50 +1887,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                     const SizedBox(height: 16),
 
 
-                    // Re-clean Synopses Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: FloralPalette.softIvory,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: FloralPalette.cardBorder),
-                        boxShadow: [FloralPalette.cardShadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Synopsis Quality', style: JournalTypography.headingSmall()),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Re-check all auto-fetched synopses against improved quality filters. '
-                            'Removes opening lines mistakenly saved as descriptions. '
-                            'Your own edits are never touched.',
-                            style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              key: const ValueKey('reclean_synopses_btn'),
-                              icon: Icon(Icons.auto_fix_high_rounded, size: 18, color: FloralPalette.deepRose),
-                              label: Text(
-                                'Re-clean synopses',
-                                style: JournalTypography.body(color: FloralPalette.warmCharcoal),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: FloralPalette.cardBorder),
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              ),
-                              onPressed: () => _handleRecleanSynopses(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
-                    const SizedBox(height: 16),
 
                     // Backup & Restore Card
                     Container(

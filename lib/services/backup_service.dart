@@ -74,7 +74,7 @@ class ImportSummary {
 
 /// Comprehensive service for library Backup, Export, Validation, and Atomic Import.
 class BackupService {
-  static const int currentFormatVersion = 1;
+  static const int currentFormatVersion = 2;
   static const String currentAppVersion = '1.0.0';
 
   /// Serializes all books, binary cover images, reading goal, and settings into a JSON string.
@@ -177,9 +177,9 @@ class BackupService {
         : (data['format_version'] ?? data['version']);
     final parsedVersion = int.tryParse(formatVersionRaw?.toString() ?? '');
 
-    if (parsedVersion == null || parsedVersion != currentFormatVersion) {
+    if (parsedVersion == null || parsedVersion < 1 || parsedVersion > currentFormatVersion) {
       return BackupValidationResult.invalid(
-        'Unsupported backup format (version ${formatVersionRaw ?? "unknown"}). This version of Bookmark requires format version $currentFormatVersion.',
+        'Unsupported backup format (version ${formatVersionRaw ?? "unknown"}). This version of Bookmark supports format versions 1 to $currentFormatVersion.',
       );
     }
 

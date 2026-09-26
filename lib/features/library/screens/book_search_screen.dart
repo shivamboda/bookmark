@@ -233,7 +233,6 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
       coverUrl: result.coverUrl,
       coverBytes: coverBytes,
       pageCount: result.pageCount,
-      description: result.description ?? '',
       genres: result.genres,
       status: ReadingStatus.wantToRead,
       dateAdded: DateTime.now(),
@@ -302,8 +301,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
         coverUrl: result.coverUrl,
         coverBytes: coverBytes,
         pageCount: result.pageCount,
-        description: result.description ?? '',
-        genres: result.genres,
+          genres: result.genres,
         status: widget.defaultStatus,
         dateAdded: DateTime.now(),
       );

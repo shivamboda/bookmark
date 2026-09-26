@@ -146,8 +146,6 @@ class HiveStorageService implements StorageService {
         genres: ['Historical Fiction', 'Romance', 'Drama'],
         rating: 4.5,
         status: ReadingStatus.finished,
-        description:
-            'Aging and reclusive Hollywood movie icon Evelyn Hugo is finally ready to tell the truth about her glamorous and scandalous life.',
         startDate: now.subtract(const Duration(days: 30)),
         finishDate: now.subtract(const Duration(days: 12)),
         notes: 'An absolute masterpiece of love, ambition, and sacrifice. The twist broke my heart.',
@@ -175,8 +173,6 @@ class HiveStorageService implements StorageService {
         genres: ['Fantasy', 'Romance', 'Dragons'],
         rating: 4.0,
         status: ReadingStatus.reading,
-        description:
-            'Twenty-year-old Violet Sorrengail was supposed to enter the Scribe Quadrant. Instead, her mother orders her to join the deadly dragon riders.',
         startDate: now.subtract(const Duration(days: 8)),
         notes: 'Fast-paced, dangerous, and the dragon bonds are incredible. Violet is fierce.',
         pageCount: 528,
@@ -197,8 +193,6 @@ class HiveStorageService implements StorageService {
         genres: ['Literary Fiction', 'Contemporary'],
         rating: 5.0,
         status: ReadingStatus.finished,
-        description:
-            'Two childhood friends collaborate as video game designers, experiencing fame, joy, tragedy, and the enduring complexity of creative love.',
         startDate: now.subtract(const Duration(days: 60)),
         finishDate: now.subtract(const Duration(days: 35)),
         notes: 'One of the most poetic portraits of friendship and collaborative art ever written.',
@@ -221,8 +215,6 @@ class HiveStorageService implements StorageService {
         genres: ['Classic', 'Romance'],
         rating: 0.0,
         status: ReadingStatus.wantToRead,
-        description:
-            'The turbulent relationship between Elizabeth Bennet, the daughter of a country gentleman, and Fitzwilliam Darcy, a rich aristocratic landowner.',
         notes: 'Recommended by a friend for an autumn re-read.',
         pageCount: 432,
         dateAdded: now.subtract(const Duration(days: 4)),
@@ -234,8 +226,6 @@ class HiveStorageService implements StorageService {
         genres: ['Mythology', 'Romance', 'Historical'],
         rating: 0.0,
         status: ReadingStatus.wantToRead,
-        description:
-            'A tale of gods, kings, immortal fame, and the human heart, retelling Homer’s Iliad from the perspective of Patroclus.',
         notes: 'Heard this makes you cry like a baby. Next on my list!',
         pageCount: 416,
         dateAdded: now.subtract(const Duration(days: 2)),

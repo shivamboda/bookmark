@@ -24,7 +24,7 @@ import '../widgets/book_cover_thumbnail.dart';
 ///   80% JPEG compression (30KB-70KB), with Change and Remove actions
 /// - Half-step rating input (0 to 5 in 0.5 increments) with tap-half detection & clear button
 /// - Favorite Quotes editor: Add, edit, and delete quotes with optional page numbers
-/// - Grouped cards: Cover, Title/Authors, Status, Dates, Rating, Genres, Page Count, Notes/Synopsis, Quotes
+/// - Grouped cards: Cover, Title/Authors, Status, Dates, Rating, Genres, Page Count, Notes, Quotes
 /// - Custom botanical styling with soft pink shadows and latte hairline dividers
 /// - iOS Safari safe: 16px+ inputs (no zoom on focus), keyboard avoidance, >=44px tap targets
 /// - Unsaved changes confirmation dialog on back/swipe
@@ -57,7 +57,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorsController;
   late final TextEditingController _pageCountController;
-  late final TextEditingController _descriptionController;
   late final TextEditingController _notesController;
 
   // Form State
@@ -98,7 +97,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
   late final Uint8List? _initialCoverBytes;
   late final Set<String> _initialGenres;
   late final String _initialPageCount;
-  late final String _initialDescription;
   late final String _initialNotes;
   late final int _initialQuotesCount;
 
@@ -116,7 +114,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     _pageCountController = TextEditingController(
       text: source?.pageCount != null ? source!.pageCount.toString() : '',
     );
-    _descriptionController = TextEditingController(text: source?.description ?? '');
     _notesController = TextEditingController(text: source?.notes ?? '');
 
     _status = widget.bookToEdit?.status ??
@@ -156,7 +153,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     _initialCoverBytes = _coverBytes;
     _initialGenres = Set.from(_selectedGenres);
     _initialPageCount = _pageCountController.text;
-    _initialDescription = _descriptionController.text;
     _initialNotes = _notesController.text;
     _initialQuotesCount = _quotes.length;
   }
@@ -167,7 +163,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     _titleController.dispose();
     _authorsController.dispose();
     _pageCountController.dispose();
-    _descriptionController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -182,7 +177,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     if (_rating != _initialRating) return true;
     if (_coverBytes != _initialCoverBytes) return true;
     if (_pageCountController.text != _initialPageCount) return true;
-    if (_descriptionController.text != _initialDescription) return true;
     if (_notesController.text != _initialNotes) return true;
     if (_quotes.length != _initialQuotesCount) return true;
     if (!_areSetsEqual(_selectedGenres, _initialGenres)) return true;
@@ -657,8 +651,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
         coverBytes: _coverBytes,
         genres: _selectedGenres.toList(),
         rating: _rating,
-        description: _descriptionController.text.trim(),
-        descriptionIsUserEdited: _descriptionController.text.trim().isNotEmpty || (existingBook?.descriptionIsUserEdited ?? false),
         startDate: _status == ReadingStatus.wantToRead ? null : _startDate,
         finishDate: (_status == ReadingStatus.finished || _status == ReadingStatus.paused)
             ? _finishDate
@@ -811,8 +803,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
 
                                 const SizedBox(height: 16),
 
-                                // Card 7: Synopsis / Description & Notes
-                                _buildDescriptionAndNotesCard(),
+                                // Card 7: Personal Notes
+                                _buildNotesCard(),
 
                                 const SizedBox(height: 16),
 
@@ -1569,8 +1561,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
     );
   }
 
-  /// Card 7: Description & Personal Notes
-  Widget _buildDescriptionAndNotesCard() {
+  /// Card 7: Personal Notes
+  Widget _buildNotesCard() {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1582,27 +1574,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Synopsis / Description (Optional)',
-            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
-          ),
-          const SizedBox(height: 6),
-          AppleCenteredTextFormField(
-            fieldKey: const ValueKey('input_book_description'),
-            controller: _descriptionController,
-            maxLines: 4,
-            style: TextStyle(
-              fontSize: 16,
-              color: FloralPalette.warmCharcoal,
-              height: 1.4,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'A glimpse into the story and its premise...',
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

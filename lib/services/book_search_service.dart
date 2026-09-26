@@ -1,4 +1,3 @@
-import 'synopsis_service.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -12,7 +11,6 @@ class BookSearchResult {
   final List<String> authors;
   final String? coverUrl;
   final int? pageCount;
-  final String? description;
   final List<String> genres;
 
   const BookSearchResult({
@@ -20,7 +18,6 @@ class BookSearchResult {
     this.authors = const [],
     this.coverUrl,
     this.pageCount,
-    this.description,
     this.genres = const [],
   });
 }
@@ -32,33 +29,6 @@ class BookSearchResult {
 ///
 /// Both APIs support CORS and work from Flutter Web without a proxy.
 class BookSearchService {
-  /// Fetches and cleans a description from Google Books for a specific book title and author.
-  static Future<String?> fetchGoogleBooksDescription(String title, List<String> authors) async {
-    try {
-      final query = authors.isNotEmpty
-          ? 'intitle:"$title"+inauthor:"${authors.first}"'
-          : 'intitle:"$title"';
-      final uri = Uri.parse(
-        'https://www.googleapis.com/books/v1/volumes'
-        '?q=${Uri.encodeComponent(query)}'
-        '&maxResults=1'
-        '&printType=books',
-      );
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body) as Map<String, dynamic>;
-        final items = json['items'] as List<dynamic>? ?? [];
-        if (items.isNotEmpty) {
-          final volumeInfo = (items.first as Map<String, dynamic>)['volumeInfo'] as Map<String, dynamic>?;
-          final rawDesc = volumeInfo?['description'];
-          final cleaned = SynopsisCleaner.cleanAndValidate(rawDesc);
-          if (cleaned.isNotEmpty) return cleaned;
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
-
   BookSearchService._();
 
   /// Maximum results to display in the search list.
@@ -105,7 +75,7 @@ class BookSearchService {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final docs = json['docs'] as List<dynamic>? ?? [];
 
-    final docsMapped = docs.map<BookSearchResult?>((doc) {
+    return docs.map<BookSearchResult?>((doc) {
       final d = doc as Map<String, dynamic>;
       final title = d['title'] as String?;
       if (title == null || title.trim().isEmpty) return null;
@@ -126,14 +96,9 @@ class BookSearchService {
       // Page count (median across editions)
       final pages = d['number_of_pages_median'] as int?;
 
-      // Note: Open Library search API doesn't return reliable descriptions
-      // (it often returns the book's opening line via 'first_sentence').
-      // Descriptions will be fetched from Google Books in the enrichment step.
-      String? desc;
-
-      // Genres / Subjects — cleaned via keyword matching to the app's genre list
+      // Genres / Subjects – cleaned via keyword matching to the app's genre list
       final rawSubjects = (d['subject'] as List<dynamic>?)
-              ?.take(20)  // Take more raw subjects to increase matching chances
+              ?.take(20)
               .map((s) => s.toString())
               .toList() ??
           [];
@@ -144,34 +109,9 @@ class BookSearchService {
         authors: authorList,
         coverUrl: coverUrl,
         pageCount: pages,
-        description: desc,
         genres: subjects,
       );
     }).whereType<BookSearchResult>().take(_maxResults).toList();
-
-    // Always try Google Books for descriptions — their editorial summaries
-    // are consistently higher quality than Open Library's first_sentence data.
-    final enriched = <BookSearchResult>[];
-    for (final res in docsMapped) {
-      String? desc;
-      try {
-        final googleDesc = await fetchGoogleBooksDescription(res.title, res.authors);
-        if (googleDesc != null && googleDesc.isNotEmpty) {
-          desc = googleDesc;
-        }
-      } catch (_) {}
-      // Fall back to OL description only if Google Books returned nothing
-      desc ??= res.description;
-      enriched.add(BookSearchResult(
-        title: res.title,
-        authors: res.authors,
-        coverUrl: res.coverUrl,
-        pageCount: res.pageCount,
-        description: desc,
-        genres: res.genres,
-      ));
-    }
-    return enriched;
   }
 
   // -------------------------------------------------------------------------
@@ -223,10 +163,6 @@ class BookSearchService {
       // Page count
       final pages = volumeInfo['pageCount'] as int?;
 
-      // Description cleaned through SynopsisCleaner
-      final rawDesc = volumeInfo['description'];
-      final cleanedDesc = SynopsisCleaner.cleanAndValidate(rawDesc);
-      final desc = cleanedDesc.isNotEmpty ? cleanedDesc : null;
 
       // Categories — cleaned via keyword matching to the app's genre list
       final rawCategories = (volumeInfo['categories'] as List<dynamic>?)
@@ -240,7 +176,6 @@ class BookSearchService {
         authors: authors,
         coverUrl: coverUrl,
         pageCount: pages,
-        description: desc,
         genres: categories,
       );
     }).whereType<BookSearchResult>().take(_maxResults).toList();

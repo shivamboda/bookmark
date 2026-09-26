@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'package:bookmark/services/error_logger.dart';
 import 'package:bookmark/core/widgets/status_pill.dart';
-import 'package:bookmark/services/synopsis_service.dart';
 import 'package:bookmark/doodles/maple_leaf_doodle.dart';
 import 'package:bookmark/doodles/oak_leaf_doodle.dart';
 import 'package:bookmark/doodles/acorn_doodle.dart';
@@ -221,7 +221,6 @@ void main() {
       genres: ['Fantasy', 'Romance'],
       rating: 4.5,
       status: ReadingStatus.finished,
-      description: 'Feyre has undergone more trials than one human could ever bear.',
       startDate: now.subtract(const Duration(days: 20)),
       finishDate: now.subtract(const Duration(days: 5)),
       notes: 'Chapter 54 took my breath away. Beautiful character growth.',
@@ -484,7 +483,6 @@ void main() {
       genres: ['Romance'],
       status: ReadingStatus.finished,
       rating: 3.0,
-      description: 'A quiet masterpiece.',
       startDate: DateTime(2026, 1, 1),
       finishDate: DateTime(2026, 1, 15),
       dateAdded: DateTime(2026, 1, 1),
@@ -897,7 +895,6 @@ void main() {
       genres: ['Mythology', 'Fantasy'],
       status: ReadingStatus.wantToRead,
       pageCount: 393,
-      description: 'In the house of Helios, god of the sun and mightiest of the Titans...',
       notes: 'Gift from friend',
       quotes: [
         BookQuote(
@@ -947,7 +944,7 @@ void main() {
     expect(updated1.authors, ['Madeline Miller']);
     expect(updated1.genres, ['Mythology', 'Fantasy']);
     expect(updated1.pageCount, 393);
-    expect(updated1.description, contains('Helios'));
+    expect(updated1.title, equals('Circe'));
     expect(updated1.notes, 'Gift from friend');
     expect(updated1.quotes.length, 1);
     expect(updated1.quotes.first.cleanText, contains('Humbling women'));
@@ -962,7 +959,6 @@ void main() {
       genres: ['Fantasy', 'Mystery'],
       status: ReadingStatus.wantToRead,
       pageCount: 245,
-      description: 'Piranesi has always lived in the House.',
       notes: 'Recommended by book club',
       dateAdded: DateTime(2026, 9, 23),
     );
@@ -1515,7 +1511,6 @@ void main() {
       authors: const ['Emily St. John', 'Arthur Conan'],
       genres: const ['Historical Fiction', 'Mystery'],
       rating: 4.5,
-      description: 'A deeply personal journey across eras.',
       notes: 'Read this during autumn rain. Unforgettable atmosphere.',
       quotes: [
         BookQuote(id: 'q-1', quote: 'Memory is an untamed garden.', pageNumber: 42, createdAt: DateTime(2026, 8, 2)),
@@ -1534,7 +1529,6 @@ void main() {
       authors: const ['Marlowe Reed'],
       genres: const ['Romance', 'Young Adult'],
       rating: 5.0,
-      description: 'Lyrical coastal prose.',
       notes: 'Borrow copy from local archive.',
       quotes: [
         BookQuote(id: 'q-3', quote: 'The ocean remembers what words forget.', createdAt: DateTime(2026, 9, 2)),
@@ -1583,7 +1577,6 @@ void main() {
     expect(restored1.authors, book1.authors);
     expect(restored1.genres, book1.genres);
     expect(restored1.rating, 4.5);
-    expect(restored1.description, book1.description);
     expect(restored1.notes, book1.notes);
     expect(restored1.quotes.length, 2);
     expect(restored1.quotes[0].quote, 'Memory is an untamed garden.');
@@ -2071,142 +2064,23 @@ void main() {
     expect(find.text('Pride and Prejudice'), findsWidgets);
   });
 
-  group('Part 2: SynopsisCleaner unit tests with realistic bad samples', () {
-    test('1. HTML stripping & entity decoding', () {
-      const rawHtml =
-          '<p><b>Pride and Prejudice</b> is an 1813 romantic novel of manners.<br/>'
-          'It follows the character development of Elizabeth Bennet.&nbsp;&amp; Jane Bennet.</p>';
-      final cleaned = SynopsisCleaner.clean(rawHtml);
-      expect(cleaned, contains('Pride and Prejudice is an 1813 romantic novel of manners.'));
-      expect(cleaned, contains('Elizabeth Bennet. & Jane Bennet.'));
-      expect(cleaned.contains('<'), isFalse);
-      expect(cleaned.contains('&amp;'), isFalse);
-      expect(cleaned.contains('&nbsp;'), isFalse);
-    });
-
-    test('2. Markdown links, headings, and horizontal rules stripping', () {
-      const rawMarkdown =
-          '## Overview\n\n'
-          'This is a **classic** masterpiece about [Elizabeth](https://en.wikipedia.org/wiki/Elizabeth_Bennet) and *Mr. Darcy*.\n\n'
-          '----------\n\n'
-          '### Themes\n'
-          'Love and social class in Georgian society.';
-      final cleaned = SynopsisCleaner.clean(rawMarkdown);
-      expect(cleaned, contains('Overview'));
-      expect(cleaned, contains('This is a classic masterpiece about Elizabeth and Mr. Darcy.'));
-      expect(cleaned, contains('Themes\nLove and social class in Georgian society.'));
-      expect(cleaned.contains('##'), isFalse);
-      expect(cleaned.contains('**'), isFalse);
-      expect(cleaned.contains('['), isFalse);
-      expect(cleaned.contains('----------'), isFalse);
-    });
-
-    test('3. Source lines, Contains lines, See also sections, and Catalog boilerplate stripping', () {
-      const rawWithBoilerplate =
-          'An epic fantasy journey across the shattered plains of Roshar.\n'
-          'Source: Wikipedia\n'
-          'Contains: Spoilers for earlier volumes\n'
-          'ISBN: 978-0-7653-2635-5\n'
-          'OCLC: 601094143\n'
-          'Edition: First Tor Hardcover Edition\n'
-          'Pagination: 1007 pages\n'
-          'Digitized by Google Books\n'
-          'See also: Brandon Sanderson bibliography\n'
-          '* Words of Radiance\n'
-          '* Oathbringer';
-      final cleaned = SynopsisCleaner.clean(rawWithBoilerplate);
-      expect(cleaned, 'An epic fantasy journey across the shattered plains of Roshar.');
-      expect(cleaned.contains('Source:'), isFalse);
-      expect(cleaned.contains('Contains:'), isFalse);
-      expect(cleaned.contains('ISBN'), isFalse);
-      expect(cleaned.contains('OCLC'), isFalse);
-      expect(cleaned.contains('See also'), isFalse);
-      expect(cleaned.contains('Oathbringer'), isFalse);
-    });
-
-    test('4. Open Library object-shaped description handling (Map with "value" or "type")', () {
-      final olObject = {
-        'type': '/type/text',
-        'value':
-            'Set in the fictional provincial town of Middlemarch, this novel explores the lives, marriages, and ideals of its inhabitants.',
-      };
-      final cleaned = SynopsisCleaner.clean(olObject);
-      expect(
-        cleaned,
-        'Set in the fictional provincial town of Middlemarch, this novel explores the lives, marriages, and ideals of its inhabitants.',
-      );
-      expect(SynopsisCleaner.isQuality(cleaned), isTrue);
-    });
-
-    test('5. Quality check: rejects all-caps shouting catalog entries', () {
-      const allCaps =
-          'THIS IS A RARE REPRINT OF THE 1912 EDITION PUBLISHED BY THE UNIVERSITY PRESS IN LONDON WITH COMPLETE INDEX AND GLOSSARY.';
-      expect(SynopsisCleaner.isQuality(allCaps), isFalse);
-      expect(SynopsisCleaner.cleanAndValidate(allCaps), '');
-    });
-
-    test('6. Quality check: rejects descriptions that are too short (< 40 chars)', () {
-      const shortDesc = 'A novel about books and dreams.';
-      expect(shortDesc.length < 40, isTrue);
-      expect(SynopsisCleaner.isQuality(shortDesc), isFalse);
-      expect(SynopsisCleaner.cleanAndValidate(shortDesc), '');
-    });
-
-    test('7. Quality check: handles empty and null gracefully', () {
-      expect(SynopsisCleaner.clean(null), '');
-      expect(SynopsisCleaner.clean(''), '');
-      expect(SynopsisCleaner.clean('     '), '');
-      expect(SynopsisCleaner.cleanAndValidate(null), '');
-      expect(SynopsisCleaner.cleanAndValidate(''), '');
-    });
-
-    test('8. Quality check: rejects metadata dumps (key-value lists) rather than prose', () {
-      const metadataDump =
-          'Title: Emma\n'
-          'Author: Jane Austen\n'
-          'Format: Paperback 12mo\n'
-          'Publisher: Penguin Classics\n'
-          'Language: English\n'
-          'Year: 1815';
-      expect(SynopsisCleaner.isQuality(metadataDump), isFalse);
-      expect(SynopsisCleaner.cleanAndValidate(metadataDump), '');
-    });
-
-    test('9. Truncate preview: collapses long text and never cuts mid-word', () {
-      const longText =
-          'In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell, nor yet a dry, bare, sandy hole with nothing in it to sit down on or to eat: it was a hobbit-hole, and that means comfort. It had a perfectly round door like a porthole, painted green, with a shiny yellow brass knob in the exact middle.';
-      final truncated = SynopsisCleaner.truncatePreview(longText, maxLength: 100);
-      expect(truncated.endsWith('...'), isTrue);
-      expect(truncated.length <= 104, isTrue);
-      final withoutDots = truncated.substring(0, truncated.length - 3);
-      final lastWord = withoutDots.split(' ').last;
-      expect(RegExp(r'^[A-Za-z]+$').hasMatch(lastWord), isTrue);
-    });
-  });
-
-  group('Part 2: BookDetailScreen Synopsis UI & Collapsible behavior', () {
-    testWidgets('Book Detail shows gentle empty state ("No synopsis yet ~") with "Add your own" action when empty', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
+  group('Part 2: UI verification that Synopsis is completely removed', () {
+    testWidgets('Book Detail screen does NOT display any Synopsis section or empty state', (tester) async {
       final storage = InMemoryStorageService();
+      await storage.init();
       final book = Book(
-        id: 'no-synopsis-1',
-        title: 'A Room with a View',
-        authors: ['E. M. Forster'],
-        status: ReadingStatus.reading,
-        description: '',
-        dateAdded: DateTime(2026, 9, 20),
+        id: 'no-synopsis-detail',
+        title: 'A Beautiful Book',
+        authors: ['Author Name'],
+        dateAdded: DateTime.now(),
       );
       await storage.saveBook(book);
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          overrides: [
+            storageServiceProvider.overrideWithValue(storage),
+          ],
           child: MaterialApp(
             home: BookDetailScreen(bookId: book.id),
           ),
@@ -2214,67 +2088,31 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Synopsis'), findsOneWidget);
-      expect(find.text('No synopsis yet ~'), findsOneWidget);
-      expect(find.byKey(const ValueKey('add_synopsis_btn')), findsOneWidget);
-      expect(find.text('Add your own'), findsOneWidget);
+      expect(find.text('Synopsis'), findsNothing);
+      expect(find.text('No synopsis yet ~'), findsNothing);
+      expect(find.byKey(const ValueKey('add_synopsis_btn')), findsNothing);
+      expect(find.byKey(const ValueKey('synopsis_toggle_btn')), findsNothing);
     });
 
-    testWidgets('Book Detail collapses long descriptions with "Read more" and expands to "Show less"', (tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
+    testWidgets('Add/Edit book screen does NOT contain any Synopsis/Description input field', (tester) async {
       final storage = InMemoryStorageService();
-      const longSynopsis =
-          'Set in the lush English countryside of Hertfordshire, Pride and Prejudice follows the turbulent relationship between Elizabeth Bennet, the daughter of a country gentleman, and Fitzwilliam Darcy, a rich and aristocratic landowner. As they navigate the societal pressures of 19th-century England, they must overcome their respective biases of pride and prejudice in order to find mutual love, respect, and lasting happiness together amidst family eccentricities.';
-      final book = Book(
-        id: 'long-synopsis-1',
-        title: 'Pride and Prejudice',
-        authors: ['Jane Austen'],
-        status: ReadingStatus.finished,
-        description: longSynopsis,
-        dateAdded: DateTime(2026, 9, 20),
-      );
-      await storage.saveBook(book);
+      await storage.init();
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [storageServiceProvider.overrideWithValue(storage)],
-          child: MaterialApp(
-            home: BookDetailScreen(bookId: book.id),
+          overrides: [
+            storageServiceProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: AddEditBookScreen(),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Initially collapsed with "Read more"
-      expect(find.text('Synopsis'), findsOneWidget);
-      expect(find.text('Read more'), findsOneWidget);
-      expect(find.text('Show less'), findsNothing);
-
-      // Scroll to "Read more" button and tap
-      await tester.ensureVisible(find.byKey(const ValueKey('synopsis_toggle_btn')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('synopsis_toggle_btn')));
-      await tester.pumpAndSettle();
-
-      // Now expanded with full text and "Show less"
-      expect(find.text('Show less'), findsOneWidget);
-      expect(find.text('Read more'), findsNothing);
-      expect(find.text(longSynopsis), findsOneWidget);
-
-      // Scroll to "Show less" button and tap
-      await tester.ensureVisible(find.byKey(const ValueKey('synopsis_toggle_btn')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('synopsis_toggle_btn')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Read more'), findsOneWidget);
-      expect(find.text('Show less'), findsNothing);
+      expect(find.byKey(const ValueKey('input_book_description')), findsNothing);
+      expect(find.text('Synopsis / Description (Optional)'), findsNothing);
+      expect(find.text('Synopsis'), findsNothing);
     });
   });
 
@@ -2444,7 +2282,6 @@ void main() {
         authors: const ['Emily Bronte'],
         genres: const ['Classic', 'Romance'],
         rating: 3.5,
-        description: 'Heathcliff and Catherine story.',
         notes: 'Personal favorite classic.',
         quotes: [originalQuote],
         pageCount: 380,
@@ -2459,7 +2296,6 @@ void main() {
         authors: const ['Jane Austen'],
         genres: const ['Classic', 'Regency'],
         rating: 4.0,
-        description: 'Anne Elliot second chance romance.',
         notes: 'Quiet, poignant beauty.',
         quotes: [],
         pageCount: 260,
@@ -2508,7 +2344,6 @@ void main() {
       expect(storedBook1.title, equals(book1.title));
       expect(storedBook1.authors, equals(book1.authors));
       expect(storedBook1.genres, equals(book1.genres));
-      expect(storedBook1.description, equals(book1.description));
       expect(storedBook1.notes, equals(book1.notes));
       expect(storedBook1.quotes.length, equals(1));
       expect(storedBook1.quotes.first.quote, equals(originalQuote.quote));
@@ -3009,75 +2844,74 @@ void main() {
     });
   });
   
-  group('Opening-line detector: rejects book opening lines, accepts real synopses', () {
-    // --- REAL EXAMPLES FROM USER BUG REPORT ---
+  group('Data Model & Migration: Format Version 2 & Backwards Compatibility', () {
+    test('Importing old format_version 1 backup with descriptions succeeds and drops the field', () async {
+      final storage = InMemoryStorageService();
+      await storage.init();
 
-    test('Rejects Italian opening line: "ERANO LE CINQUE di una mattina invernale, in Siria."', () {
-      final text = 'ERANO LE CINQUE di una mattina invernale, in Siria. Il cielo era ancora buio e la temperatura era scesa sotto lo zero durante la notte.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
-          reason: 'Italian opening line with ALL-CAPS start + non-English content should be rejected');
-      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
-          reason: 'cleanAndValidate should return empty for opening lines');
-    });
+      // Older backup payload (format_version 1) that includes description and descriptionIsUserEdited
+      final oldBackupJson = jsonEncode({
+        'metadata': {
+          'format_version': 1,
+          'app_version': '1.0.0',
+          'export_date': DateTime.now().toIso8601String(),
+          'book_count': 1,
+        },
+        'books': [
+          {
+            'id': 'legacy-v1-book',
+            'title': 'Legacy Wuthering Heights',
+            'authors': ['Emily Bronte'],
+            'genres': ['Classic', 'Romance'],
+            'rating': 4.5,
+            'description': 'A passionate and tragic romance on the Yorkshire moors.',
+            'descriptionIsUserEdited': true,
+            'status': 'finished',
+            'notes': 'Classic gothic tale',
+            'quotes': [],
+            'dateAdded': DateTime.now().toIso8601String(),
+          }
+        ],
+        'covers': {},
+        'reading_goal': 25,
+        'settings': {},
+      });
 
-    test('Rejects Agatha Christie opening line: "IN THE CORNER of a first-class smoking carriage..."', () {
-      final text = 'IN THE CORNER of a first-class smoking carriage, Mr. Justice Wargrave, lately retired from the bench, puffed at a cigar and ran an interested eye through the political news in the Times.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
-          reason: 'Caps-start scene-setting narration with sensory details should be rejected');
-      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
-          reason: 'cleanAndValidate should return empty for opening lines');
-    });
+      // 1. Validation must accept format_version 1
+      final validationResult = BackupService.validateBackupJson(oldBackupJson);
+      expect(validationResult.isValid, isTrue, reason: 'Older format_version 1 must remain valid to import');
+      expect(validationResult.bookCount, equals(1));
 
-    test('Rejects Michael Crichton opening line: "TEN THOUSAND MILE AWAY, IN THE COLD, WINdowless..."', () {
-      final text = 'TEN THOUSAND MILE AWAY, IN THE COLD, WINdowless main data room of the Shimago Biotech Research Institute in Tokyo, a bank of monitors flickered in the blue-white fluorescent light.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
-          reason: 'ALL-CAPS location phrase followed by scene description should be rejected');
-      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
-          reason: 'cleanAndValidate should return empty for opening lines');
-    });
+      // 2. Perform import (Replace mode)
+      final summary = await BackupService.performImport(
+        storage,
+        validationResult.data!,
+        merge: false,
+      );
+      expect(summary.addedCount, equals(1));
 
-    // --- CONSTRUCTED EXAMPLES ---
+      // 3. Stored book must exist
+      final allBooks = await storage.getAllBooks();
+      expect(allBooks.length, equals(1));
+      final importedBook = allBooks.first;
+      expect(importedBook.id, equals('legacy-v1-book'));
+      expect(importedBook.title, equals('Legacy Wuthering Heights'));
 
-    test('Rejects French opening line: "DANS LA PETITE ville de province..."', () {
-      final text = "DANS LA PETITE ville de province, le docteur Pascal se levait chaque matin avant l'aube pour commencer ses observations dans le laboratoire qu'il avait aménagé au rez-de-chaussée.";
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
-          reason: 'French prose with caps start should be rejected as opening line');
-    });
+      // 4. Create a fresh export payload and ensure format_version is 2 and no description key exists
+      final newExport = await BackupService.createExportPayload(storage);
+      final metadata = newExport['metadata'] as Map<String, dynamic>;
+      expect(metadata['format_version'], equals(2));
 
-    test('Rejects narrative scene-setter: "IT WAS A BRIGHT cold day in April..."', () {
-      final text = 'IT WAS A BRIGHT cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
-          reason: '1984 opening line with caps start and scene narration should be rejected');
-    });
+      final booksList = newExport['books'] as List<dynamic>;
+      expect(booksList.length, equals(1));
+      final exportedBookMap = booksList.first as Map<String, dynamic>;
+      expect(exportedBookMap.containsKey('description'), isFalse, reason: 'Exported book must not have description key');
+      expect(exportedBookMap.containsKey('descriptionIsUserEdited'), isFalse, reason: 'Exported book must not have descriptionIsUserEdited key');
+      expect(exportedBookMap.containsKey('synopsis'), isFalse, reason: 'Exported book must not have synopsis key');
 
-    // --- GENUINE SYNOPSES THAT SHOULD BE ACCEPTED ---
-
-    test('Accepts genuine synopsis with character-plus-conflict structure', () {
-      final text = 'When a young orphan discovers she has magical powers, she must navigate a dangerous school of sorcery while uncovering the truth about her parents\' mysterious disappearance. A gripping tale of friendship, betrayal, and the power of love.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
-          reason: 'Character-plus-conflict synopsis with summary markers should be accepted');
-      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
-    });
-
-    test('Accepts genuine synopsis with "follows the story of" pattern', () {
-      final text = 'This bestselling novel follows the story of Elizabeth Bennet, a spirited young woman in Regency-era England, as she navigates societal expectations, family pressures, and her complicated feelings for the proud Mr. Darcy.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
-          reason: 'Synopsis using "follows the story of" should be accepted');
-      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
-    });
-
-    test('Accepts genuine synopsis starting with "In this" pattern', () {
-      final text = 'In this unforgettable masterpiece, a reclusive librarian discovers a series of letters hidden inside an ancient manuscript that reveal a centuries-old conspiracy reaching into the highest levels of power.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
-          reason: '"In this" + summary language should be accepted');
-      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
-    });
-
-    test('Accepts New York Times bestseller description', () {
-      final text = '#1 NEW YORK TIMES BESTSELLER. A masterful novel about a marriage at a crossroads, exploring the devastating consequences of secrets and lies in a seemingly perfect suburban family.';
-      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
-          reason: 'NYT bestseller marketing copy is a valid synopsis');
-      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
+      final freshExportJsonString = jsonEncode(newExport);
+      expect(freshExportJsonString.contains('"description"'), isFalse, reason: 'Fresh export JSON must have no description key anywhere');
+      expect(freshExportJsonString.contains('"synopsis"'), isFalse, reason: 'Fresh export JSON must have no synopsis key anywhere');
     });
   });
 });
