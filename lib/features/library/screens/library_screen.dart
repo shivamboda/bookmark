@@ -2953,9 +2953,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               child: Icon(Icons.close_rounded, size: 12, color: FloralPalette.deepRose),
                             ),
                           ),
-                        ] else ...[
-                          const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: FloralPalette.cocoa),
                         ],
                       ],
                     ),
@@ -2996,8 +2993,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: FloralPalette.cocoa),
                       ],
                     ),
                   ),
