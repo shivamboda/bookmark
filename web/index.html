@@ -44,6 +44,7 @@
       padding: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       background-color: #1E1611;
       overflow: hidden;
       touch-action: pan-x pan-y;
@@ -54,10 +55,17 @@
   </style>
 </head>
 <body>
-    <script>
-    // iOS Safari PWA background resume watchdog & touch unfreeze
+  <script>
+    // iOS Safari Standalone PWA Viewport Watchdog & Touch Stabilizer
     (function() {
-      function onResume(source) {
+      var isStandalone = window.navigator.standalone === true ||
+                         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                         (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+
+      var initialHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      var initialWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+
+      function forceViewportSync(source) {
         // 1. Drop any stuck input / virtual keyboard focus
         try {
           if (document.activeElement && typeof document.activeElement.blur === "function") {
@@ -65,19 +73,28 @@
           }
         } catch (e) {}
 
-        // 2. Reset any Safari viewport shift/drift
+        // 2. Reset any Safari viewport shift/drift (essential on iOS standalone cold-start)
         try {
           window.scrollTo(0, 0);
           if (document.body) document.body.scrollTop = 0;
           if (document.documentElement) document.documentElement.scrollTop = 0;
         } catch (e) {}
 
-        // 3. Wake up WebKit compositor by dispatching a resize event
+        // 3. Dispatch resize event to window.visualViewport
+        // CRITICAL: Flutter Web engine binds its viewport listener directly to window.visualViewport!
+        // Dispatching on 'window' alone DOES NOT trigger Flutter's EnginePlatformDispatcher listener.
+        try {
+          if (window.visualViewport) {
+            window.visualViewport.dispatchEvent(new Event("resize"));
+          }
+        } catch (e) {}
+
+        // 4. Also dispatch resize event to window for window-level listeners
         try {
           window.dispatchEvent(new Event("resize"));
         } catch (e) {}
 
-        // 4. Ensure no lingering splash or overlay traps pointer events
+        // 5. Ensure no lingering splash or overlay traps pointer events
         try {
           var strayElements = document.querySelectorAll(".splash, #splash, .loading, #loading, [data-splash]");
           for (var i = 0; i < strayElements.length; i++) {
@@ -86,14 +103,67 @@
         } catch (e) {}
       }
 
+      // Explicitly listen to visualViewport resize and scroll right on initial load
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", function() {
+          var curH = window.visualViewport.height;
+          if (Math.abs(curH - initialHeight) > 0.5) {
+            initialHeight = curH;
+            forceViewportSync("visualViewport-resize");
+          }
+        });
+
+        window.visualViewport.addEventListener("scroll", function() {
+          if (window.visualViewport.pageTop !== 0 || window.visualViewport.offsetTop !== 0) {
+            forceViewportSync("visualViewport-scrollDrift");
+          }
+        });
+      }
+
+      window.addEventListener("resize", function() {
+        forceViewportSync("window-resize");
+      });
+
+      // Cold start stabilization cascade:
+      // iOS WebKit in standalone mode often reports pre-settled (shorter) dimensions during Flutter's
+      // first frame layout, then settles into full standalone height without firing an event.
+      // Running a timed cascade forces Flutter to re-query visualViewport metrics as WebKit settles.
+      var coldStartDelays = [50, 150, 300, 500, 800, 1200, 2000];
+      for (var k = 0; k < coldStartDelays.length; k++) {
+        (function(delay) {
+          setTimeout(function() {
+            var curH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            if (isStandalone || Math.abs(curH - initialHeight) > 0.5) {
+              initialHeight = curH;
+              forceViewportSync("coldStart-" + delay + "ms");
+            }
+          }, delay);
+        })(coldStartDelays[k]);
+      }
+
+      // Early requestAnimationFrame loop to catch immediate sub-frame geometry adjustments
+      var rAFCount = 0;
+      function checkEarlyRAF() {
+        var curH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        if (Math.abs(curH - initialHeight) > 0.5) {
+          initialHeight = curH;
+          forceViewportSync("rAF-" + rAFCount);
+        }
+        if (++rAFCount < 15) {
+          requestAnimationFrame(checkEarlyRAF);
+        }
+      }
+      requestAnimationFrame(checkEarlyRAF);
+
+      // App background/resume watchdogs
       document.addEventListener("visibilitychange", function() {
         if (!document.hidden) {
-          onResume("visibilitychange");
+          forceViewportSync("visibilitychange");
         }
       });
 
       window.addEventListener("pageshow", function(e) {
-        onResume("pageshow" + (e.persisted ? "-persisted" : ""));
+        forceViewportSync("pageshow" + (e.persisted ? "-persisted" : ""));
       });
     })();
   </script>
