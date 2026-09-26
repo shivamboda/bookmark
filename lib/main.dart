@@ -2,12 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/state/providers.dart';
 import 'core/theme/app_theme.dart';
+import 'dart:ui';
 import 'core/theme/palette.dart';
 import 'doodles/doodle_gallery_screen.dart';
+import 'services/error_logger.dart';
 import 'features/library/screens/library_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Global uncaught error logging for Diagnostics screen
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    AppErrorLogger.recordError(
+      details.exception,
+      details.stack,
+      context: details.context?.toDescription(),
+    );
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppErrorLogger.recordError(error, stack, context: 'Platform');
+    return false;
+  };
 
   // Initialize decoupled Hive CE storage
   await globalStorageService.init();

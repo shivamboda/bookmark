@@ -26,6 +26,7 @@ import 'book_detail_screen.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../../services/backup_service.dart';
+import '../../../services/error_logger.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/backup_transport.dart';
 
@@ -191,12 +192,92 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.inactive) {
+        state == AppLifecycleState.hidden) {
       _lastPauseTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       _handleAppResume();
     }
+  }
+
+
+  Widget _buildErrorDiagnosticsSection() {
+    final errors = AppErrorLogger.recentErrors;
+    final timeFormat = DateFormat('HH:mm:ss');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              errors.isEmpty ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
+              size: 16,
+              color: errors.isEmpty ? FloralPalette.sageGreenDark : FloralPalette.deepRose,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Recent errors (${errors.length}):',
+                key: const ValueKey('recent_errors_diagnostics_title'),
+                style: JournalTypography.bodySmall(
+                  color: FloralPalette.mutedCharcoal,
+                ).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (errors.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Text(
+              'No recent errors detected (clean session)',
+              key: const ValueKey('recent_errors_empty_text'),
+              style: JournalTypography.bodySmall(
+                color: FloralPalette.mutedCharcoal.withValues(alpha: 0.8),
+              ),
+            ),
+          )
+        else
+          ...errors.map((e) => Container(
+                key: const ValueKey('recent_error_entry_container'),
+                margin: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: FloralPalette.petalWhite,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: FloralPalette.cardBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '[${timeFormat.format(e.timestamp)}] ${e.message}',
+                      key: const ValueKey('recent_error_entry_msg'),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: Color(0xFF8B2500),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (e.stackPreview.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        e.stackPreview,
+                        key: const ValueKey('recent_error_entry_stack'),
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 10,
+                          color: FloralPalette.mutedCharcoal,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              )),
+      ],
+    );
   }
 
   void _handleAppResume() {
@@ -223,9 +304,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
       } catch (_) {}
     }
 
-    // 2. Force immediate frame warm up to wake up WebKit compositor
+    // 2. Safely request visual update to wake up WebKit compositor
     try {
-      WidgetsBinding.instance.scheduleWarmUpFrame();
+      WidgetsBinding.instance.ensureVisualUpdate();
     } catch (_) {}
 
     // 3. Lightweight recovery after long background (> 5 minutes)
@@ -936,10 +1017,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
       ref.invalidate(booksProvider);
       ref.invalidate(yearlyGoalProvider);
 
-      setState(() {
-        _lastBackupDate = DateTime.now();
-        _isBackupBannerDismissed = true;
-      });
+      if (mounted) {
+        setState(() {
+          _lastBackupDate = DateTime.now();
+          _isBackupBannerDismissed = true;
+        });
+      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1793,6 +1876,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
+                          const SizedBox(height: 10),
+                          _buildErrorDiagnosticsSection(),
                         ],
                       ),
                     ),

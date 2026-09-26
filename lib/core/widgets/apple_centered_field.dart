@@ -55,12 +55,14 @@ class _AppleCenteredFieldState extends State<AppleCenteredField> {
     _scrollTimer?.cancel();
     _scrollTimer = Timer(widget.delay, () {
       if (mounted && _effectiveFocusNode.hasFocus) {
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.5, // 0.5 = Vertically centered in visible viewport
-          duration: widget.scrollDuration,
-          curve: widget.curve,
-        );
+        try {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5, // 0.5 = Vertically centered in visible viewport
+            duration: widget.scrollDuration,
+            curve: widget.curve,
+          );
+        } catch (_) {}
       }
     });
   }
@@ -149,12 +151,14 @@ class _AppleCenteredTextFormFieldState extends State<AppleCenteredTextFormField>
     _scrollTimer?.cancel();
     _scrollTimer = Timer(const Duration(milliseconds: 220), () {
       if (mounted) {
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.5, // Center vertically in viewport
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeInOutCubic,
-        );
+        try {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5, // Center vertically in viewport
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOutCubic,
+          );
+        } catch (_) {}
       }
     });
   }

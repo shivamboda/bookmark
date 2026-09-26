@@ -1093,7 +1093,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => onPicked(picked));
     }
   }

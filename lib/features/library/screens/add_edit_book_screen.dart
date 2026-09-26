@@ -281,7 +281,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         if (isStart) {
           _startDate = picked;
@@ -448,7 +448,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       },
     );
 
-    if (savedQuote != null) {
+    if (savedQuote != null && mounted) {
       setState(() {
         if (editIndex != null) {
           _quotes[editIndex] = savedQuote;

@@ -1,3 +1,4 @@
+import 'package:bookmark/services/error_logger.dart';
 import 'package:bookmark/core/widgets/status_pill.dart';
 import 'package:bookmark/services/synopsis_service.dart';
 import 'package:bookmark/doodles/maple_leaf_doodle.dart';
@@ -2936,5 +2937,76 @@ void main() {
       expect(FloralPalette.softIvory, const Color(0xFF2B211A));
     });
   });
-});
+
+  group('Part 2: Error Logger & iOS Diagnostics', () {
+    setUp(() {
+      AppErrorLogger.clearForTest();
+    });
+
+    tearDown(() {
+      AppErrorLogger.clearForTest();
+    });
+
+    test('AppErrorLogger records uncaught errors, caps at maxErrors (5), and captures stack preview', () {
+      expect(AppErrorLogger.recentErrors, isEmpty);
+
+      // Record an error
+      AppErrorLogger.recordError(
+        'Simulated RenderFlex overflow',
+        StackTrace.fromString('#0 RenderFlex.performLayout\n#1 RenderObject.layout\n#2 dart-sdk/lib/async.dart'),
+        context: 'rendering',
+      );
+
+      expect(AppErrorLogger.recentErrors.length, 1);
+      final entry = AppErrorLogger.recentErrors.first;
+      expect(entry.message, contains('[rendering] Simulated RenderFlex overflow'));
+      expect(entry.stackPreview, contains('#0 RenderFlex.performLayout'));
+
+      // Record 6 more errors to test capping at 5
+      for (int i = 1; i <= 6; i++) {
+        AppErrorLogger.recordError('Error number $i', null);
+      }
+      expect(AppErrorLogger.recentErrors.length, 5);
+      expect(AppErrorLogger.recentErrors.first.message, 'Error number 6');
+    });
+
+    testWidgets('Diagnostics screen displays clean session when no errors, and lists error details when errors occur', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Navigate to Settings tab (index 3)
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+
+      // Verify clean session state
+      expect(find.byKey(const ValueKey('recent_errors_diagnostics_title')), findsOneWidget);
+      expect(find.byKey(const ValueKey('recent_errors_empty_text')), findsOneWidget);
+
+      // Record a test error
+      AppErrorLogger.recordError('Test simulated unhandled error', null, context: 'TestEngine');
+
+      // Re-pump Settings tab to reflect state
+      await tester.tap(find.text('Library').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('recent_error_entry_container')), findsOneWidget);
+      expect(find.textContaining('Test simulated unhandled error'), findsOneWidget);
+    });
+  });
+  });
 }
