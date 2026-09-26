@@ -34,11 +34,13 @@ class FloralBottomNav extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
           child: Container(
             decoration: BoxDecoration(
-              color: FloralPalette.softIvory.withValues(alpha: 0.82),
+              color: FloralPalette.isDark
+                  ? const Color(0xFF1E1611).withValues(alpha: 0.70)
+                  : const Color(0xFFFFFBF5).withValues(alpha: 0.72),
               border: Border(
                 top: BorderSide(
-                  color: FloralPalette.isDark ? const Color(0xFF3D2E24) : const Color(0xFFE8D7C8),
-                  width: 1.0,
+                  color: FloralPalette.isDark ? const Color(0x3DF5EBE1) : const Color(0x3D4A3428),
+                  width: 0.8,
                 ),
               ),
               boxShadow: [

@@ -33,12 +33,15 @@ class FrostedGlassHeader extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
           child: Container(
             decoration: BoxDecoration(
-              color: backgroundColor ?? FloralPalette.softIvory.withValues(alpha: 0.85),
+              color: backgroundColor ??
+                  (FloralPalette.isDark
+                      ? const Color(0xFF2B211A).withValues(alpha: 0.72)
+                      : const Color(0xFFFFFBF5).withValues(alpha: 0.75)),
               border: border ??
-                  const Border(
+                  Border(
                     bottom: BorderSide(
-                      color: Color(0xFFE8D7C8),
-                      width: 1.0,
+                      color: FloralPalette.isDark ? const Color(0x3DF5EBE1) : const Color(0x3DEADBCE),
+                      width: 0.8,
                     ),
                   ),
             ),
@@ -72,41 +75,56 @@ class FrostedFloralFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: SizedBox(
-        width: 66,
-        height: 66,
+        width: 70,
+        height: 70,
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Soft frosted halo layer beneath
+            // Soft frosted glass depth layer underneath
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
                 child: Container(
-                  width: 66,
-                  height: 66,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
-                    color: FloralPalette.deepRose.withValues(alpha: 0.16),
+                    color: FloralPalette.isDark
+                        ? const Color(0x30FFFFFF)
+                        : const Color(0x35A6482A),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: const Color(0xFFE8D7C8).withValues(alpha: 0.6),
+                      color: FloralPalette.isDark
+                          ? const Color(0x60F5EBE1)
+                          : const Color(0x45A6482A),
                       width: 1.0,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: FloralPalette.deepRose.withValues(alpha: FloralPalette.isDark ? 0.35 : 0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
 
             // Solid tappable FAB
-            FloatingActionButton(
-              key: fabKey,
-              onPressed: onPressed,
-              backgroundColor: FloralPalette.deepRose,
-              foregroundColor: FloralPalette.softIvory,
-              elevation: 3,
-              tooltip: tooltip,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: child,
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: FloatingActionButton(
+                key: fabKey,
+                onPressed: onPressed,
+                backgroundColor: FloralPalette.deepRose,
+                foregroundColor: FloralPalette.softIvory,
+                elevation: 4,
+                tooltip: tooltip,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                child: child,
+              ),
             ),
           ],
         ),

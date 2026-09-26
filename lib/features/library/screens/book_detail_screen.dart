@@ -1030,20 +1030,10 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
+    return SafeArea(
+      top: false,
+      child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2A402E32),
-            blurRadius: 20,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1083,9 +1073,11 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
               ),
             ),
             Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-                child: Column(
+              child: Container(
+                color: FloralPalette.softIvory,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1374,6 +1366,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
           ),
         ),
       ),
+    ),
       ],
       ),
       ),

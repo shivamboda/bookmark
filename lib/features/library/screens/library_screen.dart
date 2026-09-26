@@ -545,11 +545,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           isScrollControlled: true,
           builder: (ctx) {
             return SafeArea(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: FloralPalette.softIvory,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -585,7 +582,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         ),
                       ),
                     ),
-                    Padding(
+                    Container(
+                      color: FloralPalette.softIvory,
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -671,11 +669,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: FloralPalette.petalWhite,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -708,7 +703,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                   ),
                 ),
               ),
-              Padding(
+              Container(
+                color: FloralPalette.petalWhite,
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
