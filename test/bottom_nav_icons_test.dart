@@ -23,17 +23,24 @@ void main() {
       expect(images, findsNWidgets(4));
 
       // Check asset paths
+      AssetImage getAsset(Image img) {
+        if (img.image is ResizeImage) {
+          return (img.image as ResizeImage).imageProvider as AssetImage;
+        }
+        return img.image as AssetImage;
+      }
+
       final poppyImage = tester.widget<Image>(images.at(0));
-      expect((poppyImage.image as AssetImage).assetName, 'assets/icons/nav_poppy.png');
+      expect(getAsset(poppyImage).assetName, 'assets/icons/nav_poppy.png');
 
       final tulipImage = tester.widget<Image>(images.at(1));
-      expect((tulipImage.image as AssetImage).assetName, 'assets/icons/nav_tulip.png');
+      expect(getAsset(tulipImage).assetName, 'assets/icons/nav_tulip.png');
 
       final daisyImage = tester.widget<Image>(images.at(2));
-      expect((daisyImage.image as AssetImage).assetName, 'assets/icons/nav_daisy.png');
+      expect(getAsset(daisyImage).assetName, 'assets/icons/nav_daisy.png');
 
       final sprigImage = tester.widget<Image>(images.at(3));
-      expect((sprigImage.image as AssetImage).assetName, 'assets/icons/nav_sprig.png');
+      expect(getAsset(sprigImage).assetName, 'assets/icons/nav_sprig.png');
 
       // Verify labels
       expect(find.text('Library'), findsOneWidget);

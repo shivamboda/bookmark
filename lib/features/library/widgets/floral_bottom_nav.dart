@@ -116,6 +116,8 @@ class FloralBottomNav extends StatelessWidget {
         assetPath,
         width: 26,
         height: 26,
+        cacheWidth: 104,
+        cacheHeight: 104,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium,
       ),

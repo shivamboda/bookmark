@@ -97,6 +97,24 @@ class _MainContainerScreenState extends State<MainContainerScreen>
     }
   }
 
+  bool _navIconsPrecached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_navIconsPrecached) {
+      _navIconsPrecached = true;
+      for (final asset in const [
+        'assets/icons/nav_poppy.png',
+        'assets/icons/nav_tulip.png',
+        'assets/icons/nav_daisy.png',
+        'assets/icons/nav_sprig.png',
+      ]) {
+        precacheImage(AssetImage(asset), context);
+      }
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
