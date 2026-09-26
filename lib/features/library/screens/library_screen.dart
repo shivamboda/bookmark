@@ -2030,6 +2030,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               ),
                             ),
                           ],
+                          if (kDebugMode) ...[
                           const SizedBox(height: 14),
                           Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
                           Material(
@@ -2115,6 +2116,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                             ),
                           ),
                         ),
+                          ],
                       ],
                       ),
                     ),
