@@ -75,50 +75,31 @@ class FrostedFloralFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: SizedBox(
-        width: 70,
-        height: 70,
+        width: 56,
+        height: 56,
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Soft frosted glass depth layer underneath
+            // Frosted glass depth layer underneath (kept cleanly within bounds, no harsh outer border)
             ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: FloralPalette.isDark
-                        ? const Color(0x30FFFFFF)
-                        : const Color(0x35A6482A),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: FloralPalette.isDark
-                          ? const Color(0x60F5EBE1)
-                          : const Color(0x45A6482A),
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: FloralPalette.deepRose.withValues(alpha: FloralPalette.isDark ? 0.35 : 0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                child: const SizedBox(
+                  width: 56,
+                  height: 56,
                 ),
               ),
             ),
 
-            // Solid tappable FAB
+            // Clean, solid tappable FAB in signature rust color with soft ivory/dark cocoa icon
             SizedBox(
               width: 56,
               height: 56,
               child: FloatingActionButton(
                 key: fabKey,
                 onPressed: onPressed,
-                backgroundColor: FloralPalette.deepRose,
+                backgroundColor: const Color(0xFFA6482A), // Keep signature rust color
                 foregroundColor: FloralPalette.softIvory,
                 elevation: 4,
                 tooltip: tooltip,

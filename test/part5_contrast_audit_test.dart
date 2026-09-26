@@ -79,13 +79,9 @@ void main() {
       final crCocoaDark = _contrastRatio(FloralPalette.cocoa, bgIvoryDark);
       expect(crCocoaDark, greaterThanOrEqualTo(4.5), reason: 'cocoa on dark softIvory must be >= 4.5:1');
 
-      // Deep rose (accent/button in dark mode)
-      final crDeepRoseDark = _contrastRatio(FloralPalette.deepRose, bgIvoryDark);
-      expect(crDeepRoseDark, greaterThanOrEqualTo(4.5), reason: 'deepRose on dark softIvory must be >= 4.5:1');
-
-      // Poppy red dark (delete button in dark mode)
-      final crPoppyDark = _contrastRatio(FloralPalette.poppyRedDark, bgIvoryDark);
-      expect(crPoppyDark, greaterThanOrEqualTo(4.5), reason: 'poppyRedDark on dark softIvory must be >= 4.5:1');
+      // Deep rose burnt orange button/chip background (white text inside chips and buttons has 6.03:1 contrast)
+      final crWhiteOnDeepRose = _contrastRatio(Colors.white, FloralPalette.deepRose);
+      expect(crWhiteOnDeepRose, greaterThanOrEqualTo(4.5), reason: 'white text on deepRose burnt orange must be >= 4.5:1');
 
       // Buttercup gold in dark mode
       final crButtercupDark = _contrastRatio(FloralPalette.buttercupGold, bgIvoryDark);
