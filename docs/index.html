@@ -95,10 +95,6 @@
       window.addEventListener("pageshow", function(e) {
         onResume("pageshow" + (e.persisted ? "-persisted" : ""));
       });
-
-      window.addEventListener("focus", function() {
-        onResume("focus");
-      });
     })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
