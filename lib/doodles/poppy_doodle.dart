@@ -52,10 +52,10 @@ class _PoppyBotanicalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final bloomCenter = Offset(
-      size.width * 0.52,
-      showStem ? size.height * 0.38 : size.height * 0.50,
+      showStem ? size.width * 0.52 : size.width * 0.50,
+      showStem ? size.height * 0.38 : size.height * 0.46,
     );
-    final radius = size.width * 0.36;
+    final radius = showStem ? size.width * 0.36 : size.width * 0.33;
 
     // ========================================================
     // 1. STEMS, BUD & LEAVES (Z-Order: Drawn behind bloom)

@@ -11,7 +11,7 @@ import '../../../doodles/tulip_doodle.dart';
 ///
 /// Designed specifically for iPhone 16 standalone mode with correct SafeArea handling,
 /// 48px+ tap targets, and an organic blooming scale animation on the selected tab.
-/// Inactive tabs use warm soft brown (#8A6B5A, 4.8:1 contrast) for subtle warmth.
+/// Inactive tabs use warm soft brown (#8A6B5A / #C9B8AB) for subtle warmth.
 class FloralBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
@@ -31,15 +31,15 @@ class FloralBottomNav extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: FloralPalette.softIvory.withValues(alpha: 0.82),
-              border: const Border(
+              border: Border(
                 top: BorderSide(
-                  color: Color(0xFFE8D7C8), // Latte hairline divider
+                  color: FloralPalette.isDark ? const Color(0xFF3D2E24) : const Color(0xFFE8D7C8),
                   width: 1.0,
                 ),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: FloralPalette.softShadowTint.withValues(alpha: 0.6),
+                  color: FloralPalette.softShadowTint.withValues(alpha: FloralPalette.isDark ? 0.7 : 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, -4),
                 ),
@@ -48,7 +48,7 @@ class FloralBottomNav extends StatelessWidget {
             child: SafeArea(
               top: false,
               child: SizedBox(
-                height: 64,
+                height: 66,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -58,7 +58,7 @@ class FloralBottomNav extends StatelessWidget {
                       icon: const PoppyDoodle(
                         size: 26,
                         showStem: false,
-                        petalColor: FloralPalette.rosePetal, // Blush poppy variant
+                        petalColor: FloralPalette.rosePetal,
                       ),
                     ),
                     _buildNavItem(
@@ -81,9 +81,8 @@ class FloralBottomNav extends StatelessWidget {
                     _buildNavItem(
                       index: 3,
                       label: 'Settings',
-                      icon: LeafSprigDoodle(
-                        size: 24,
-                        color: currentIndex == 3 ? FloralPalette.deepRose : FloralPalette.unratedText,
+                      icon: const LeafSprigDoodle(
+                        size: 26,
                       ),
                     ),
                   ],
@@ -102,32 +101,42 @@ class FloralBottomNav extends StatelessWidget {
     required Widget icon,
   }) {
     final isSelected = currentIndex == index;
-    final inactiveColor = FloralPalette.unratedText; // Soft brown (4.8:1 contrast on white)
+    final inactiveColor = FloralPalette.unratedText;
 
     return Expanded(
       child: InkWell(
         onTap: () => onTabSelected(index),
         borderRadius: BorderRadius.circular(16),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          constraints: const BoxConstraints(minHeight: 52, minWidth: 48),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Blooming scale animation on selected floral icon
+              // Blooming scale animation & subtle rounded background highlight pill
               AnimatedScale(
-                scale: isSelected ? 1.18 : 0.95,
+                scale: isSelected ? 1.14 : 0.95,
                 duration: const Duration(milliseconds: 240),
                 curve: Curves.easeOutBack,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 240),
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? FloralPalette.blushPink.withValues(alpha: 0.35)
+                        ? FloralPalette.blushPink.withValues(alpha: FloralPalette.isDark ? 0.24 : 0.40)
                         : Colors.transparent,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? FloralPalette.deepRose.withValues(alpha: FloralPalette.isDark ? 0.35 : 0.20)
+                          : Colors.transparent,
+                      width: 1.0,
+                    ),
                   ),
-                  child: icon,
+                  child: SizedBox(
+                    width: 26,
+                    height: 26,
+                    child: Center(child: icon),
+                  ),
                 ),
               ),
               const SizedBox(height: 3),
@@ -139,6 +148,17 @@ class FloralBottomNav extends StatelessWidget {
                   color: isSelected ? FloralPalette.deepRose : inactiveColor,
                 ),
                 child: Text(label),
+              ),
+              // Non-color active indicator: small botanical dot beneath active label
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isSelected ? 4.0 : 0.0,
+                height: 4.0,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(
+                  color: isSelected ? FloralPalette.deepRose : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
               ),
             ],
           ),

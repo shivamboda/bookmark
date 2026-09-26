@@ -2,18 +2,23 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../core/theme/palette.dart';
 
-/// A handcrafted botanical leaf sprig doodle drawn via CustomPainter.
+/// A handcrafted sweet botanical leaf sprig doodle drawn via CustomPainter.
 ///
-/// Features a delicate arched stem with alternating sage green leaves,
-/// used for the Settings tab icon and delicate botanical flourishes.
+/// Features authentic botanical details matching Poppy, Tulip, and Daisy:
+/// - Slender curving stem with natural organic taper
+/// - 5 plump, hand-inked sage leaves (2 pairs + terminal crown leaf)
+/// - Delicate central leaf veins for rich sketchbook craftsmanship
+/// - Warm berry accents at leaf nodes echoing the floral palette
 class LeafSprigDoodle extends StatelessWidget {
   final double size;
   final Color? color;
+  final Color? leafColor;
 
   const LeafSprigDoodle({
     super.key,
-    this.size = 28,
+    this.size = 26,
     this.color,
+    this.leafColor,
   });
 
   @override
@@ -23,7 +28,8 @@ class LeafSprigDoodle extends StatelessWidget {
       height: size,
       child: CustomPaint(
         painter: _LeafSprigPainter(
-          color: color ?? FloralPalette.deepForestGreen,
+          stemColor: color ?? FloralPalette.deepForestGreen,
+          leafFillColor: leafColor ?? FloralPalette.sageGreen,
         ),
       ),
     );
@@ -31,109 +37,144 @@ class LeafSprigDoodle extends StatelessWidget {
 }
 
 class _LeafSprigPainter extends CustomPainter {
-  final Color color;
+  final Color stemColor;
+  final Color leafFillColor;
 
-  _LeafSprigPainter({required this.color});
+  _LeafSprigPainter({
+    required this.stemColor,
+    required this.leafFillColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Curving Central Stem
     final stemPaint = Paint()
-      ..color = color.withValues(alpha: 0.9)
-      ..strokeWidth = math.max(1.4, size.width * 0.05)
+      ..color = stemColor
+      ..strokeWidth = math.max(1.3, w * 0.05)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final leafFill = Paint()
-      ..color = FloralPalette.sageGreen.withValues(alpha: 0.88)
+    final stemPath = Path();
+    stemPath.moveTo(w * 0.44, h * 0.92);
+    stemPath.quadraticBezierTo(w * 0.46, h * 0.56, w * 0.52, h * 0.22);
+    canvas.drawPath(stemPath, stemPaint);
+
+    // 2. Leaf Drawing Helper
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: [
+          leafFillColor.withValues(alpha: 0.95),
+          const Color(0xFF7A9A72),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
       ..style = PaintingStyle.fill;
 
-    final leafStroke = Paint()
-      ..color = color.withValues(alpha: 0.8)
+    final strokePaint = Paint()
+      ..color = stemColor
+      ..strokeWidth = math.max(1.1, w * 0.042)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final veinPaint = Paint()
+      ..color = stemColor.withValues(alpha: 0.6)
+      ..strokeWidth = math.max(0.8, w * 0.03)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    void drawLeaf({
+      required Offset base,
+      required Offset tip,
+      required Offset leftControl,
+      required Offset rightControl,
+    }) {
+      final path = Path();
+      path.moveTo(base.dx, base.dy);
+      path.quadraticBezierTo(leftControl.dx, leftControl.dy, tip.dx, tip.dy);
+      path.quadraticBezierTo(rightControl.dx, rightControl.dy, base.dx, base.dy);
+      path.close();
+
+      canvas.drawPath(path, fillPaint);
+      canvas.drawPath(path, strokePaint);
+
+      // Central vein
+      final veinPath = Path();
+      veinPath.moveTo(base.dx, base.dy);
+      final midX = (base.dx + tip.dx) * 0.5;
+      final midY = (base.dy + tip.dy) * 0.5;
+      veinPath.quadraticBezierTo(midX, midY, tip.dx * 0.9 + base.dx * 0.1, tip.dy * 0.9 + base.dy * 0.1);
+      canvas.drawPath(veinPath, veinPaint);
+    }
+
+    // 3. Five Botanical Leaves
+    // Lower Left Leaf
+    drawLeaf(
+      base: Offset(w * 0.45, h * 0.74),
+      tip: Offset(w * 0.14, h * 0.62),
+      leftControl: Offset(w * 0.22, h * 0.54),
+      rightControl: Offset(w * 0.32, h * 0.78),
+    );
+
+    // Lower Right Leaf
+    drawLeaf(
+      base: Offset(w * 0.47, h * 0.66),
+      tip: Offset(w * 0.86, h * 0.54),
+      leftControl: Offset(w * 0.72, h * 0.46),
+      rightControl: Offset(w * 0.68, h * 0.70),
+    );
+
+    // Mid Left Leaf
+    drawLeaf(
+      base: Offset(w * 0.48, h * 0.48),
+      tip: Offset(w * 0.18, h * 0.36),
+      leftControl: Offset(w * 0.28, h * 0.28),
+      rightControl: Offset(w * 0.36, h * 0.50),
+    );
+
+    // Mid Right Leaf
+    drawLeaf(
+      base: Offset(w * 0.50, h * 0.40),
+      tip: Offset(w * 0.82, h * 0.26),
+      leftControl: Offset(w * 0.72, h * 0.18),
+      rightControl: Offset(w * 0.66, h * 0.42),
+    );
+
+    // Terminal Apex Crown Leaf
+    drawLeaf(
+      base: Offset(w * 0.52, h * 0.22),
+      tip: Offset(w * 0.52, h * 0.06),
+      leftControl: Offset(w * 0.38, h * 0.13),
+      rightControl: Offset(w * 0.66, h * 0.13),
+    );
+
+    // 4. Botanical Warm Berry Accents at Node Junctions
+    final berryPaint = Paint()
+      ..color = FloralPalette.rosePetal
+      ..style = PaintingStyle.fill;
+    final berryOutline = Paint()
+      ..color = const Color(0xFF7A161C).withValues(alpha: 0.8)
       ..strokeWidth = 0.9
       ..style = PaintingStyle.stroke;
 
-    // Arched stem from bottom left to top right
-    final stemPath = Path();
-    stemPath.moveTo(size.width * 0.2, size.height * 0.85);
-    stemPath.quadraticBezierTo(
-      size.width * 0.45, size.height * 0.55,
-      size.width * 0.8, size.height * 0.18,
-    );
-    canvas.drawPath(stemPath, stemPaint);
+    final berry1 = Offset(w * 0.42, h * 0.58);
+    final berry2 = Offset(w * 0.56, h * 0.45);
+    final berryRadius = math.max(1.8, w * 0.065);
 
-    // 4 alternating leaf pairs
-    final leafSpecs = [
-      _SprigLeaf(t: 0.35, isLeft: true, angle: -0.6, scale: 0.8),
-      _SprigLeaf(t: 0.50, isLeft: false, angle: 0.6, scale: 0.85),
-      _SprigLeaf(t: 0.68, isLeft: true, angle: -0.5, scale: 0.9),
-      _SprigLeaf(t: 0.82, isLeft: false, angle: 0.5, scale: 0.8),
-    ];
+    canvas.drawCircle(berry1, berryRadius, berryPaint);
+    canvas.drawCircle(berry1, berryRadius, berryOutline);
 
-    for (final spec in leafSpecs) {
-      final t = spec.t;
-      // Quadratic bezier evaluation
-      final p0 = Offset(size.width * 0.2, size.height * 0.85);
-      final p1 = Offset(size.width * 0.45, size.height * 0.55);
-      final p2 = Offset(size.width * 0.8, size.height * 0.18);
-
-      final x = (1 - t) * (1 - t) * p0.dx + 2 * (1 - t) * t * p1.dx + t * t * p2.dx;
-      final y = (1 - t) * (1 - t) * p0.dy + 2 * (1 - t) * t * p1.dy + t * t * p2.dy;
-
-      canvas.save();
-      canvas.translate(x, y);
-      canvas.rotate(spec.angle);
-
-      final leaf = Path();
-      leaf.moveTo(0, 0);
-      leaf.cubicTo(
-        -size.width * 0.08 * spec.scale, -size.width * 0.12 * spec.scale,
-        -size.width * 0.04 * spec.scale, -size.width * 0.22 * spec.scale,
-        0, -size.width * 0.26 * spec.scale,
-      );
-      leaf.cubicTo(
-        size.width * 0.04 * spec.scale, -size.width * 0.22 * spec.scale,
-        size.width * 0.08 * spec.scale, -size.width * 0.12 * spec.scale,
-        0, 0,
-      );
-      leaf.close();
-
-      canvas.drawPath(leaf, leafFill);
-      canvas.drawPath(leaf, leafStroke);
-      canvas.restore();
-    }
-
-    // Terminal leaf at the tip
-    canvas.save();
-    canvas.translate(size.width * 0.8, size.height * 0.18);
-    canvas.rotate(0.7);
-
-    final tipLeaf = Path();
-    tipLeaf.moveTo(0, 0);
-    tipLeaf.cubicTo(-2, -6, -2, -10, 0, -12);
-    tipLeaf.cubicTo(2, -10, 2, -6, 0, 0);
-    tipLeaf.close();
-
-    canvas.drawPath(tipLeaf, leafFill);
-    canvas.drawPath(tipLeaf, leafStroke);
-    canvas.restore();
+    canvas.drawCircle(berry2, berryRadius * 0.85, berryPaint);
+    canvas.drawCircle(berry2, berryRadius * 0.85, berryOutline);
   }
 
   @override
   bool shouldRepaint(covariant _LeafSprigPainter oldDelegate) {
-    return oldDelegate.color != color;
+    return oldDelegate.stemColor != stemColor ||
+        oldDelegate.leafFillColor != leafFillColor;
   }
-}
-
-class _SprigLeaf {
-  final double t;
-  final bool isLeft;
-  final double angle;
-  final double scale;
-
-  const _SprigLeaf({
-    required this.t,
-    required this.isLeft,
-    required this.angle,
-    required this.scale,
-  });
 }
