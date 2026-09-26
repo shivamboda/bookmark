@@ -2914,5 +2914,64 @@ void main() {
       expect(freshExportJsonString.contains('"synopsis"'), isFalse, reason: 'Fresh export JSON must have no synopsis key anywhere');
     });
   });
+
+  group('Keyboard & Input Focus Protection', () {
+    testWidgets('Focusing a text field maintains active focus during viewport resize and keyboard appearance', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewInsets();
+      });
+
+      final storage = InMemoryStorageService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            storageServiceProvider.overrideWithValue(storage),
+          ],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open Add/Edit Book Screen
+      await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditBookScreen), findsOneWidget);
+
+      // Find the Title text field
+      final titleField = find.byKey(const ValueKey('input_book_title'));
+      expect(titleField, findsOneWidget);
+
+      // 1. Tap the title field to focus it
+      await tester.tap(titleField);
+      await tester.pump();
+
+      expect(FocusManager.instance.primaryFocus, isNotNull, reason: 'A field must have primary focus upon tapping');
+
+      // 2. Simulate keyboard appearing: viewport shrinks and viewInsets change
+      // This triggers EnginePlatformDispatcher.onMetricsChanged and WidgetsBinding.handleMetricsChanged
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      tester.binding.handleMetricsChanged();
+      await tester.pump();
+
+      // 3. Assert the text field did NOT lose focus (no programmatic blur)
+      expect(FocusManager.instance.primaryFocus, isNotNull, reason: 'Field must remain focused after keyboard opens');
+
+      // 4. Enter text to ensure input actually works without closing
+      await tester.enterText(titleField, 'The Great Gatsby');
+      await tester.pump();
+
+      expect(find.text('The Great Gatsby'), findsWidgets);
+      expect(FocusManager.instance.primaryFocus, isNotNull, reason: 'Focus must be maintained during text entry');
+    });
+  });
 });
 }

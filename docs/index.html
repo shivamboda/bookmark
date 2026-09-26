@@ -63,65 +63,88 @@
                          (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
 
       var initialHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      var initialWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+      var isSyncing = false;
 
-      function forceViewportSync(source) {
-        // 1. Drop any stuck input / virtual keyboard focus
+      function isEditingActive() {
+        var el = document.activeElement;
+        if (!el) return false;
+        var tag = (el.tagName || '').toUpperCase();
+        return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable || el.hasAttribute('data-flutter-text-input');
+      }
+
+      // Synchronize viewport geometry for standalone cold-start & orientation
+      function syncViewportGeometry(source) {
+        if (isSyncing) return;
+        isSyncing = true;
+        try {
+          // CRITICAL: NEVER blur activeElement during viewport resize or cold-start sync!
+          // NEVER reset scroll if user is actively editing a text field!
+          if (!isEditingActive()) {
+            try {
+              window.scrollTo(0, 0);
+              if (document.body) document.body.scrollTop = 0;
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+            } catch (e) {}
+          }
+
+          // Dispatch resize event to window.visualViewport (CRITICAL for Flutter Web engine)
+          // Only dispatch if NOT triggered directly by a visualViewport event to avoid loops
+          if (source !== 'visualViewport-resize' && window.visualViewport) {
+            try {
+              window.visualViewport.dispatchEvent(new Event("resize"));
+            } catch (e) {}
+          }
+
+          // Also dispatch to window for window-level listeners
+          if (source !== 'window-resize') {
+            try {
+              window.dispatchEvent(new Event("resize"));
+            } catch (e) {}
+          }
+
+          // Ensure no lingering splash or overlay traps pointer events
+          try {
+            var strayElements = document.querySelectorAll(".splash, #splash, .loading, #loading, [data-splash]");
+            for (var i = 0; i < strayElements.length; i++) {
+              strayElements[i].style.pointerEvents = "none";
+            }
+          } catch (e) {}
+        } finally {
+          isSyncing = false;
+        }
+      }
+
+      // Background resume watchdog (ONLY called on actual resume from background)
+      function onResumeFromBackground(source) {
+        // Drop stuck input focus that may have frozen while app was in the background
         try {
           if (document.activeElement && typeof document.activeElement.blur === "function") {
             document.activeElement.blur();
           }
         } catch (e) {}
 
-        // 2. Reset any Safari viewport shift/drift (essential on iOS standalone cold-start)
-        try {
-          window.scrollTo(0, 0);
-          if (document.body) document.body.scrollTop = 0;
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-        } catch (e) {}
-
-        // 3. Dispatch resize event to window.visualViewport
-        // CRITICAL: Flutter Web engine binds its viewport listener directly to window.visualViewport!
-        // Dispatching on 'window' alone DOES NOT trigger Flutter's EnginePlatformDispatcher listener.
-        try {
-          if (window.visualViewport) {
-            window.visualViewport.dispatchEvent(new Event("resize"));
-          }
-        } catch (e) {}
-
-        // 4. Also dispatch resize event to window for window-level listeners
-        try {
-          window.dispatchEvent(new Event("resize"));
-        } catch (e) {}
-
-        // 5. Ensure no lingering splash or overlay traps pointer events
-        try {
-          var strayElements = document.querySelectorAll(".splash, #splash, .loading, #loading, [data-splash]");
-          for (var i = 0; i < strayElements.length; i++) {
-            strayElements[i].style.pointerEvents = "none";
-          }
-        } catch (e) {}
+        syncViewportGeometry(source);
       }
 
-      // Explicitly listen to visualViewport resize and scroll right on initial load
+      // Listen to visualViewport resize and scroll right on initial load
       if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", function() {
           var curH = window.visualViewport.height;
           if (Math.abs(curH - initialHeight) > 0.5) {
             initialHeight = curH;
-            forceViewportSync("visualViewport-resize");
+            syncViewportGeometry("visualViewport-resize");
           }
         });
 
         window.visualViewport.addEventListener("scroll", function() {
-          if (window.visualViewport.pageTop !== 0 || window.visualViewport.offsetTop !== 0) {
-            forceViewportSync("visualViewport-scrollDrift");
+          if (!isEditingActive() && (window.visualViewport.pageTop !== 0 || window.visualViewport.offsetTop !== 0)) {
+            syncViewportGeometry("visualViewport-scrollDrift");
           }
         });
       }
 
       window.addEventListener("resize", function() {
-        forceViewportSync("window-resize");
+        syncViewportGeometry("window-resize");
       });
 
       // Cold start stabilization cascade:
@@ -135,7 +158,7 @@
             var curH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
             if (isStandalone || Math.abs(curH - initialHeight) > 0.5) {
               initialHeight = curH;
-              forceViewportSync("coldStart-" + delay + "ms");
+              syncViewportGeometry("coldStart-" + delay + "ms");
             }
           }, delay);
         })(coldStartDelays[k]);
@@ -147,7 +170,7 @@
         var curH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         if (Math.abs(curH - initialHeight) > 0.5) {
           initialHeight = curH;
-          forceViewportSync("rAF-" + rAFCount);
+          syncViewportGeometry("rAF-" + rAFCount);
         }
         if (++rAFCount < 15) {
           requestAnimationFrame(checkEarlyRAF);
@@ -155,15 +178,15 @@
       }
       requestAnimationFrame(checkEarlyRAF);
 
-      // App background/resume watchdogs
+      // App background/resume watchdogs: ONLY these events should ever drop stuck background focus!
       document.addEventListener("visibilitychange", function() {
         if (!document.hidden) {
-          forceViewportSync("visibilitychange");
+          onResumeFromBackground("visibilitychange");
         }
       });
 
       window.addEventListener("pageshow", function(e) {
-        forceViewportSync("pageshow" + (e.persisted ? "-persisted" : ""));
+        onResumeFromBackground("pageshow" + (e.persisted ? "-persisted" : ""));
       });
     })();
   </script>

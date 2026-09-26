@@ -109,7 +109,10 @@ class _MainContainerScreenState extends State<MainContainerScreen>
 
   @override
   void didChangeMetrics() {
-    if (mounted) {
+    // If a text input has active focus, Flutter's framework (Scaffold/MediaQuery)
+    // already automatically animates viewInsets and keeps the input visible.
+    // Do NOT trigger an unnecessary top-level rebuild that could interfere with text input focus.
+    if (mounted && FocusManager.instance.primaryFocus == null) {
       setState(() {});
     }
   }
@@ -126,6 +129,8 @@ class _MainContainerScreenState extends State<MainContainerScreen>
     for (final delay in delays) {
       final timer = Timer(delay, () {
         if (!mounted) return;
+        // Never trigger forced metrics changes if the user is already typing in a text field
+        if (FocusManager.instance.primaryFocus != null) return;
         WidgetsBinding.instance.handleMetricsChanged();
         setState(() {});
       });
