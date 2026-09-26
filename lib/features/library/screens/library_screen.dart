@@ -501,6 +501,328 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
     }
   }
 
+  IconData _getSortIcon(LibrarySortOption opt) {
+    switch (opt) {
+      case LibrarySortOption.dateFinished:
+        return Icons.event_available_rounded;
+      case LibrarySortOption.dateAdded:
+        return Icons.access_time_rounded;
+      case LibrarySortOption.rating:
+        return Icons.star_rounded;
+      case LibrarySortOption.title:
+        return Icons.sort_by_alpha_rounded;
+      case LibrarySortOption.author:
+        return Icons.person_outline_rounded;
+    }
+  }
+
+  void _showGenreFilterSheet(BuildContext context, List<String> availableGenres) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: FloralPalette.softIvory,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: FloralPalette.softShadowTint.withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FrostedGlassHeader(
+                  borderRadius: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: FloralPalette.cardBorder,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Filter by Genre',
+                                  style: JournalTypography.headingSmall(),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'find stories by theme ~',
+                                  style: JournalTypography.handwriting(color: FloralPalette.cocoa)
+                                      .copyWith(fontSize: 15),
+                                ),
+                              ],
+                            ),
+                            if (_selectedGenre != null)
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  setState(() => _selectedGenre = null);
+                                },
+                                icon: const Icon(Icons.close_rounded, size: 14),
+                                label: const Text('Reset', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: FloralPalette.deepRose,
+                                  minimumSize: const Size(44, 44),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 10,
+                      children: [
+                        _buildGenreSelectChip(
+                          label: 'All Genres',
+                          key: const ValueKey('genre_item_all'),
+                          isSelected: _selectedGenre == null,
+                          onTap: () {
+                            Navigator.pop(sheetContext);
+                            setState(() => _selectedGenre = null);
+                          },
+                        ),
+                        ...availableGenres.map(
+                          (g) => _buildGenreSelectChip(
+                            label: g,
+                            key: ValueKey('genre_item_$g'),
+                            isSelected: _selectedGenre == g,
+                            onTap: () {
+                              Navigator.pop(sheetContext);
+                              setState(() => _selectedGenre = g);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGenreSelectChip({
+    required String label,
+    required Key key,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? FloralPalette.deepRose : FloralPalette.kraftPaper.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? FloralPalette.deepRose : FloralPalette.cardBorder,
+              width: 1.2,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: FloralPalette.deepRose.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: JournalTypography.bodySmall(
+                  color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
+                ).copyWith(
+                  fontSize: 13.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSortOptionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: FloralPalette.softIvory,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: FloralPalette.softShadowTint.withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FrostedGlassHeader(
+                  borderRadius: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: FloralPalette.cardBorder,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sort Bookshelf',
+                                  style: JournalTypography.headingSmall(),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'order your reading sanctuary ~',
+                                  style: JournalTypography.handwriting(color: FloralPalette.cocoa)
+                                      .copyWith(fontSize: 15),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: LibrarySortOption.values.map((opt) {
+                      final isSelected = _sortOption == opt;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          key: ValueKey('sort_item_${opt.name}'),
+                          onTap: () {
+                            Navigator.pop(sheetContext);
+                            _setSortOption(opt);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? FloralPalette.deepRose
+                                    : FloralPalette.kraftPaper.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                                  width: 1.0,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: FloralPalette.deepRose.withValues(alpha: 0.25),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _getSortIcon(opt),
+                                    size: 18,
+                                    color: isSelected ? Colors.white : FloralPalette.cocoa,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      opt.label,
+                                      style: JournalTypography.body(
+                                        color: isSelected ? Colors.white : FloralPalette.warmCharcoal,
+                                      ).copyWith(
+                                        fontSize: 14,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(booksProvider);
@@ -2582,155 +2904,102 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           // 3. Secondary Controls: Genre Filter, Sort Options, Grid/List Mode
           Row(
             children: [
-              // Genre Filter Button / Dropdown
-              PopupMenuButton<String>(
+              // Genre Filter Button (Opens botanical bottom sheet)
+              InkWell(
                 key: const ValueKey('genre_filter_button'),
-                initialValue: _selectedGenre ?? '',
-                onSelected: (genre) {
-                  setState(() {
-                    _selectedGenre = (genre.isEmpty || genre == '__all__') ? null : genre;
-                  });
-                },
-                color: FloralPalette.softIvory,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                itemBuilder: (context) {
-                  return [
-                    PopupMenuItem<String>(
-                      value: '',
-                      key: const ValueKey('genre_item_all'),
-                      child: Row(
-                        children: [
-                          if (_selectedGenre == null) ...[
-                            Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
-                            const SizedBox(width: 6),
-                          ],
-                          Text(
-                            'All Genres',
-                            style: JournalTypography.bodySmall(
-                              color: _selectedGenre == null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                            ).copyWith(fontWeight: _selectedGenre == null ? FontWeight.w700 : FontWeight.w500),
-                          ),
-                        ],
+                onTap: () => _showGenreFilterSheet(context, availableGenres),
+                borderRadius: BorderRadius.circular(14),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _selectedGenre != null
+                          ? FloralPalette.deepRose.withValues(alpha: 0.15)
+                          : FloralPalette.softIvory,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                        width: 1.0,
                       ),
+                      boxShadow: [FloralPalette.cardShadow],
                     ),
-                    ...availableGenres.map(
-                      (g) => PopupMenuItem<String>(
-                        value: g,
-                        key: ValueKey('genre_item_$g'),
-                        child: Row(
-                          children: [
-                            if (_selectedGenre == g) ...[
-                              Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
-                              const SizedBox(width: 6),
-                            ],
-                            Text(
-                              g,
-                              style: JournalTypography.bodySmall(
-                                color: _selectedGenre == g ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                              ).copyWith(fontWeight: _selectedGenre == g ? FontWeight.w700 : FontWeight.w500),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.filter_list_rounded,
+                          size: 16,
+                          color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cocoa,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _selectedGenre ?? 'All Genres',
+                          style: JournalTypography.bodySmall(
+                            color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                          ).copyWith(fontSize: 12.5, fontWeight: FontWeight.w600),
+                        ),
+                        if (_selectedGenre != null) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            key: const ValueKey('clear_genre_chip_btn'),
+                            onTap: () => setState(() => _selectedGenre = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: FloralPalette.deepRose.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.close_rounded, size: 12, color: FloralPalette.deepRose),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ];
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _selectedGenre != null
-                        ? FloralPalette.blushPink.withValues(alpha: 0.3)
-                        : FloralPalette.softIvory,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.filter_list_rounded,
-                        size: 15,
-                        color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cocoa,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _selectedGenre ?? 'All Genres',
-                        style: JournalTypography.bodySmall(
-                          color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                        ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
-                      if (_selectedGenre != null) ...[
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          key: const ValueKey('clear_genre_chip_btn'),
-                          onTap: () => setState(() => _selectedGenre = null),
-                          child: Icon(Icons.close_rounded, size: 14, color: FloralPalette.deepRose),
-                        ),
-                      ] else ...[
-                        const SizedBox(width: 2),
-                        Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
+                          ),
+                        ] else ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: FloralPalette.cocoa),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
 
               const SizedBox(width: 8),
 
-              // Sort Option Button / Dropdown
-              PopupMenuButton<LibrarySortOption>(
+              // Sort Option Button (Opens botanical bottom sheet)
+              InkWell(
                 key: const ValueKey('sort_option_button'),
-                initialValue: _sortOption,
-                onSelected: (opt) => _setSortOption(opt),
-                color: FloralPalette.softIvory,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                itemBuilder: (context) {
-                  return LibrarySortOption.values.map(
-                    (opt) => PopupMenuItem<LibrarySortOption>(
-                      value: opt,
-                      key: ValueKey('sort_item_${opt.name}'),
-                      child: Row(
-                        children: [
-                          if (_sortOption == opt) ...[
-                            Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
-                            const SizedBox(width: 6),
-                          ],
-                          Text(
-                            opt.label,
-                            style: JournalTypography.bodySmall(
-                              color: _sortOption == opt ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                            ).copyWith(fontWeight: _sortOption == opt ? FontWeight.w700 : FontWeight.w500),
-                          ),
-                        ],
-                      ),
+                onTap: () => _showSortOptionSheet(context),
+                borderRadius: BorderRadius.circular(14),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: FloralPalette.softIvory,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
+                      boxShadow: [FloralPalette.cardShadow],
                     ),
-                  ).toList();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: FloralPalette.softIvory,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.swap_vert_rounded, size: 15, color: FloralPalette.cocoa),
-                      const SizedBox(width: 4),
-                      Text(
-                        _sortOption.label,
-                        style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.swap_vert_rounded,
+                          size: 16,
+                          color: FloralPalette.cocoa,
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.arrow_drop_down_rounded, size: 16, color: FloralPalette.cocoa),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          _sortOption.label,
+                          style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: FloralPalette.cocoa),
+                      ],
+                    ),
                   ),
                 ),
               ),
