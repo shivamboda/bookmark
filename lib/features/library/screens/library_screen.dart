@@ -32,6 +32,7 @@ import '../../../services/storage_service.dart';
 import '../../../services/backup_transport.dart';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'add_edit_book_screen.dart';
 import 'book_search_screen.dart';
 
@@ -278,6 +279,121 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                 ),
               )),
       ],
+    );
+  }
+
+  String _generateDiagnosticsReport() {
+    final buffer = StringBuffer();
+    buffer.writeln('=== Bookmark Diagnostics Report ===');
+    buffer.writeln('Timestamp: ${DateTime.now().toIso8601String()}');
+    buffer.writeln('Platform: ${kIsWeb ? "Web/PWA" : defaultTargetPlatform.name}');
+    buffer.writeln('Theme: ${FloralPalette.isDark ? "Autumn Night (Dark)" : "Autumn Day (Light)"}');
+    buffer.writeln('Storage Persisted: $_isStoragePersisted');
+    buffer.writeln('Resume Events: $_resumeCount (last: ${_formatLastResumeTime()})');
+
+    final errors = AppErrorLogger.recentErrors;
+    buffer.writeln('Recent Errors (${errors.length}):');
+    if (errors.isEmpty) {
+      buffer.writeln('  No unhandled errors recorded (clean session).');
+    } else {
+      for (final e in errors) {
+        buffer.writeln('  [${e.timestamp.toIso8601String()}] ${e.message}');
+        if (e.stackPreview.isNotEmpty) buffer.writeln('    Stack: ${e.stackPreview}');
+      }
+    }
+    return buffer.toString();
+  }
+
+  void _copyDiagnostics(BuildContext context) {
+    final report = _generateDiagnosticsReport();
+    Clipboard.setData(ClipboardData(text: report));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Diagnostics report copied to clipboard ~',
+          style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal),
+        ),
+        backgroundColor: FloralPalette.softIvory,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: FloralPalette.cardBorder),
+        ),
+      ),
+    );
+  }
+
+  void _showReportProblemDialog(BuildContext context) {
+    final report = _generateDiagnosticsReport();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FloralPalette.softIvory,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.help_outline_rounded, color: FloralPalette.deepRose, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              'Report a Problem',
+              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'If you are experiencing unexpected behavior or glitches, you can copy the diagnostic details below and send them to support.',
+              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 140,
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FloralPalette.petalWhite,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: FloralPalette.cardBorder),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  report,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Close',
+              style: TextStyle(color: FloralPalette.mutedCharcoal),
+            ),
+          ),
+          ElevatedButton.icon(
+            key: const ValueKey('dialog_copy_diagnostics_btn'),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _copyDiagnostics(context);
+            },
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            label: const Text('Copy Diagnostics'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FloralPalette.deepRose,
+              foregroundColor: FloralPalette.softIvory,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1916,25 +2032,90 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                           ],
                           const SizedBox(height: 14),
                           Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Icon(Icons.sync_rounded, size: 16, color: FloralPalette.mutedCharcoal),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Resume events: $_resumeCount (last: ${_formatLastResumeTime()})',
-                                  key: const ValueKey('resume_events_diagnostics_text'),
-                                  style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                          Material(
+                            color: Colors.transparent,
+                            child: Theme(
+                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                              child: ExpansionTile(
+                                key: const ValueKey('advanced_diagnostics_tile'),
+                              maintainState: true,
+                              tilePadding: EdgeInsets.zero,
+                              childrenPadding: const EdgeInsets.only(top: 8, bottom: 4),
+                              leading: Icon(
+                                Icons.tune_rounded,
+                                size: 18,
+                                color: FloralPalette.mutedCharcoal,
+                              ),
+                              title: Text(
+                                'Advanced Diagnostics',
+                                style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
                                 ),
                               ),
-                            ],
+                              subtitle: Text(
+                                'Developer and troubleshooting info',
+                                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                                  fontSize: 11,
+                                ),
+                              ),
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.sync_rounded, size: 16, color: FloralPalette.mutedCharcoal),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Resume events: $_resumeCount (last: ${_formatLastResumeTime()})',
+                                        key: const ValueKey('resume_events_diagnostics_text'),
+                                        style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
+                                const SizedBox(height: 10),
+                                _buildErrorDiagnosticsSection(),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        key: const ValueKey('copy_diagnostics_button'),
+                                        onPressed: () => _copyDiagnostics(context),
+                                        icon: const Icon(Icons.copy_rounded, size: 14),
+                                        label: const Text('Copy Diagnostics', style: TextStyle(fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: FloralPalette.warmCharcoal,
+                                          side: BorderSide(color: FloralPalette.cardBorder),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        key: const ValueKey('report_problem_button'),
+                                        onPressed: () => _showReportProblemDialog(context),
+                                        icon: const Icon(Icons.help_outline_rounded, size: 14),
+                                        label: const Text('Report Problem', style: TextStyle(fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: FloralPalette.deepRose,
+                                          side: const BorderSide(color: FloralPalette.deepRose),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          Divider(height: 1, thickness: 0.8, color: FloralPalette.cardBorder),
-                          const SizedBox(height: 10),
-                          _buildErrorDiagnosticsSection(),
-                        ],
+                        ),
+                      ],
                       ),
                     ),
 

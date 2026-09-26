@@ -2573,6 +2573,13 @@ void main() {
       await tester.tap(find.text('Settings').first);
       await tester.pumpAndSettle();
 
+      // Expand Advanced Diagnostics tile to access diagnostics
+      final advancedTile = find.byKey(const ValueKey('advanced_diagnostics_tile'));
+      await tester.ensureVisible(advancedTile);
+      await tester.pumpAndSettle();
+      await tester.tap(advancedTile);
+      await tester.pumpAndSettle();
+
       // Verify diagnostics line initially shows 0 events (last: never)
       expect(find.byKey(const ValueKey('resume_events_diagnostics_text')), findsOneWidget);
       expect(find.textContaining('Resume events: 0 (last: never)'), findsOneWidget);
@@ -2826,6 +2833,13 @@ void main() {
       await tester.tap(find.text('Settings').first);
       await tester.pumpAndSettle();
 
+      // Open Advanced Diagnostics tile
+      final advTile = find.byKey(const ValueKey('advanced_diagnostics_tile'));
+      await tester.ensureVisible(advTile);
+      await tester.pumpAndSettle();
+      await tester.tap(advTile);
+      await tester.pumpAndSettle();
+
       // Verify clean session state
       expect(find.byKey(const ValueKey('recent_errors_diagnostics_title')), findsOneWidget);
       expect(find.byKey(const ValueKey('recent_errors_empty_text')), findsOneWidget);
@@ -2837,6 +2851,12 @@ void main() {
       await tester.tap(find.text('Library').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+
+      // Re-open Advanced Diagnostics tile
+      await tester.ensureVisible(advTile);
+      await tester.pumpAndSettle();
+      await tester.tap(advTile);
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('recent_error_entry_container')), findsOneWidget);
