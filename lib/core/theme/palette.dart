@@ -25,7 +25,7 @@ class FloralPalette {
   static Color get petalWhite => isDark ? const Color(0xFF1E1611) : const Color(0xFFFBF3E8);
   static Color get softIvory => isDark ? const Color(0xFF2B211A) : const Color(0xFFFFFBF5);
   static Color get warmCharcoal => isDark ? const Color(0xFFF5EBE1) : const Color(0xFF4A3428);
-  static Color get mutedCharcoal => isDark ? const Color(0xFFC4B2A5) : const Color(0xFF7A685D);
+  static Color get mutedCharcoal => isDark ? const Color(0xFFC4B2A5) : const Color(0xFF6E5A4E);
   static Color get cardBorder => isDark ? const Color(0xFF3D2E24) : const Color(0xFFEADBCE);
   static Color get bannerBackground => isDark ? const Color(0xFF261C16) : const Color(0xFFF7ECE0);
   static Color get latte => isDark ? const Color(0xFF4A382C) : const Color(0xFFD8BBA0);
@@ -37,16 +37,16 @@ class FloralPalette {
   // Signature Core Colors (Shared Autumn Accents)
   static const Color blushPink = Color(0xFFF2C9A0); // Primary soft accent: Apricot (#F2C9A0)
   static const Color rosePetal = Color(0xFFD98A4E); // Decorative accent: Pumpkin (#D98A4E)
-  static const Color deepRose = Color(0xFFA6482A); // Button color with white text: Rust (#A6482A)
   static const Color poppyRed = Color(0xFFC8402A); // Signature accent: Poppy Ember (#C8402A)
-  static const Color poppyRedDark = Color(0xFF9E2C1A); // Deep Poppy Ember
   static const Color sageGreen = Color(0xFFB7B36A); // Leaves and "Reading" status: Olive Sage (#B7B36A)
   static const Color lavenderMist = Color(0xFFE3C6D0); // "Want to Read" status: Dusty Mauve (#E3C6D0)
   static const Color buttercupYellow = Color(0xFFEBB84A); // Highlights and poppy centers: Golden Amber (#EBB84A)
   static const Color buttercupDark = Color(0xFFB58014);
-  static const Color buttercupGold = Color(0xFFEBB84A); // Highlights and poppy centers: Golden Amber (#EBB84A)
 
   // Dynamic Text, Badge, and Action Tokens (Theme-aware for verified >= 4.5:1 contrast)
+  static Color get deepRose => isDark ? const Color(0xFFE28A72) : const Color(0xFFA6482A);
+  static Color get poppyRedDark => isDark ? const Color(0xFFFF8B7A) : const Color(0xFF9E2C1A);
+  static Color get buttercupGold => isDark ? const Color(0xFFEBB84A) : const Color(0xFF8F6200);
   static Color get lavenderDark => isDark ? const Color(0xFFFFEBF3) : const Color(0xFF5A3142);
   static Color get espresso => isDark ? const Color(0xFFF5EBE1) : const Color(0xFF4A3428);
   static Color get cocoa => isDark ? const Color(0xFFD4BDB0) : const Color(0xFF7A5240);

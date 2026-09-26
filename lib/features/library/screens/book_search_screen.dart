@@ -441,7 +441,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: [FloralPalette.cardShadow],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_note_rounded,
                     color: FloralPalette.deepRose,
                     size: 22,
@@ -485,7 +485,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
             color: FloralPalette.mutedCharcoal.withValues(alpha: 0.65),
             fontSize: 15,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
             color: FloralPalette.deepRose,
             size: 22,
@@ -716,7 +716,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(
+          SizedBox(
             width: 38,
             height: 38,
             child: CircularProgressIndicator(
@@ -889,7 +889,7 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
                     color: FloralPalette.blushPink.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_forward_rounded,
                     color: FloralPalette.deepRose,
                     size: 18,

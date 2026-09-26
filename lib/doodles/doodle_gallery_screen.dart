@@ -264,7 +264,7 @@ class DoodleGalleryScreen extends StatelessWidget {
                             ),
                             _buildDoodleItem(
                               label: 'Maple (Rust)',
-                              child: const MapleLeafDoodle(
+                              child: MapleLeafDoodle(
                                 size: 48,
                                 color: FloralPalette.deepRose,
                                 angle: 0.2,
@@ -272,7 +272,7 @@ class DoodleGalleryScreen extends StatelessWidget {
                             ),
                             _buildDoodleItem(
                               label: 'Oak (Golden)',
-                              child: const OakLeafDoodle(
+                              child: OakLeafDoodle(
                                 size: 48,
                                 color: FloralPalette.buttercupGold,
                               ),

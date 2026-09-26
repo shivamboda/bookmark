@@ -50,7 +50,7 @@ class FallingLeavesDoodle extends StatelessWidget {
           Positioned(
             left: width * 0.42,
             top: height * 0.18,
-            child: const OakLeafDoodle(
+            child: OakLeafDoodle(
               size: 32,
               color: FloralPalette.buttercupGold, // Golden Amber
               angle: 0.42,
@@ -71,7 +71,7 @@ class FallingLeavesDoodle extends StatelessWidget {
           Positioned(
             right: width * 0.06,
             top: height * 0.28,
-            child: const MapleLeafDoodle(
+            child: MapleLeafDoodle(
               size: 26,
               color: FloralPalette.deepRose, // Rust
               angle: 0.28,

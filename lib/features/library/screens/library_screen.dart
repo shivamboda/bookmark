@@ -566,7 +566,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
       ),
       child: Row(
         children: [
-          const Icon(Icons.shield_outlined, color: FloralPalette.buttercupGold, size: 22),
+          Icon(Icons.shield_outlined, color: FloralPalette.buttercupGold, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -705,8 +705,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFF9EAE1),
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFF9EAE1),
                               child: Icon(Icons.share_rounded, color: FloralPalette.deepRose),
                             ),
                             title: const Text('Share Backup File'),
@@ -969,7 +969,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, color: FloralPalette.deepRose),
+            Icon(Icons.info_outline_rounded, color: FloralPalette.deepRose),
             const SizedBox(width: 8),
             Text('Backup Notice', style: JournalTypography.headingSmall()),
           ],
@@ -978,7 +978,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Understood', style: TextStyle(color: FloralPalette.deepRose)),
+            child: Text('Understood', style: TextStyle(color: FloralPalette.deepRose)),
           ),
         ],
       ),
@@ -1107,7 +1107,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: FloralPalette.deepRose, size: 28),
+                        Icon(Icons.warning_amber_rounded, color: FloralPalette.deepRose, size: 28),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -1144,7 +1144,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.warning_rounded, color: FloralPalette.deepRose),
+            Icon(Icons.warning_rounded, color: FloralPalette.deepRose),
             const SizedBox(width: 8),
             Text('Confirm Replace', style: JournalTypography.headingSmall()),
           ],
@@ -1269,7 +1269,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
             // Book Collection / Empty State
             Expanded(
               child: booksAsync.when(
-                loading: () => const Center(
+                loading: () => Center(
                   child: CircularProgressIndicator(
                     color: FloralPalette.deepRose,
                     strokeWidth: 2.5,
@@ -1446,7 +1446,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                             ).copyWith(fontSize: 32),
                           ),
                           const SizedBox(height: 2),
-                          const HandDrawnUnderline(
+                          HandDrawnUnderline(
                             width: 115,
                             color: FloralPalette.deepRose,
                           ),
@@ -1471,7 +1471,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
 
             Expanded(
               child: booksAsync.when(
-                loading: () => const Center(
+                loading: () => Center(
                   child: CircularProgressIndicator(color: FloralPalette.deepRose),
                 ),
                 error: (error, _) => Center(child: Text('Error: $error')),
@@ -1570,7 +1570,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                             ).copyWith(fontSize: 32),
                           ),
                           const SizedBox(height: 2),
-                          const HandDrawnUnderline(
+                          HandDrawnUnderline(
                             width: 80,
                             color: FloralPalette.deepRose,
                           ),
@@ -1595,7 +1595,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
 
             Expanded(
               child: booksAsync.when(
-                loading: () => const Center(
+                loading: () => Center(
                   child: CircularProgressIndicator(color: FloralPalette.deepRose),
                 ),
                 error: (error, _) => Center(child: Text('Error: $error')),
@@ -1839,7 +1839,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                             ).copyWith(fontSize: 32),
                           ),
                           const SizedBox(height: 2),
-                          const HandDrawnUnderline(
+                          HandDrawnUnderline(
                             width: 115,
                             color: FloralPalette.deepRose,
                           ),
@@ -2025,7 +2025,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               label: const Text('Check / Request Protection'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: FloralPalette.deepRose,
-                                side: const BorderSide(color: FloralPalette.deepRose),
+                                side: BorderSide(color: FloralPalette.deepRose),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
                             ),
@@ -2103,7 +2103,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                                         label: const Text('Report Problem', style: TextStyle(fontSize: 12)),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: FloralPalette.deepRose,
-                                          side: const BorderSide(color: FloralPalette.deepRose),
+                                          side: BorderSide(color: FloralPalette.deepRose),
                                           padding: const EdgeInsets.symmetric(vertical: 8),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         ),
@@ -2152,7 +2152,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                                 ),
                                 child: Text(
                                   'v1 JSON',
-                                  style: JournalTypography.bodySmall(color: FloralPalette.deepRose).copyWith(
+                                  style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -2266,7 +2266,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                     ).copyWith(fontSize: 32),
                   ),
                   const SizedBox(height: 2),
-                  const HandDrawnUnderline(
+                  HandDrawnUnderline(
                     width: 105,
                     color: FloralPalette.deepRose,
                   ),
@@ -2599,7 +2599,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                       child: Row(
                         children: [
                           if (_selectedGenre == null) ...[
-                            const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                            Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
                             const SizedBox(width: 6),
                           ],
                           Text(
@@ -2618,7 +2618,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         child: Row(
                           children: [
                             if (_selectedGenre == g) ...[
-                              const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                              Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
                               const SizedBox(width: 6),
                             ],
                             Text(
@@ -2665,7 +2665,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                         GestureDetector(
                           key: const ValueKey('clear_genre_chip_btn'),
                           onTap: () => setState(() => _selectedGenre = null),
-                          child: const Icon(Icons.close_rounded, size: 14, color: FloralPalette.deepRose),
+                          child: Icon(Icons.close_rounded, size: 14, color: FloralPalette.deepRose),
                         ),
                       ] else ...[
                         const SizedBox(width: 2),
@@ -2693,7 +2693,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                       child: Row(
                         children: [
                           if (_sortOption == opt) ...[
-                            const Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
+                            Icon(Icons.check_rounded, size: 14, color: FloralPalette.deepRose),
                             const SizedBox(width: 6),
                           ],
                           Text(
@@ -2872,7 +2872,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
               color: FloralPalette.deepRose.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_rounded, color: FloralPalette.deepRose, size: 18),
+            child: Icon(Icons.check_rounded, color: FloralPalette.deepRose, size: 18),
           ),
           const SizedBox(width: 10),
           Text(
@@ -2939,7 +2939,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  icon: const Icon(Icons.event_outlined, size: 20, color: FloralPalette.deepRose),
+                  icon: Icon(Icons.event_outlined, size: 20, color: FloralPalette.deepRose),
                   label: const Text('Set year', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                   onPressed: hasSelection ? () => _showBulkSetYearFlow(context, allBooks) : null,
                 ),
@@ -2959,7 +2959,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  icon: const Icon(Icons.star_rounded, size: 22, color: FloralPalette.buttercupGold),
+                  icon: Icon(Icons.star_rounded, size: 22, color: FloralPalette.buttercupGold),
                   label: const Text('Rate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                   onPressed: hasSelection ? () => _showBulkRateFlow(context, allBooks) : null,
                 ),
@@ -3143,7 +3143,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           elevation: 3,
           action: SnackBarAction(
             label: 'Undo',
-            textColor: const Color(0xFFB85D19),
+            textColor: const Color(0xFFA6482A),
             onPressed: () async {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               if (mounted) setState(() => _isUndoSnackBarActive = false);
@@ -3249,7 +3249,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           elevation: 3,
           action: SnackBarAction(
             label: 'Undo',
-            textColor: const Color(0xFFB85D19),
+            textColor: const Color(0xFFA6482A),
             onPressed: () async {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               if (mounted) setState(() => _isUndoSnackBarActive = false);

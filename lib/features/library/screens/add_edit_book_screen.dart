@@ -756,7 +756,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                                   ).copyWith(fontSize: 28),
                                 ),
                                 const SizedBox(height: 2),
-                                const HandDrawnUnderline(width: 95, color: FloralPalette.deepRose),
+                                HandDrawnUnderline(width: 95, color: FloralPalette.deepRose),
                                 const SizedBox(height: 6),
                                 Text(
                                   widget.isEditMode
@@ -1723,8 +1723,8 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                                 });
                               },
                               borderRadius: BorderRadius.circular(8),
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
                                 child: Icon(Icons.delete_outline_rounded, size: 16, color: FloralPalette.poppyRedDark),
                               ),
                             ),
@@ -1770,7 +1770,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       child: OutlinedButton.icon(
         key: const ValueKey('delete_book_btn'),
         onPressed: _confirmDeleteBook,
-        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: FloralPalette.poppyRedDark),
+        icon: Icon(Icons.delete_outline_rounded, size: 18, color: FloralPalette.poppyRedDark),
         label: Text(
           'Delete Book from Shelf',
           style: JournalTypography.bodySmall(color: FloralPalette.poppyRedDark).copyWith(
@@ -1779,7 +1779,7 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
           ),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFF2B8B8), width: 1.2),
+          side: BorderSide(color: FloralPalette.isDark ? const Color(0x66FF8B7A) : const Color(0xFFF2B8B8), width: 1.2),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           minimumSize: const Size(200, 44),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

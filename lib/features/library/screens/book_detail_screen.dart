@@ -290,7 +290,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
                     boxShadow: [FloralPalette.cardShadow],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_outlined,
                     color: FloralPalette.deepRose,
                     size: 22,
@@ -347,7 +347,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
                     const SizedBox(height: 4),
 
-                    const HandDrawnUnderline(
+                    HandDrawnUnderline(
                       width: 80,
                       color: FloralPalette.deepRose,
                     ),
@@ -872,7 +872,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   color: FloralPalette.blushPink.withValues(alpha: 0.35),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.auto_stories_rounded,
                   color: FloralPalette.deepRose,
                   size: 20,
@@ -1180,7 +1180,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today_rounded, size: 16, color: FloralPalette.deepRose),
+                            Icon(Icons.calendar_today_rounded, size: 16, color: FloralPalette.deepRose),
                             const SizedBox(width: 8),
                             Text(
                               'Start Date: ${_formatDateShort(_startDate)}',

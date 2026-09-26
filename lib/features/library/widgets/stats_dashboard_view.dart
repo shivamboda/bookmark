@@ -183,7 +183,7 @@ class StatsDashboardView extends ConsumerWidget {
               label: const Text('Set Goal in Settings'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: FloralPalette.deepRose,
-                side: const BorderSide(color: FloralPalette.deepRose),
+                side: BorderSide(color: FloralPalette.deepRose),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 minimumSize: const Size(44, 44),
               ),
@@ -679,7 +679,7 @@ class StatsDashboardView extends ConsumerWidget {
               color: FloralPalette.kraftPaper,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.star_rounded, color: FloralPalette.buttercupGold, size: 28),
+            child: Icon(Icons.star_rounded, color: FloralPalette.buttercupGold, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -932,7 +932,7 @@ class StatsDashboardView extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.military_tech_rounded, color: FloralPalette.buttercupGold, size: 22),
+              Icon(Icons.military_tech_rounded, color: FloralPalette.buttercupGold, size: 22),
               const SizedBox(width: 8),
               Text(
                 'Highest-Rated Reads',
@@ -1024,11 +1024,11 @@ class StatsDashboardView extends ConsumerWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, size: 14, color: FloralPalette.buttercupGold),
+                            Icon(Icons.star_rounded, size: 14, color: FloralPalette.buttercupGold),
                             const SizedBox(width: 3),
                             Text(
                               book.rating!.toStringAsFixed(1),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: FloralPalette.buttercupGold,
@@ -1071,7 +1071,7 @@ class StatsDashboardView extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_stories_rounded, color: FloralPalette.deepRose, size: 22),
+              Icon(Icons.auto_stories_rounded, color: FloralPalette.deepRose, size: 22),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
