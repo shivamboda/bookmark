@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
@@ -23,65 +24,72 @@ class FloralBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: FloralPalette.softIvory,
-        border: const Border(
-          top: BorderSide(
-            color: Color(0xFFE8D7C8), // Latte hairline divider
-            width: 1.0,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: FloralPalette.softShadowTint.withValues(alpha: 0.6),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                index: 0,
-                label: 'Library',
-                icon: const PoppyDoodle(
-                  size: 26,
-                  showStem: false,
-                  petalColor: FloralPalette.rosePetal, // Blush poppy variant
+    return RepaintBoundary(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: FloralPalette.softIvory.withValues(alpha: 0.82),
+              border: const Border(
+                top: BorderSide(
+                  color: Color(0xFFE8D7C8), // Latte hairline divider
+                  width: 1.0,
                 ),
               ),
-              _buildNavItem(
-                index: 1,
-                label: 'Wishlist',
-                icon: const TulipDoodle(
-                  size: 26,
-                  showStem: false,
-                  petalColor: FloralPalette.rosePetal,
+              boxShadow: [
+                BoxShadow(
+                  color: FloralPalette.softShadowTint.withValues(alpha: 0.6),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 64,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(
+                      index: 0,
+                      label: 'Library',
+                      icon: const PoppyDoodle(
+                        size: 26,
+                        showStem: false,
+                        petalColor: FloralPalette.rosePetal, // Blush poppy variant
+                      ),
+                    ),
+                    _buildNavItem(
+                      index: 1,
+                      label: 'Wishlist',
+                      icon: const TulipDoodle(
+                        size: 26,
+                        showStem: false,
+                        petalColor: FloralPalette.rosePetal,
+                      ),
+                    ),
+                    _buildNavItem(
+                      index: 2,
+                      label: 'Stats',
+                      icon: const DaisyDoodle(
+                        size: 26,
+                        showStem: false,
+                      ),
+                    ),
+                    _buildNavItem(
+                      index: 3,
+                      label: 'Settings',
+                      icon: LeafSprigDoodle(
+                        size: 24,
+                        color: currentIndex == 3 ? FloralPalette.deepRose : FloralPalette.unratedText,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              _buildNavItem(
-                index: 2,
-                label: 'Stats',
-                icon: const DaisyDoodle(
-                  size: 26,
-                  showStem: false,
-                ),
-              ),
-              _buildNavItem(
-                index: 3,
-                label: 'Settings',
-                icon: LeafSprigDoodle(
-                  size: 24,
-                  color: currentIndex == 3 ? FloralPalette.deepRose : FloralPalette.unratedText,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

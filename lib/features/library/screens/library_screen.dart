@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/floral_rating_bar.dart';
+import '../../../core/widgets/frosted_glass.dart';
 import '../../../core/state/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/palette.dart';
@@ -390,6 +391,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
 
     return Scaffold(
       backgroundColor: FloralPalette.petalWhite,
+      extendBody: true,
       body: SafeArea(
         bottom: false,
         child: Center(
@@ -417,14 +419,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         },
       ),
       floatingActionButton: (!_isSelectionMode && !_isUndoSnackBarActive && (_currentNavIndex == 0 || _currentNavIndex == 1))
-          ? FloatingActionButton(
-              key: const ValueKey('add_book_fab'),
-              onPressed: () => _openAddBookScreen(context),
-              backgroundColor: FloralPalette.deepRose,
-              foregroundColor: FloralPalette.softIvory,
-              elevation: 3,
+          ? FrostedFloralFab(
+              fabKey: const ValueKey('add_book_fab'),
               tooltip: 'Add Book',
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              onPressed: () => _openAddBookScreen(context),
               child: const Icon(Icons.add_rounded, size: 28),
             )
           : null,
@@ -543,68 +541,97 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         // Offer choice between Web Share and direct download
         showModalBottomSheet(
           context: context,
-          backgroundColor: FloralPalette.softIvory,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
           builder: (ctx) {
             return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: FloralPalette.softIvory,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Export Library Backup',
-                      style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Ready to export ${books.length} books with all quotes, notes, and covers.',
-                      style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-                    ),
-                    const SizedBox(height: 20),
-                    ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFF9EAE1),
-                        child: Icon(Icons.share_rounded, color: FloralPalette.deepRose),
+                    FrostedGlassHeader(
+                      borderRadius: 24,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: FloralPalette.latte,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Export Library Backup',
+                              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Ready to export ${books.length} books with all quotes, notes, and covers.',
+                              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                            ),
+                          ],
+                        ),
                       ),
-                      title: const Text('Share Backup File'),
-                      subtitle: const Text('Send via AirDrop, Messages, Drive, or Email'),
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        await BackupService.downloadOrShareBackup(
-                          jsonContent: jsonString,
-                          customFileName: fileName,
-                          preferShare: true,
-                        );
-                        _updateBackupState();
-                      },
                     ),
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFFEBF3ED),
-                        child: Icon(Icons.file_download_rounded, color: FloralPalette.sageGreenDark),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: Color(0xFFF9EAE1),
+                              child: Icon(Icons.share_rounded, color: FloralPalette.deepRose),
+                            ),
+                            title: const Text('Share Backup File'),
+                            subtitle: const Text('Send via AirDrop, Messages, Drive, or Email'),
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await BackupService.downloadOrShareBackup(
+                                jsonContent: jsonString,
+                                customFileName: fileName,
+                                preferShare: true,
+                              );
+                              _updateBackupState();
+                            },
+                          ),
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFEBF3ED),
+                              child: Icon(Icons.file_download_rounded, color: FloralPalette.sageGreenDark),
+                            ),
+                            title: const Text('Download Backup JSON'),
+                            subtitle: const Text('Save to your device Downloads folder'),
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await BackupService.downloadOrShareBackup(
+                                jsonContent: jsonString,
+                                customFileName: fileName,
+                                preferShare: false,
+                              );
+                              _updateBackupState();
+                            },
+                          ),
+                        ],
                       ),
-                      title: const Text('Download Backup JSON'),
-                      subtitle: const Text('Save file directly to your device downloads'),
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        await BackupService.downloadOrShareBackup(
-                          jsonContent: jsonString,
-                          customFileName: fileName,
-                          preferShare: false,
-                        );
-                        _updateBackupState();
-                      },
                     ),
                   ],
                 ),
               ),
             );
-          },
-        );
+          });
       } else {
         // Direct download
         await BackupService.downloadOrShareBackup(
@@ -641,56 +668,87 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
   Future<void> _handleImport(BuildContext context) async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: FloralPalette.petalWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: FloralPalette.petalWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Restore Library', style: JournalTypography.headingSmall()),
-              const SizedBox(height: 6),
-              Text(
-                'Choose how you would like to restore your Bookmark library:',
-                style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                key: const ValueKey('restore_file_button'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: FloralPalette.deepRose,
-                  foregroundColor: FloralPalette.softIvory,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              FrostedGlassHeader(
+                borderRadius: 24,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: FloralPalette.latte,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Restore Library', style: JournalTypography.headingSmall()),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Choose how you would like to restore your Bookmark library:',
+                        style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal),
+                      ),
+                    ],
+                  ),
                 ),
-                icon: const Icon(Icons.file_open_rounded, size: 20),
-                label: const Text('Select Backup File (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  _pickAndProcessFile(context);
-                },
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const ValueKey('restore_paste_button'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: FloralPalette.deepRose,
-                  side: const BorderSide(color: FloralPalette.blushPink),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton.icon(
+                      key: const ValueKey('restore_file_button'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: FloralPalette.deepRose,
+                        foregroundColor: FloralPalette.softIvory,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.file_open_rounded, size: 20),
+                      label: const Text('Select Backup File (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _pickAndProcessFile(context);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      key: const ValueKey('restore_paste_button'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: FloralPalette.deepRose,
+                        side: const BorderSide(color: FloralPalette.blushPink),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.content_paste_rounded, size: 20),
+                      label: const Text('Paste Backup JSON Text', style: TextStyle(fontWeight: FontWeight.w600)),
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _showPasteJsonDialog(context);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
-                icon: const Icon(Icons.content_paste_rounded, size: 20),
-                label: const Text('Paste Backup JSON Text', style: TextStyle(fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  _showPasteJsonDialog(context);
-                },
               ),
-              const SizedBox(height: 8),
             ],
           ),
         ),

@@ -11,6 +11,7 @@ import '../../../doodles/vine_doodle.dart';
 import '../../../models/book.dart';
 import 'add_edit_book_screen.dart';
 import '../../../core/widgets/floral_rating_bar.dart';
+import '../../../core/widgets/frosted_glass.dart';
 import '../../../core/widgets/floral_celebration_overlay.dart';
 
 import '../widgets/book_cover_thumbnail.dart';
@@ -1033,7 +1034,7 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
       decoration: BoxDecoration(
         color: FloralPalette.softIvory,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x2A402E32),
             blurRadius: 20,
@@ -1043,35 +1044,51 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
       ),
       child: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: FloralPalette.latte,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FrostedGlassHeader(
+              borderRadius: 28,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: FloralPalette.latte,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Header
+                    Text(
+                      'Update Reading Status',
+                      style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 18),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Move "${widget.book.title}" to your shelf ~',
+                      style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 15),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Header
-              Text(
-                'Update Reading Status',
-                style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 18),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Move "${widget.book.title}" to your shelf ~',
-                style: JournalTypography.handwriting(color: FloralPalette.cocoa).copyWith(fontSize: 15),
-              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
               const SizedBox(height: 18),
 
@@ -1356,6 +1373,9 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
             ],
           ),
         ),
+      ),
+      ],
+      ),
       ),
     );
   }
