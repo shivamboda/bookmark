@@ -3008,5 +3008,77 @@ void main() {
       expect(find.textContaining('Test simulated unhandled error'), findsOneWidget);
     });
   });
+  
+  group('Opening-line detector: rejects book opening lines, accepts real synopses', () {
+    // --- REAL EXAMPLES FROM USER BUG REPORT ---
+
+    test('Rejects Italian opening line: "ERANO LE CINQUE di una mattina invernale, in Siria."', () {
+      final text = 'ERANO LE CINQUE di una mattina invernale, in Siria. Il cielo era ancora buio e la temperatura era scesa sotto lo zero durante la notte.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
+          reason: 'Italian opening line with ALL-CAPS start + non-English content should be rejected');
+      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
+          reason: 'cleanAndValidate should return empty for opening lines');
+    });
+
+    test('Rejects Agatha Christie opening line: "IN THE CORNER of a first-class smoking carriage..."', () {
+      final text = 'IN THE CORNER of a first-class smoking carriage, Mr. Justice Wargrave, lately retired from the bench, puffed at a cigar and ran an interested eye through the political news in the Times.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
+          reason: 'Caps-start scene-setting narration with sensory details should be rejected');
+      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
+          reason: 'cleanAndValidate should return empty for opening lines');
+    });
+
+    test('Rejects Michael Crichton opening line: "TEN THOUSAND MILE AWAY, IN THE COLD, WINdowless..."', () {
+      final text = 'TEN THOUSAND MILE AWAY, IN THE COLD, WINdowless main data room of the Shimago Biotech Research Institute in Tokyo, a bank of monitors flickered in the blue-white fluorescent light.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
+          reason: 'ALL-CAPS location phrase followed by scene description should be rejected');
+      expect(SynopsisCleaner.cleanAndValidate(text), isEmpty,
+          reason: 'cleanAndValidate should return empty for opening lines');
+    });
+
+    // --- CONSTRUCTED EXAMPLES ---
+
+    test('Rejects French opening line: "DANS LA PETITE ville de province..."', () {
+      final text = "DANS LA PETITE ville de province, le docteur Pascal se levait chaque matin avant l'aube pour commencer ses observations dans le laboratoire qu'il avait aménagé au rez-de-chaussée.";
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
+          reason: 'French prose with caps start should be rejected as opening line');
+    });
+
+    test('Rejects narrative scene-setter: "IT WAS A BRIGHT cold day in April..."', () {
+      final text = 'IT WAS A BRIGHT cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isTrue,
+          reason: '1984 opening line with caps start and scene narration should be rejected');
+    });
+
+    // --- GENUINE SYNOPSES THAT SHOULD BE ACCEPTED ---
+
+    test('Accepts genuine synopsis with character-plus-conflict structure', () {
+      final text = 'When a young orphan discovers she has magical powers, she must navigate a dangerous school of sorcery while uncovering the truth about her parents\' mysterious disappearance. A gripping tale of friendship, betrayal, and the power of love.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
+          reason: 'Character-plus-conflict synopsis with summary markers should be accepted');
+      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
+    });
+
+    test('Accepts genuine synopsis with "follows the story of" pattern', () {
+      final text = 'This bestselling novel follows the story of Elizabeth Bennet, a spirited young woman in Regency-era England, as she navigates societal expectations, family pressures, and her complicated feelings for the proud Mr. Darcy.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
+          reason: 'Synopsis using "follows the story of" should be accepted');
+      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
+    });
+
+    test('Accepts genuine synopsis starting with "In this" pattern', () {
+      final text = 'In this unforgettable masterpiece, a reclusive librarian discovers a series of letters hidden inside an ancient manuscript that reveal a centuries-old conspiracy reaching into the highest levels of power.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
+          reason: '"In this" + summary language should be accepted');
+      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
+    });
+
+    test('Accepts New York Times bestseller description', () {
+      final text = '#1 NEW YORK TIMES BESTSELLER. A masterful novel about a marriage at a crossroads, exploring the devastating consequences of secrets and lies in a seemingly perfect suburban family.';
+      expect(SynopsisCleaner.isLikelyOpeningLine(text), isFalse,
+          reason: 'NYT bestseller marketing copy is a valid synopsis');
+      expect(SynopsisCleaner.cleanAndValidate(text), isNotEmpty);
+    });
   });
+});
 }

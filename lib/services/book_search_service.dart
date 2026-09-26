@@ -92,7 +92,7 @@ class BookSearchService {
       'https://openlibrary.org/search.json'
       '?q=${Uri.encodeComponent(query)}'
       '&limit=$_maxResults'
-      '&fields=title,author_name,cover_i,number_of_pages_median,first_sentence,subject',
+      '&fields=title,author_name,cover_i,number_of_pages_median,subject',
     );
 
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -126,13 +126,10 @@ class BookSearchService {
       // Page count (median across editions)
       final pages = d['number_of_pages_median'] as int?;
 
-      // Description (clean and validate Open Library first_sentence or description object)
+      // Note: Open Library search API doesn't return reliable descriptions
+      // (it often returns the book's opening line via 'first_sentence').
+      // Descriptions will be fetched from Google Books in the enrichment step.
       String? desc;
-      final rawDesc = d['description'] ?? d['first_sentence'];
-      final cleaned = SynopsisCleaner.cleanAndValidate(rawDesc);
-      if (cleaned.isNotEmpty) {
-        desc = cleaned;
-      }
 
       // Genres / Subjects — cleaned via keyword matching to the app's genre list
       final rawSubjects = (d['subject'] as List<dynamic>?)
@@ -152,19 +149,19 @@ class BookSearchService {
       );
     }).whereType<BookSearchResult>().take(_maxResults).toList();
 
-    // If Open Library description is absent or failed the quality check,
-    // automatically try Google Books for the same book before giving up.
+    // Always try Google Books for descriptions — their editorial summaries
+    // are consistently higher quality than Open Library's first_sentence data.
     final enriched = <BookSearchResult>[];
     for (final res in docsMapped) {
-      var desc = res.description;
-      if (desc == null || desc.isEmpty) {
-        try {
-          final googleDesc = await fetchGoogleBooksDescription(res.title, res.authors);
-          if (googleDesc != null && googleDesc.isNotEmpty) {
-            desc = googleDesc;
-          }
-        } catch (_) {}
-      }
+      String? desc;
+      try {
+        final googleDesc = await fetchGoogleBooksDescription(res.title, res.authors);
+        if (googleDesc != null && googleDesc.isNotEmpty) {
+          desc = googleDesc;
+        }
+      } catch (_) {}
+      // Fall back to OL description only if Google Books returned nothing
+      desc ??= res.description;
       enriched.add(BookSearchResult(
         title: res.title,
         authors: res.authors,

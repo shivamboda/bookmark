@@ -154,12 +154,174 @@ class SynopsisCleaner {
     return true;
   }
 
+
+  /// Detects descriptions that are actually the book's opening line/sentence
+  /// rather than a genuine editorial synopsis.
+  ///
+  /// Opening lines share common patterns:
+  /// 1. Start with an ALL-CAPS word/phrase followed by lowercase narration
+  ///    ("IN THE CORNER of a first-class smoking carriage...")
+  /// 2. Read as scene-setting narrative without summary structure
+  ///    (no character-plus-goal, no "discovers", "must", "follows the story of")
+  /// 3. May be in a completely wrong language (Italian, French, etc.)
+  ///
+  /// Returns true if the text looks like an opening line (should be rejected).
+  static bool isLikelyOpeningLine(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    // --- Pattern 1: Starts with ALL-CAPS word(s) followed by lowercase ---
+    // Matches: "ERANO LE CINQUE di...", "IN THE CORNER of...",
+    //          "TEN THOUSAND MILE AWAY, IN THE COLD, WINdowless..."
+    final capsStartPattern = RegExp(
+      r'^[A-Z][A-Z\s,]{2,}[a-z]',
+    );
+    if (capsStartPattern.hasMatch(trimmed)) {
+      // Additional check: if the caps start is followed by scene-setting
+      // (not summary language), it's an opening line
+      if (!_hasSummaryLanguage(trimmed)) {
+        return true;
+      }
+    }
+
+    // --- Pattern 2: Non-English content detection ---
+    // Check for high proportion of accented/non-ASCII Latin characters
+    // typical of Italian, French, Spanish, German text
+    if (_isLikelyNonEnglish(trimmed)) {
+      return true;
+    }
+
+    // --- Pattern 3: Pure scene-setting narrative ---
+    // Single continuous paragraph that reads like prose fiction:
+    // - No sentence resembling a summary hook
+    // - Present tense scene-setting or past tense narration
+    // - No meta-words about the book itself
+    if (_isPureNarrative(trimmed)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Checks if text contains language typical of book summaries/synopses.
+  static bool _hasSummaryLanguage(String text) {
+    final lower = text.toLowerCase();
+    // Words/phrases that indicate this IS a genuine synopsis
+    final summaryMarkers = [
+      'must', 'discovers', 'discovers that', 'when ',
+      'follows the story', 'a novel about', 'a tale of',
+      'the story of', 'in this', 'bestselling', 'award-winning',
+      'new york times', 'explores', 'journey', 'struggles',
+      'uncovers', 'confronts', 'faces', 'secrets',
+      'is forced to', 'sets out to', 'finds herself',
+      'finds himself', 'leads to', 'plunges into',
+      'a story of', 'debut novel', 'masterpiece',
+      'page-turner', 'gripping', 'riveting',
+      'heartwarming', 'unforgettable', 'compelling',
+      'author of', 'from the creator', 'introduces',
+      '#1', 'number one', 'million copies',
+    ];
+
+    for (final marker in summaryMarkers) {
+      if (lower.contains(marker)) return true;
+    }
+    return false;
+  }
+
+  /// Basic non-English detection for Latin-script languages.
+  /// Checks for high frequency of accented characters and common
+  /// non-English function words.
+  static bool _isLikelyNonEnglish(String text) {
+    final lower = text.toLowerCase();
+
+    // Common function words in Italian, French, Spanish, German, Portuguese
+    final nonEnglishMarkers = [
+      // Italian
+      ' della ', ' delle ', ' degli ', ' nella ', ' nelle ',
+      ' una ', ' erano ', ' questa ', ' questo ', ' mattina ',
+      ' giorno ', ' notte ', ' quando ', ' perché ',
+      // French
+      ' dans ', ' cette ', ' avec ', ' pour ', ' mais ',
+      ' était ', " c'est ", ' les ', ' des ', ' une ',
+      // Spanish
+      ' esta ', ' pero ', ' porque ', ' cuando ',
+      ' había ', ' también ',
+      // German
+      ' und ', ' nicht ', ' aber ', ' oder ', ' auch ',
+      ' diese ', ' einem ', ' einen ',
+      // Portuguese
+      ' estava ', ' tinha ', ' também ',
+    ];
+
+    int nonEnglishHits = 0;
+    for (final marker in nonEnglishMarkers) {
+      if (lower.contains(marker)) nonEnglishHits++;
+    }
+    // If 2+ non-English markers found, likely wrong language
+    if (nonEnglishHits >= 2) return true;
+
+    // Check ratio of accented characters
+    final accentedPattern = RegExp(r'[àáâãäåæçèéêëìíîïðñòóôõöùúûüýþÿ]');
+    final accentedCount = accentedPattern.allMatches(lower).length;
+    final letterCount = RegExp(r'[a-zA-Z\u00C0-\u024F]').allMatches(lower).length;
+    if (letterCount > 20 && accentedCount / letterCount > 0.06) return true;
+
+    return false;
+  }
+
+  /// Detects pure narrative prose that is scene-setting rather than synopsis.
+  /// A narrative opening typically:
+  /// - Is a single paragraph (no line breaks for structure)
+  /// - Uses concrete sensory details (time, place, weather, actions)
+  /// - Lacks any meta-description of the book's plot arc or themes
+  static bool _isPureNarrative(String text) {
+    final lower = text.toLowerCase();
+
+    // Must lack ALL summary language to be considered pure narrative
+    if (_hasSummaryLanguage(text)) return false;
+
+    // Narrative scene-setting markers
+    final narrativeMarkers = [
+      // Time/place openers
+      RegExp(r'^(it was|there was|on the|at the|in the)\b', caseSensitive: false),
+      // Past-tense scene description
+      RegExp(r'\b(puffed at|sat in|stood at|walked|looked|stared)\b', caseSensitive: false),
+      // Concrete sensory details in opening
+      RegExp(r'\b(morning|evening|night|dawn|cold|warm|rain|sun|wind|smoke|cigar)\b', caseSensitive: false),
+    ];
+
+    int narrativeHits = 0;
+    for (final pattern in narrativeMarkers) {
+      if (pattern.hasMatch(lower)) narrativeHits++;
+    }
+
+    // If 2+ narrative markers AND no summary language, likely an opening line
+    if (narrativeHits >= 2) return true;
+
+    // Very short text (under 200 chars) with no summary language
+    // that reads as a single scene-setting sentence
+    if (text.length < 200) {
+      final sentences = text.split(RegExp(r'[.!?]+')).where((s) => s.trim().isNotEmpty).toList();
+      if (sentences.length <= 2 && !_hasSummaryLanguage(text)) {
+        // Check if it starts with a location/time phrase
+        if (RegExp(r'^(In |On |At |It was |There |From |The )', caseSensitive: false).hasMatch(text)) {
+          // But not if it sounds like a summary ("In this novel...", "The story of...")
+          if (!RegExp(r'^(In this |The story |The tale |This )', caseSensitive: false).hasMatch(text)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
   /// Convenience pipeline: cleans raw input and verifies quality.
   /// If it passes quality check, returns the cleaned string.
   /// Otherwise, returns an empty string (no junk shown).
   static String cleanAndValidate(dynamic raw) {
     final cleaned = clean(raw);
-    if (isQuality(cleaned)) {
+    if (isQuality(cleaned) && !isLikelyOpeningLine(cleaned)) {
       return cleaned;
     }
     return '';
