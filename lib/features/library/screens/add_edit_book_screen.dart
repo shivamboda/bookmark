@@ -279,19 +279,6 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
       initialDate: initial,
       firstDate: DateTime(1900),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: AppTheme.lightTheme().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: FloralPalette.deepRose,
-              onPrimary: FloralPalette.softIvory,
-              surface: FloralPalette.softIvory,
-              onSurface: FloralPalette.warmCharcoal,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {

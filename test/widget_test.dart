@@ -2830,5 +2830,111 @@ void main() {
       expect(AddEditBookScreen.isFormActive, true);
     });
   });
+
+  group('Part 1: Theme leak fix & botanical date picker theming', () {
+    testWidgets('Date picker opens in dark mode and does NOT leak light theme into the app', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      await storage.setSetting('theme_mode', 'midnightGarden');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Ensure app begins in Autumn Night (dark mode)
+      expect(FloralPalette.isDark, isTrue);
+      expect(FloralPalette.petalWhite, const Color(0xFF1E1611));
+      expect(FloralPalette.softIvory, const Color(0xFF2B211A));
+
+      // Open Add Book form
+      await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddEditBookScreen), findsOneWidget);
+
+      // Tap "Start Date" picker
+      await tester.tap(find.byKey(const ValueKey('pick_start_date_btn')));
+      await tester.pumpAndSettle();
+
+      // 1. Assert DatePickerDialog is displayed
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+
+      // 2. Assert the DatePickerDialog uses dark theme brightness
+      final datePickerThemeData = Theme.of(tester.element(find.byType(DatePickerDialog)));
+      expect(datePickerThemeData.brightness, Brightness.dark);
+      expect(datePickerThemeData.datePickerTheme.backgroundColor, FloralPalette.softIvory);
+
+      // 3. Select current date and tap "OK"
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      // 4. Date picker dismissed
+      expect(find.byType(DatePickerDialog), findsNothing);
+
+      // 5. CRITICAL ASSERTION: The app's theme brightness and key colors are 100% UNCHANGED
+      expect(FloralPalette.isDark, isTrue, reason: 'FloralPalette.isDark must remain true after date picker closes');
+      expect(FloralPalette.currentMode, FloralThemeMode.midnightGarden);
+      expect(FloralPalette.petalWhite, const Color(0xFF1E1611));
+      expect(FloralPalette.softIvory, const Color(0xFF2B211A));
+      expect(FloralPalette.warmCharcoal, const Color(0xFFF5EBE1));
+
+      final addEditTheme = Theme.of(tester.element(find.byType(AddEditBookScreen)));
+      expect(addEditTheme.brightness, Brightness.dark);
+    });
+
+    testWidgets('Canceling date picker also preserves dark theme without leak', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      await storage.setSetting('theme_mode', 'midnightGarden');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const BookmarkApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open Add Book form
+      await tester.tap(find.byKey(const ValueKey('add_book_fab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('add_manually_btn')));
+      await tester.pumpAndSettle();
+
+      // Tap "Start Date" picker
+      await tester.tap(find.byKey(const ValueKey('pick_start_date_btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+
+      // Tap "Cancel"
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsNothing);
+      expect(FloralPalette.isDark, isTrue);
+      expect(FloralPalette.currentMode, FloralThemeMode.midnightGarden);
+      expect(FloralPalette.petalWhite, const Color(0xFF1E1611));
+      expect(FloralPalette.softIvory, const Color(0xFF2B211A));
+    });
+  });
 });
 }

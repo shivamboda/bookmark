@@ -1092,19 +1092,6 @@ class _StartReadingBottomSheetState extends State<_StartReadingBottomSheet> {
       initialDate: initialDate,
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: FloralPalette.deepRose,
-              onPrimary: FloralPalette.softIvory,
-              surface: FloralPalette.softIvory,
-              onSurface: FloralPalette.warmCharcoal,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() => onPicked(picked));

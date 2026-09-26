@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/state/providers.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/palette.dart';
 import 'doodles/doodle_gallery_screen.dart';
 import 'features/library/screens/library_screen.dart';
 
@@ -36,6 +37,7 @@ class BookmarkApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    FloralPalette.currentMode = themeMode;
 
     return MaterialApp(
       title: 'Bookmark',

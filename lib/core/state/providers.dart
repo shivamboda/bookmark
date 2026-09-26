@@ -27,10 +27,10 @@ class ThemeModeNotifier extends Notifier<FloralThemeMode> {
   Future<void> _loadTheme() async {
     try {
       final storage = ref.read(storageServiceProvider);
-      final saved = await storage.getSetting('theme_mode', defaultValue: 'poppyBlush');
+      final saved = await storage.getSetting('theme_mode', defaultValue: 'midnightGarden');
       final match = FloralThemeMode.values.firstWhere(
         (m) => m.name == saved,
-        orElse: () => FloralThemeMode.poppyBlush,
+        orElse: () => FloralThemeMode.midnightGarden,
       );
       FloralPalette.currentMode = match;
       state = match;

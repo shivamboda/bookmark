@@ -122,9 +122,9 @@ class JournalTypography {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData lightTheme({FloralThemeMode mode = FloralThemeMode.poppyBlush}) {
-    FloralPalette.currentMode = mode;
-    final isDark = mode == FloralThemeMode.midnightGarden;
+  static ThemeData lightTheme({FloralThemeMode? mode}) {
+    final effectiveMode = mode ?? FloralPalette.currentMode;
+    final isDark = effectiveMode == FloralThemeMode.midnightGarden;
 
     Color primary;
     Color secondary;
@@ -132,7 +132,7 @@ class AppTheme {
     Color surface;
     Color text;
 
-    switch (mode) {
+    switch (effectiveMode) {
       case FloralThemeMode.lavenderMeadow:
         primary = const Color(0xFFC7B5E8);
         secondary = FloralPalette.rosePetal;
@@ -258,6 +258,126 @@ class AppTheme {
             width: 1.8,
           ),
         ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark ? const Color(0x33FFFFFF) : FloralPalette.cardBorder,
+            width: 1.0,
+          ),
+        ),
+        headerBackgroundColor: isDark ? FloralPalette.petalWhite : FloralPalette.bannerBackground,
+        headerForegroundColor: text,
+        headerHeadlineStyle: GoogleFonts.lora(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: text,
+        ),
+        headerHelpStyle: GoogleFonts.lora(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: FloralPalette.mutedCharcoal,
+        ),
+        weekdayStyle: GoogleFonts.lora(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: FloralPalette.mutedCharcoal,
+        ),
+        dayStyle: GoogleFonts.lora(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return FloralPalette.mutedCharcoal.withValues(alpha: 0.38);
+          }
+          return text;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return FloralPalette.deepRose;
+          }
+          return null;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return FloralPalette.rosePetal;
+        }),
+        todayBorder: const BorderSide(color: FloralPalette.rosePetal, width: 1.5),
+        yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return text;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return FloralPalette.deepRose;
+          }
+          return null;
+        }),
+        dividerColor: isDark ? const Color(0x22FFFFFF) : FloralPalette.cardBorder,
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: FloralPalette.mutedCharcoal,
+          textStyle: GoogleFonts.lora(fontWeight: FontWeight.w600),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: FloralPalette.deepRose,
+          textStyle: GoogleFonts.lora(fontWeight: FontWeight.w700),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark ? const Color(0x33FFFFFF) : FloralPalette.cardBorder,
+            width: 1.0,
+          ),
+        ),
+        titleTextStyle: JournalTypography.headingMedium(color: text),
+        contentTextStyle: JournalTypography.bodyMedium(color: text),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        modalBackgroundColor: surface,
+        modalBarrierColor: Colors.black54,
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark ? const Color(0x33FFFFFF) : FloralPalette.cardBorder,
+            width: 1.0,
+          ),
+        ),
+        dialBackgroundColor: isDark ? FloralPalette.petalWhite : FloralPalette.bannerBackground,
+        dialHandColor: FloralPalette.deepRose,
+        dialTextColor: text,
+        hourMinuteColor: isDark ? FloralPalette.petalWhite : FloralPalette.bannerBackground,
+        hourMinuteTextColor: text,
+        dayPeriodColor: isDark ? FloralPalette.petalWhite : FloralPalette.bannerBackground,
+        dayPeriodTextColor: text,
+        cancelButtonStyle: TextButton.styleFrom(foregroundColor: FloralPalette.mutedCharcoal),
+        confirmButtonStyle: TextButton.styleFrom(foregroundColor: FloralPalette.deepRose),
       ),
     );
   }
