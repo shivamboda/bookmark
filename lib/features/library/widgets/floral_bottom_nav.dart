@@ -7,12 +7,16 @@ import '../../../doodles/leaf_sprig_doodle.dart';
 import '../../../doodles/poppy_doodle.dart';
 import '../../../doodles/tulip_doodle.dart';
 
-/// Botanical bottom navigation bar featuring handcrafted vector flower icons.
+/// Botanical bottom navigation bar featuring handcrafted botanical icons.
 ///
 /// Designed specifically for iPhone 16 standalone mode with correct SafeArea handling,
 /// 48px+ tap targets, and an organic blooming scale animation on the selected tab.
 /// Inactive tabs use warm soft brown (#8A6B5A / #C9B8AB) for subtle warmth.
 class FloralBottomNav extends StatelessWidget {
+  /// When true, renders the rich AI-generated watercolor illustration icons.
+  /// Set to false to instantly revert back to the vector CustomPainter doodle icons.
+  static const bool useWatercolorIcons = true;
+
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
 
@@ -55,35 +59,43 @@ class FloralBottomNav extends StatelessWidget {
                     _buildNavItem(
                       index: 0,
                       label: 'Library',
-                      icon: const PoppyDoodle(
-                        size: 26,
-                        showStem: false,
-                        petalColor: FloralPalette.rosePetal,
-                      ),
+                      icon: useWatercolorIcons
+                          ? _buildWatercolorIcon('assets/icons/nav_poppy.png', isSelected: currentIndex == 0)
+                          : const PoppyDoodle(
+                              size: 26,
+                              showStem: false,
+                              petalColor: FloralPalette.rosePetal,
+                            ),
                     ),
                     _buildNavItem(
                       index: 1,
                       label: 'Wishlist',
-                      icon: const TulipDoodle(
-                        size: 26,
-                        showStem: false,
-                        petalColor: FloralPalette.rosePetal,
-                      ),
+                      icon: useWatercolorIcons
+                          ? _buildWatercolorIcon('assets/icons/nav_tulip.png', isSelected: currentIndex == 1)
+                          : const TulipDoodle(
+                              size: 26,
+                              showStem: false,
+                              petalColor: FloralPalette.rosePetal,
+                            ),
                     ),
                     _buildNavItem(
                       index: 2,
                       label: 'Stats',
-                      icon: const DaisyDoodle(
-                        size: 26,
-                        showStem: false,
-                      ),
+                      icon: useWatercolorIcons
+                          ? _buildWatercolorIcon('assets/icons/nav_daisy.png', isSelected: currentIndex == 2)
+                          : const DaisyDoodle(
+                              size: 26,
+                              showStem: false,
+                            ),
                     ),
                     _buildNavItem(
                       index: 3,
                       label: 'Settings',
-                      icon: const LeafSprigDoodle(
-                        size: 26,
-                      ),
+                      icon: useWatercolorIcons
+                          ? _buildWatercolorIcon('assets/icons/nav_sprig.png', isSelected: currentIndex == 3)
+                          : const LeafSprigDoodle(
+                              size: 26,
+                            ),
                     ),
                   ],
                 ),
@@ -91,6 +103,19 @@ class FloralBottomNav extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  static Widget _buildWatercolorIcon(String assetPath, {required bool isSelected}) {
+    return Opacity(
+      opacity: isSelected ? 1.0 : 0.88,
+      child: Image.asset(
+        assetPath,
+        width: 26,
+        height: 26,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
       ),
     );
   }
