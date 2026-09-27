@@ -159,8 +159,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
     });
   }
 
-  void _openOnlineSearch(BuildContext context, String query) {
-    Navigator.of(context).push(
+  void _openOnlineSearch(BuildContext context, String query) async {
+    _clearLibrarySearch();
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BookSearchScreen(
           initialQuery: query,
@@ -170,6 +171,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         ),
       ),
     );
+    if (mounted) {
+      _clearLibrarySearch();
+    }
   }
 
   int _currentNavIndex = 0;
@@ -1831,11 +1835,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                           title: "Books you'd love to read someday live here ~",
                           subtitle: "add stories you dream of reading next",
                           buttonLabel: "Find a Book",
-                          onAddBook: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const BookSearchScreen(),
-                            ),
-                          ),
+                          onAddBook: () => _openAddBookScreen(context),
                         ),
                       ),
                     );
@@ -3131,17 +3131,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
     );
   }
 
-  void _openAddBookScreen(BuildContext context, {ReadingStatus? defaultStatus}) {
+  void _openAddBookScreen(BuildContext context, {ReadingStatus? defaultStatus}) async {
+    _clearLibrarySearch();
     final status = defaultStatus ??
         (_currentNavIndex == 1
             ? ReadingStatus.wantToRead
             : ReadingStatus.reading);
 
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BookSearchScreen(defaultStatus: status),
       ),
     );
+    if (mounted) {
+      _clearLibrarySearch();
+    }
   }
 
   // ==========================================

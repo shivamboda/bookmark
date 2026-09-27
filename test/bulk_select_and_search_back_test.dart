@@ -268,5 +268,71 @@ void main() {
       expect(find.byType(BookSearchScreen), findsNothing);
       expect(find.text('Open Search Screen'), findsOneWidget);
     });
+
+    testWidgets('Homepage search for unowned book -> fallback prompt -> search online -> back clears homepage search bar and shows shelf', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      final existingBook = Book(
+        id: 'home-book-1',
+        title: 'Kafka on the Shore',
+        authors: ['Haruki Murakami'],
+        status: ReadingStatus.reading,
+        dateAdded: DateTime(2026, 1, 1),
+      );
+      await storage.saveBook(existingBook);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const MaterialApp(home: LibraryScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially, Kafka on the Shore is visible on the bookshelf
+      expect(find.text('Kafka on the Shore'), findsWidgets);
+
+      // Search for a book that is NOT in the library
+      final searchField = find.byKey(const ValueKey('library_search_input'));
+      expect(searchField, findsOneWidget);
+      await tester.enterText(searchField, 'Brave New World');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      // Fallback card appears
+      expect(find.text('Nothing on your shelf matches "Brave New World".'), findsOneWidget);
+      final searchOnlineBtn = find.byKey(const ValueKey('search_online_fallback_btn'));
+      expect(searchOnlineBtn, findsOneWidget);
+
+      // Tap "Search online for 'Brave New World'"
+      await tester.tap(searchOnlineBtn);
+      await tester.pumpAndSettle();
+
+      // BookSearchScreen is open
+      expect(find.byType(BookSearchScreen), findsOneWidget);
+      final bookSearchInput = find.byKey(const ValueKey('book_search_input'));
+      expect(bookSearchInput, findsOneWidget);
+      expect(tester.widget<TextField>(bookSearchInput).controller?.text, 'Brave New World');
+
+      // Now user presses back button from search screen without selecting a book
+      await tester.tap(find.byKey(const ValueKey('search_back_button')));
+      await tester.pumpAndSettle();
+
+      // Verified: lands directly back on Homepage (LibraryScreen)
+      expect(find.byType(BookSearchScreen), findsNothing);
+      expect(find.byType(LibraryScreen), findsOneWidget);
+
+      // Verified: Homepage search bar is CLEARED (empty text), fallback prompt is GONE, and bookshelf shows all books!
+      final librarySearchFieldWidget = tester.widget<TextField>(find.byKey(const ValueKey('library_search_input')));
+      expect(librarySearchFieldWidget.controller?.text, '');
+      expect(find.text('Nothing on your shelf matches "Brave New World".'), findsNothing);
+      expect(find.text('Kafka on the Shore'), findsWidgets);
+    });
   });
 }

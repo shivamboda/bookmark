@@ -2036,10 +2036,9 @@ void main() {
     Navigator.of(tester.element(find.byType(BookSearchScreen))).pop();
     await tester.pumpAndSettle();
 
-    // Clear search
-    await tester.tap(find.byKey(const ValueKey('clear_filters_btn')));
-    await tester.pumpAndSettle();
+    // Returning to library: search bar is automatically cleared, so shelf books are immediately visible
     expect(find.text('Pride and Prejudice'), findsWidgets);
+    expect(tester.widget<TextField>(searchField).controller?.text, '');
 
     // 3. Filter hiding matches:
     // Filter library by "Reading" chip

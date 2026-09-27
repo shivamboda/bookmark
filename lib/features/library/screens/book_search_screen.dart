@@ -389,7 +389,13 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               key: const ValueKey('search_back_button'),
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () {
+                _debounceTimer?.cancel();
+                _searchController.clear();
+                _results.clear();
+                _hasSearched = false;
+                Navigator.of(context).pop();
+              },
               borderRadius: BorderRadius.circular(14),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
