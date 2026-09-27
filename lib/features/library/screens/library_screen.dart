@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -847,14 +849,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           ),
         ),
       ),
-      bottomNavigationBar: FloralBottomNav(
-        currentIndex: _currentNavIndex,
-        onTabSelected: (index) {
-          if (_isSelectionMode) {
-            _exitSelectionMode();
-          }
-          setState(() => _currentNavIndex = index);
+      bottomNavigationBar: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.2),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
         },
+        child: _isSelectionMode
+            ? KeyedSubtree(
+                key: const ValueKey('bulk_selection_bar_subtree'),
+                child: _buildBulkActionBar(context, booksAsync.value ?? []),
+              )
+            : KeyedSubtree(
+                key: const ValueKey('floral_bottom_nav_subtree'),
+                child: FloralBottomNav(
+                  currentIndex: _currentNavIndex,
+                  onTabSelected: (index) {
+                    if (_isSelectionMode) {
+                      _exitSelectionMode();
+                    }
+                    setState(() => _currentNavIndex = index);
+                  },
+                ),
+              ),
       ),
       floatingActionButton: (!_isSelectionMode && !_isUndoSnackBarActive && (_currentNavIndex == 0 || _currentNavIndex == 1))
           ? FrostedFloralFab(
@@ -1626,7 +1653,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                   if (_isGridView) {
                     return GridView.builder(
                       key: const ValueKey('library_grid_view'),
-                      padding: EdgeInsets.fromLTRB(18, 12, 18, _isSelectionMode ? 190 : 140),
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.60,
@@ -1661,7 +1688,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
 
                   return ListView.builder(
                     key: const ValueKey('library_list_view'),
-                    padding: EdgeInsets.fromLTRB(18, 12, 18, _isSelectionMode ? 190 : 140),
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 140),
                     itemCount: books.length,
                     itemBuilder: (context, index) {
                       final book = books[index];
@@ -1692,14 +1719,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           ],
         ),
 
-        // Floating Bulk Action Bar (Docked above bottom navigation)
-        if (_isSelectionMode)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: _buildBulkActionBar(context, booksAsync.value ?? []),
-          ),
+
       ],
     );
   }
@@ -2905,56 +2925,62 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
           Row(
             children: [
               // Genre Filter Button (Opens botanical bottom sheet)
-              InkWell(
-                key: const ValueKey('genre_filter_button'),
-                onTap: () => _showGenreFilterSheet(context, availableGenres),
-                borderRadius: BorderRadius.circular(14),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _selectedGenre != null
-                          ? FloralPalette.deepRose.withValues(alpha: 0.15)
-                          : FloralPalette.softIvory,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
-                        width: 1.0,
+              Flexible(
+                child: InkWell(
+                  key: const ValueKey('genre_filter_button'),
+                  onTap: () => _showGenreFilterSheet(context, availableGenres),
+                  borderRadius: BorderRadius.circular(14),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedGenre != null
+                            ? FloralPalette.deepRose.withValues(alpha: 0.15)
+                            : FloralPalette.softIvory,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cardBorder,
+                          width: 1.0,
+                        ),
+                        boxShadow: [FloralPalette.cardShadow],
                       ),
-                      boxShadow: [FloralPalette.cardShadow],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.filter_list_rounded,
-                          size: 16,
-                          color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cocoa,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _selectedGenre ?? 'All Genres',
-                          style: JournalTypography.bodySmall(
-                            color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
-                          ).copyWith(fontSize: 12.5, fontWeight: FontWeight.w600),
-                        ),
-                        if (_selectedGenre != null) ...[
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            key: const ValueKey('clear_genre_chip_btn'),
-                            onTap: () => setState(() => _selectedGenre = null),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: FloralPalette.deepRose.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.close_rounded, size: 12, color: FloralPalette.deepRose),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.filter_list_rounded,
+                            size: 16,
+                            color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.cocoa,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              _selectedGenre ?? 'All Genres',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: JournalTypography.bodySmall(
+                                color: _selectedGenre != null ? FloralPalette.deepRose : FloralPalette.warmCharcoal,
+                              ).copyWith(fontSize: 12.5, fontWeight: FontWeight.w600),
                             ),
                           ),
+                          if (_selectedGenre != null) ...[
+                            const SizedBox(width: 5),
+                            GestureDetector(
+                              key: const ValueKey('clear_genre_chip_btn'),
+                              onTap: () => setState(() => _selectedGenre = null),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: FloralPalette.deepRose.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.close_rounded, size: 12, color: FloralPalette.deepRose),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -2963,43 +2989,49 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
               const SizedBox(width: 8),
 
               // Sort Option Button (Opens botanical bottom sheet)
-              InkWell(
-                key: const ValueKey('sort_option_button'),
-                onTap: () => _showSortOptionSheet(context),
-                borderRadius: BorderRadius.circular(14),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: FloralPalette.softIvory,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
-                      boxShadow: [FloralPalette.cardShadow],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.swap_vert_rounded,
-                          size: 16,
-                          color: FloralPalette.cocoa,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _sortOption.label,
-                          style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
+              Flexible(
+                child: InkWell(
+                  key: const ValueKey('sort_option_button'),
+                  onTap: () => _showSortOptionSheet(context),
+                  borderRadius: BorderRadius.circular(14),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: FloralPalette.softIvory,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: FloralPalette.cardBorder, width: 1.0),
+                        boxShadow: [FloralPalette.cardShadow],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.swap_vert_rounded,
+                            size: 16,
+                            color: FloralPalette.cocoa,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              _sortOption.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: JournalTypography.bodySmall(color: FloralPalette.warmCharcoal).copyWith(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(width: 8),
 
               // List / Grid Mode Toggle Button (44px+ tap target)
               Material(
@@ -3140,34 +3172,37 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
             ),
             child: Icon(Icons.check_rounded, color: FloralPalette.deepRose, size: 18),
           ),
-          const SizedBox(width: 10),
-          Text(
-            '$count selected',
-            style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$count selected',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: JournalTypography.headingSmall(color: FloralPalette.warmCharcoal).copyWith(fontSize: 15),
+            ),
           ),
-          const Spacer(),
           // Select All button (min 44px tap target)
           TextButton(
             key: const ValueKey('select_all_button'),
             style: TextButton.styleFrom(
               minimumSize: const Size(44, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               foregroundColor: FloralPalette.deepRose,
             ),
             onPressed: () => _selectAll(filtered),
-            child: const Text('Select all', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+            child: const Text('Select all', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           // Cancel button (min 44px tap target)
           TextButton(
             key: const ValueKey('cancel_selection_button'),
             style: TextButton.styleFrom(
               minimumSize: const Size(44, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               foregroundColor: FloralPalette.mutedCharcoal,
             ),
             onPressed: _exitSelectionMode,
-            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ],
       ),
@@ -3177,61 +3212,131 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
   Widget _buildBulkActionBar(BuildContext context, List<Book> allBooks) {
     final count = _selectedBookIds.length;
     final bool hasSelection = count > 0;
+    const double navHeight = 66.0;
+    const double pillRadius = navHeight / 2; // 33.0px stadium pill matching FloralBottomNav
+    final double bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(22),
-      shadowColor: Colors.black26,
-      color: FloralPalette.softIvory,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: FloralPalette.softIvory,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: FloralPalette.cardBorder, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: ElevatedButton.icon(
-                  key: const ValueKey('bulk_set_year_button'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FloralPalette.kraftPaper,
-                    foregroundColor: FloralPalette.warmCharcoal,
-                    elevation: 0,
-                    side: BorderSide(color: FloralPalette.cardBorder),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, math.max(10.0, bottomInset + 4.0)),
+      child: RepaintBoundary(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(pillRadius),
+            boxShadow: [
+              BoxShadow(
+                color: FloralPalette.softShadowTint.withValues(
+                  alpha: FloralPalette.isDark ? 0.70 : 0.40,
+                ),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(pillRadius),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+              child: Container(
+                height: navHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: FloralPalette.isDark
+                      ? const Color(0xFF1E1611).withValues(alpha: 0.85)
+                      : const Color(0xFFFFFBF5).withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(pillRadius),
+                  border: Border.all(
+                    color: FloralPalette.isDark ? const Color(0x3DF5EBE1) : const Color(0x3D4A3428),
+                    width: 0.8,
                   ),
-                  icon: Icon(Icons.event_outlined, size: 20, color: FloralPalette.deepRose),
-                  label: const Text('Set year', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                  onPressed: hasSelection ? () => _showBulkSetYearFlow(context, allBooks) : null,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          key: const ValueKey('bulk_set_year_button'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasSelection
+                                ? (FloralPalette.isDark ? const Color(0xFF2C221B) : const Color(0xFFEFE8DC))
+                                : FloralPalette.cardBorder.withValues(alpha: 0.25),
+                            foregroundColor: hasSelection
+                                ? FloralPalette.warmCharcoal
+                                : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            elevation: 0,
+                            side: BorderSide(
+                              color: hasSelection ? FloralPalette.cardBorder : Colors.transparent,
+                              width: 1.0,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                          ),
+                          icon: Icon(
+                            Icons.calendar_today_rounded,
+                            size: 18,
+                            color: hasSelection ? FloralPalette.deepRose : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                          ),
+                          label: Text(
+                            'Set year',
+                            style: JournalTypography.bodySmall(
+                              color: hasSelection
+                                  ? FloralPalette.warmCharcoal
+                                  : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 13.5),
+                          ),
+                          onPressed: hasSelection ? () => _showBulkSetYearFlow(context, allBooks) : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: FloralPalette.cardBorder.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          key: const ValueKey('bulk_rate_button'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasSelection
+                                ? (FloralPalette.isDark ? const Color(0xFF2C221B) : const Color(0xFFEFE8DC))
+                                : FloralPalette.cardBorder.withValues(alpha: 0.25),
+                            foregroundColor: hasSelection
+                                ? FloralPalette.warmCharcoal
+                                : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            elevation: 0,
+                            side: BorderSide(
+                              color: hasSelection ? FloralPalette.cardBorder : Colors.transparent,
+                              width: 1.0,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                          ),
+                          icon: Icon(
+                            Icons.star_rounded,
+                            size: 20,
+                            color: hasSelection ? FloralPalette.buttercupGold : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                          ),
+                          label: Text(
+                            'Rate',
+                            style: JournalTypography.bodySmall(
+                              color: hasSelection
+                                  ? FloralPalette.warmCharcoal
+                                  : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 13.5),
+                          ),
+                          onPressed: hasSelection ? () => _showBulkRateFlow(context, allBooks) : null,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: ElevatedButton.icon(
-                  key: const ValueKey('bulk_rate_button'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FloralPalette.kraftPaper,
-                    foregroundColor: FloralPalette.warmCharcoal,
-                    elevation: 0,
-                    side: BorderSide(color: FloralPalette.cardBorder),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  icon: Icon(Icons.star_rounded, size: 22, color: FloralPalette.buttercupGold),
-                  label: const Text('Rate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                  onPressed: hasSelection ? () => _showBulkRateFlow(context, allBooks) : null,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

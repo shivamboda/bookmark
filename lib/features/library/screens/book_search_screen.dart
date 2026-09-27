@@ -307,6 +307,8 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
       );
     }
 
+    final bool isFromSearchResult = result != null;
+
     if (!mounted) return;
 
     final saved = await Navigator.of(context).push<bool>(
@@ -319,7 +321,19 @@ class _BookSearchScreenState extends ConsumerState<BookSearchScreen> {
     );
 
     if (saved == true && mounted) {
+      _debounceTimer?.cancel();
+      _searchController.clear();
+      _results.clear();
+      _hasSearched = false;
       Navigator.of(context).pop(true);
+    } else if (isFromSearchResult && mounted) {
+      // User tapped a search result, viewed/edited it, and backed out:
+      // Return all the way to Library with search state cleared.
+      _debounceTimer?.cancel();
+      _searchController.clear();
+      _results.clear();
+      _hasSearched = false;
+      Navigator.of(context).pop(false);
     }
   }
 
