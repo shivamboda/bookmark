@@ -135,6 +135,7 @@ void main() {
       // The bulk-select action bar REPLACES the bottom nav bar in the Scaffold bottomNavigationBar slot
       expect(find.byKey(const ValueKey('bulk_set_year_button')), findsOneWidget);
       expect(find.byKey(const ValueKey('bulk_rate_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('bulk_delete_button')), findsOneWidget);
       expect(find.byType(FloralBottomNav), findsNothing); // Never stacked or colliding!
 
       // 5. Button tap targets & styling
@@ -142,6 +143,8 @@ void main() {
       expect(setYearSize.height, greaterThanOrEqualTo(44.0));
       final rateSize = tester.getSize(find.byKey(const ValueKey('bulk_rate_button')));
       expect(rateSize.height, greaterThanOrEqualTo(44.0));
+      final deleteSize = tester.getSize(find.byKey(const ValueKey('bulk_delete_button')));
+      expect(deleteSize.height, greaterThanOrEqualTo(44.0));
 
       // 6. Select all and cancel interaction
       await tester.tap(find.byKey(const ValueKey('select_all_button')));
@@ -154,7 +157,75 @@ void main() {
       // Exiting selection mode smoothly restores FloralBottomNav
       expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
       expect(find.byKey(const ValueKey('bulk_set_year_button')), findsNothing);
+      expect(find.byKey(const ValueKey('bulk_rate_button')), findsNothing);
+      expect(find.byKey(const ValueKey('bulk_delete_button')), findsNothing);
       expect(find.byType(FloralBottomNav), findsOneWidget);
+    });
+
+    testWidgets('Bulk delete removes selected books after confirmation dialog', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final storage = InMemoryStorageService();
+      final b1 = Book(
+        id: 'del-1',
+        title: 'Book To Delete',
+        authors: ['Author One'],
+        status: ReadingStatus.reading,
+        dateAdded: DateTime(2026, 1, 1),
+      );
+      final b2 = Book(
+        id: 'del-2',
+        title: 'Book To Keep',
+        authors: ['Author Two'],
+        status: ReadingStatus.finished,
+        dateAdded: DateTime(2026, 1, 2),
+      );
+      await storage.saveBook(b1);
+      await storage.saveBook(b2);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storageServiceProvider.overrideWithValue(storage)],
+          child: const MaterialApp(home: LibraryScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Book To Delete'), findsWidgets);
+      expect(find.text('Book To Keep'), findsWidgets);
+
+      // Long-press Book To Delete to select it
+      final bookToDeleteCard = find.ancestor(
+        of: find.text('Book To Delete').first,
+        matching: find.byType(BookListCard),
+      );
+      await tester.longPress(bookToDeleteCard);
+      await tester.pumpAndSettle();
+
+      // Tap Delete in the bulk action bar
+      final deleteBtn = find.byKey(const ValueKey('bulk_delete_button'));
+      expect(deleteBtn, findsOneWidget);
+      await tester.tap(deleteBtn);
+      await tester.pumpAndSettle();
+
+      // Confirmation dialog appears
+      expect(find.text('Remove from Shelf?'), findsOneWidget);
+      expect(find.byKey(const ValueKey('confirm_bulk_delete_button')), findsOneWidget);
+
+      // Confirm deletion
+      await tester.tap(find.byKey(const ValueKey('confirm_bulk_delete_button')));
+      await tester.pumpAndSettle();
+
+      // Selection mode exited, book deleted from library
+      expect(find.byKey(const ValueKey('library_selection_header')), findsNothing);
+      expect(find.text('Book To Delete'), findsNothing);
+      expect(find.text('Book To Keep'), findsWidgets);
+      expect(find.text('Removed "Book To Delete" from shelf ~'), findsOneWidget);
     });
   });
 

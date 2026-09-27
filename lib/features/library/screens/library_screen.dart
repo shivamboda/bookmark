@@ -3273,32 +3273,34 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               width: 1.0,
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),
                           icon: Icon(
                             Icons.calendar_today_rounded,
-                            size: 18,
+                            size: 16,
                             color: hasSelection ? FloralPalette.deepRose : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
                           ),
                           label: Text(
                             'Set year',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: JournalTypography.bodySmall(
                               color: hasSelection
                                   ? FloralPalette.warmCharcoal
                                   : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
-                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 13.5),
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
                           ),
                           onPressed: hasSelection ? () => _showBulkSetYearFlow(context, allBooks) : null,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Container(
                       width: 1,
-                      height: 24,
+                      height: 22,
                       color: FloralPalette.cardBorder.withValues(alpha: 0.6),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: SizedBox(
                         height: 48,
@@ -3317,22 +3319,74 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
                               width: 1.0,
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),
                           icon: Icon(
                             Icons.star_rounded,
-                            size: 20,
+                            size: 18,
                             color: hasSelection ? FloralPalette.buttercupGold : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
                           ),
                           label: Text(
                             'Rate',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: JournalTypography.bodySmall(
                               color: hasSelection
                                   ? FloralPalette.warmCharcoal
                                   : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
-                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 13.5),
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
                           ),
                           onPressed: hasSelection ? () => _showBulkRateFlow(context, allBooks) : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 1,
+                      height: 22,
+                      color: FloralPalette.cardBorder.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          key: const ValueKey('bulk_delete_button'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasSelection
+                                ? (FloralPalette.isDark ? const Color(0xFF351C18) : const Color(0xFFFBECE8))
+                                : FloralPalette.cardBorder.withValues(alpha: 0.25),
+                            foregroundColor: hasSelection
+                                ? (FloralPalette.isDark ? const Color(0xFFFFB4A8) : FloralPalette.poppyRedDark)
+                                : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            elevation: 0,
+                            side: BorderSide(
+                              color: hasSelection
+                                  ? (FloralPalette.isDark ? const Color(0xFF6A281E) : const Color(0xFFE8BDB5))
+                                  : Colors.transparent,
+                              width: 1.0,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                          ),
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            size: 17,
+                            color: hasSelection
+                                ? (FloralPalette.isDark ? const Color(0xFFFFB4A8) : FloralPalette.poppyRed)
+                                : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                          ),
+                          label: Text(
+                            'Delete',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: JournalTypography.bodySmall(
+                              color: hasSelection
+                                  ? (FloralPalette.isDark ? const Color(0xFFFFB4A8) : FloralPalette.poppyRedDark)
+                                  : FloralPalette.mutedCharcoal.withValues(alpha: 0.45),
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
+                          ),
+                          onPressed: hasSelection ? () => _showBulkDeleteFlow(allBooks) : null,
                         ),
                       ),
                     ),
@@ -3344,6 +3398,92 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with WidgetsBindi
         ),
       ),
     );
+  }
+
+  Future<void> _showBulkDeleteFlow(List<Book> allBooks) async {
+    final selectedBooks = allBooks.where((b) => _selectedBookIds.contains(b.id)).toList();
+    if (selectedBooks.isEmpty) return;
+
+    final count = selectedBooks.length;
+    final title = count == 1 ? 'Remove from Shelf?' : 'Remove $count Books?';
+    final content = count == 1
+        ? 'Are you sure you want to remove "${selectedBooks.first.title}" from your journal? This cannot be undone.'
+        : 'Are you sure you want to remove these $count books from your journal? This cannot be undone.';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FloralPalette.softIvory,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: FloralPalette.cardBorder),
+        ),
+        title: Text(
+          title,
+          style: JournalTypography.headingSmall(color: FloralPalette.poppyRedDark),
+        ),
+        content: Text(
+          content,
+          style: JournalTypography.body(color: FloralPalette.warmCharcoal),
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('cancel_bulk_delete_dialog_button'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancel',
+              style: JournalTypography.bodySmall(color: FloralPalette.mutedCharcoal).copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            key: const ValueKey('confirm_bulk_delete_button'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FloralPalette.poppyRedDark,
+              foregroundColor: FloralPalette.softIvory,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      final idsToDelete = selectedBooks.map((b) => b.id).toList();
+      await ref.read(booksProvider.notifier).bulkDeleteBooks(idsToDelete);
+
+      if (mounted) {
+        _exitSelectionMode();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    count == 1
+                        ? 'Removed "${selectedBooks.first.title}" from shelf ~'
+                        : 'Removed $count books from shelf ~',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontFamily: 'Caveat', fontSize: 17, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: FloralPalette.deepRose,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showBulkSetYearFlow(BuildContext context, List<Book> allBooks) async {

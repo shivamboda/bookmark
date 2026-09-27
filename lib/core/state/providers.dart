@@ -118,6 +118,16 @@ class BooksNotifier extends AsyncNotifier<List<Book>> {
     await future;
   }
 
+  /// Bulk deletes multiple books from storage with a single invalidation.
+  Future<void> bulkDeleteBooks(List<String> ids) async {
+    final storage = ref.read(storageServiceProvider);
+    for (final id in ids) {
+      await storage.deleteBook(id);
+    }
+    ref.invalidateSelf();
+    await future;
+  }
+
   Future<void> updateStatus(
     String id,
     ReadingStatus newStatus, {
